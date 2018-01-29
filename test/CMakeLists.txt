@@ -1,0 +1,7 @@
+include_directories(${CMAKE_SOURCE_DIR}/beamforming/c)
+add_executable(test_bf test_bf.c)
+add_executable(test_workers test_workers.c)
+add_executable(test_fft test_fft.c)
+target_link_libraries(test_bf beamforming_lib)
+target_link_libraries(test_fft beamforming_lib pthread)
+target_link_libraries(test_workers beamforming_lib pthread)

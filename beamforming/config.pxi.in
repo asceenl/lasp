@@ -1,0 +1,42 @@
+
+import numpy as np
+cimport numpy as np
+from libcpp cimport bool
+
+DEF ASCEE_FLOAT = "@ASCEE_FLOAT@"
+
+IF ASCEE_FLOAT == "double":
+    ctypedef  double d
+    ctypedef double complex c
+    NUMPY_FLOAT_TYPE = np.float64
+    NUMPY_COMPLEX_TYPE = np.complex128
+ELSE:
+    ctypedef  float d
+    ctypedef float complex c
+    NUMPY_FLOAT_TYPE = np.float32
+    NUMPY_COMPLEX_TYPE = np.complex128
+
+ctypedef size_t us
+
+cdef extern from "math.h":
+    ctypedef struct dmat:
+        d* data
+        us n_cols,n_rows
+    ctypedef struct cmat:
+        c* data
+        us n_cols,n_rows
+
+# cdef np.ndarray empty(us nrows,us ncols,dtype):
+cdef dmat dmat_from_array(d[::1,:] arr):
+    cdef dmat result
+    result.data = &arr[0,0]
+    result.n_rows = arr.shape[0]
+    result.n_cols = arr.shape[1]
+    return result
+
+cdef cmat cmat_from_array(c[::1,:] arr):
+    cdef cmat result
+    result.data = &arr[0,0]
+    result.n_rows = arr.shape[0]
+    result.n_cols = arr.shape[1]
+    return result

@@ -1,0 +1,14 @@
+*.a
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Beamforming.egg-info
+beamforming/*.cpp
+Makefile
+build
+*.html
+__pycache__
+cython_debug
+beamforming/config.pxi
+beamforming/fft.c
+*.so
