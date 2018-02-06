@@ -16,3 +16,5 @@ test/test_bf
 test/test_fft
 test/test_math
 test/test_workers
+doc
+
