@@ -2,149 +2,58 @@
 //
 // Author: J.A. de Jong - ASCEE
 //
-// Description:
-//
+// Description: Basic routines for allocating, setting, freeing and
+// copying of matrices and vectors.
 //////////////////////////////////////////////////////////////////////
 #pragma once
 #ifndef ASCEE_MATH_H
 #define ASCEE_MATH_H
-#include <math.h>
-#include "types.h"
-#include "tracer.h"
-#include "ascee_assert.h"
+#include "ascee_math_raw.h"
 #include "ascee_alloc.h"
+#include "ascee_tracer.h"
+#include "ascee_assert.h"
 
-#if ASCEE_USE_BLAS == 1
-#include <cblas.h>
-#endif
-
-#ifdef ASCEE_DOUBLE_PRECISION
-#define c_real creal
-#define c_imag cimag
-#define d_abs fabs
-#define c_abs cabs
-#define c_conj conj
-#define d_atan2 atan2
-#define d_acos acos
-#define d_sqrt sqrt
-#define c_exp cexp
-#define d_sin sin
-#define d_cos cos
-#define d_pow pow
-
-#else  // ASCEE_DOUBLE_PRECISION not defined
-#define c_conj conjf
-#define c_real crealf
-#define c_imag cimagf
-#define d_abs fabsf
-#define c_abs cabsf
-#define d_atan2 atan2f
-#define d_acos acosf
-#define d_sqrt sqrtf
-#define c_exp cexpf
-#define d_sin sinf
-#define d_cos cosf
-#define d_pow powf
-
-#endif // ASCEE_DOUBLE_PRECISION
-
-#ifdef M_PI
-static const d number_pi = M_PI;
-#else
-static const d number_pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679;
-#endif
-
-
-/// Code generation for vector of floats and vector of complex floats.
-#define vxinit(type)                                               \
-    typedef struct {                                            \
-        us size;                                                \
-        type* data;                                             \
-    } v##type;
-vxinit(d);
-vxinit(c);
-
-/// Code generation for matrix of floats and matrix of complex floats.
-#define xmatinit(type)                                                  \
-    typedef struct {                                                 \
-        us n_rows;                                                    \
-        us n_cols;                                                    \
-        type* data;                                                     \
-    } type##mat;
-xmatinit(d);
-xmatinit(c);
-
-
-    
-#define setvecval(vec,index,val)                              \
-    dbgassert((((us) index) <= (vec)->size),OUTOFBOUNDSVEC);  \
-    (vec)->data[index] = val;
-
-    
-#define setmatval(mat,row,col,val)                              \
-    dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
-    dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
-    (mat)->data[(col)*(mat)->n_rows+(row)] = val;
-
-/** 
- * Return a value from a vector
- *
- * @param mat The vector
- * @param row The row
- */
-static inline d* getvdval(const vd* vec,us row){
-    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
-    return &vec->data[row];
-}
-
-/** 
- * Return a value from a complex vector
- *
- * @param mat The vector
- * @param row The row
- */
-static inline c* getvcval(const vc* vec,us row){
-    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
-    return &vec->data[row];
-}
-
-/** 
- * Return a value from a matrix of floating points
- *
- * @param mat The matrix
- * @param row The row
- * @param col The column
- */
-static inline d* getdmatval(const dmat* mat,us row,us col){
-    assert((row) < mat->n_rows); 
-    assert((col) < mat->n_cols);
-    return &mat->data[(col)*mat->n_rows+(row)];
-}
-
-/** 
- * Return a value from a matrix of complex floating points
- *
- * @param mat The matrix
- * @param row The row
- * @param col The column
- */
-static inline c* getcmatval(const cmat* mat,const us row,const us col){
-    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
-    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
-    return &mat->data[col*mat->n_rows+row];
-}
+/// Vector of floating point numbers
+typedef struct {
+    us size;
+    d* ptr;                     /**< This pointer points to the data
+                                   of this vector */
+    d* data;                    /**< Pointer set if data storage is
+                                   intern. If this is set to zero, the
+                                   vector is a sub-vector. */
+} vd;
+/// Vector of complex floating point numbers
+typedef struct {
+    us size;
+    c* ptr;                     /**< This pointer points to the data
+                                   of this vector */
+    c* data;                    /**< Pointer set if data storage is
+                                   intern. If this is set to zero, the
+                                   vector is a sub-vector. */
+} vc;
+/// Dense matrix of floating point values
+typedef struct { 
+    us n_rows; 
+    us n_cols;
+    d** col_ptrs;
+    d* data;
+} dmat; 
+/// Dense matrix of complex floating point values
+typedef struct { 
+    us n_rows; 
+    us n_cols;
+    c** col_ptrs;
+    c* data; 
+} cmat; 
 
 /** 
  * Sets all values in a vector to the value
  *
- * @param b the vector to set
+ * @param vec the vector to set
  * @param value 
  */
 static inline void vd_set(vd* vec, d value){
-    us i;
-    for(i=0;i<vec->size;i++){
-        vec->data[i] = value;
-    }
+    d_set(vec->ptr,value,vec->size);
 }
 
 /** 
@@ -154,10 +63,7 @@ static inline void vd_set(vd* vec, d value){
  * @param value 
  */
 static inline void vc_set(vc* vec,const c value){
-    us i;
-    for(i=0;i<vec->size;i++){
-        vec->data[i] = value;
-    }
+    c_set(vec->ptr,value,vec->size);
 }
 
 /** 
@@ -167,9 +73,15 @@ static inline void vc_set(vc* vec,const c value){
  * @param value 
  */
 static inline void dmat_set(dmat* mat,const d value){
-    us i,size = mat->n_cols*mat->n_rows;
-    for(i=0;i<size;i++){
-        mat->data[i] = value;
+    dbgassert(mat,NULLPTRDEREF);
+    us size = mat->n_cols*mat->n_rows;
+    if(likely(mat->data)){
+        d_set(mat->data,value,size);
+    }
+    else {
+        for(us col=0;col<mat->n_cols;col++) {
+            d_set(mat->col_ptrs[col],value,mat->n_rows);
+        }
     }
 }
 
@@ -181,369 +93,17 @@ static inline void dmat_set(dmat* mat,const d value){
  * @param value 
  */
 static inline void cmat_set(cmat* mat,const c value){
-    us i,size = mat->n_cols*mat->n_rows;
-    for(i=0;i<size;i++){
-        mat->data[i] = value;
+    dbgassert(mat,NULLPTRDEREF);
+    us size = mat->n_cols*mat->n_rows;
+    if(likely(mat->data)){
+        c_set(mat->data,value,size);
+    }
+    else {
+        for(us col=0;col<mat->n_cols;col++) {
+            c_set(mat->col_ptrs[col],value,mat->n_rows);
+        }
     }
 }
-
-/** 
- * Return a column pointer of the matrix
- *
- * @param mtrx The matrix.
- * @param column The column number.
- *
- * @return Pointer to the column.
- */
-static inline d* d_column(dmat* mtrx,us column){
-    return &mtrx->data[mtrx->n_rows*column];
-}
-
-/** 
- * Return a column pointer of the matrix
- *
- * @param mtrx The matrix.
- * @param column The column number.
- *
- * @return Pointer to the column.
- */
-static inline c* c_column(cmat* mtrx,us column){
-    return &mtrx->data[mtrx->n_rows*column];
-}
-
-
-/** 
- * Return the maximum of two doubles
- *
- * @param a value 1
- * @param b value 2
- * 
- * @returns the maximum of value 1 and 2
- */
-static inline d max(const d a,const d b) {
-    return a>b?a:b;
-}
-
-
-/** 
- * Return the dot product of two arrays, one of them complex-valued,
- * the other real-valued
- *
- * @param a the complex-valued array
- * @param b the real-valued array
- * @param size the size of the arrays. *Should be equal-sized!*
- *
- * @return the dot product
- */
-static inline c cd_dot(const c a[],const d b[],us size){
-    c result = 0;
-    us i;
-    for(i=0;i<size;i++){
-        result+=a[i]*b[i];
-    }
-    return result;
-}
-
-
-/** 
- * Return the dot product of two complex-valued arrays. Wraps BLAS
- * when ASCEE_USE_BLAS == 1.
- *
- * @param a complex-valued array
- * @param b complex-valued array
- * @param size the size of the arrays. *Should be equal-sized!*
- *
- * @return the dot product
- */
-static inline c cc_dot(const c a[],const c b[],us size){
-    #if ASCEE_USE_BLAS == 1
-    WARN("CBlas zdotu not yet tested");
-    #if ASCEE_DOUBLE_PRECISION
-    // assert(0);
-    return cblas_zdotu(size,(d*) a,1,(d*) b,1);
-    #else
-    return cblas_cdotu(size,(d*) a,1,(d*) b,1);
-    #endif
-    #else
-    c result = 0;
-    us i;
-    for(i=0;i<size;i++){
-        result+=a[i]*b[i];
-    }
-    return result;
-    #endif
-}
-
-/** 
- * Compute the dot product of two real arrays.
- *
- * @param a First array.
- * @param b Second array.
- * @param size Size of the arrays.
- * @return The result.
- */
-static inline d d_dot(const d a[],const d b[],const us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
-    return cblas_ddot(size,a,1,b,1);
-    #else  // Single precision function
-    return cblas_sdot(size,a,1,b,1);
-    #endif
-    #else  // No BLAS, do it manually
-
-    d result = 0;
-    us i;
-    for(i=0;i<size;i++){
-        result+=a[i]*b[i];
-    }
-    return result;
-    #endif
-}
-
-/** 
- * Compute the dot product of two vectors of double precision
- *
- * @param a First vector
- * @param b Second second vector
-
- */
-static inline d vd_dot(const vd * a,const vd* b) {
-    dbgassert(a->size == b->size,SIZEINEQUAL);
-    return d_dot(a->data,b->data,a->size);
-}
-
-
-/** 
- * Copy array of floats.
- *
- * @param to : Array to write to
- * @param from : Array to read from
- * @param size : Size of arrays
- */
-static inline void d_copy(d to[],const d from[],const us size){
-    #if ASCEE_USE_BLAS == 1
-    cblas_dcopy(size,from,1,to,1);
-    #else
-    us i;
-    for(i=0;i<size;i++)
-        to[i] = from[i];
-    #endif
-}
-
-/** 
- * Copy vector to another
- *
- * @param to : Vector to write to
- * @param from : Vector to read from
- */
-static inline void vd_copy(vd* to,vd* from) {
-    dbgassert(to->size==from->size,SIZEINEQUAL);
-    d_copy(to->data,from->data,to->size);
-}
-
-/** 
- * Copy array of floats to array of complex floats. Imaginary part set
- * to zero.
- *
- * @param to : Array to write to
- * @param from : Array to read from
- * @param size : Size of arrays
- */
-static inline void cd_copy(c to[],const d from[],const us size) {
-    us i;
-    for(i=0;i<size;i++) {
-        to[i] = (c) (from[i]);
-        dbgassert(cimag(to[i]) == 0,"Imaginary part not equal to zero");
-    }
-}
-
-/** 
- * Copy float vector to complex vector. Imaginary part set
- * to zero.
- *
- * @param to : Vector to write to
- * @param from : Vector to read from
- */
-static inline void c_copy(c to[],const c from[],us size){
-    
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
-    cblas_zcopy(size,(d*) from,1,(d*) to,1);
-    #else
-    cblas_ccopy(size,(d*) from,1,(d*) to,1);
-    #endif
-    #else
-    us i;
-    for(i=0;i<size;i++)
-        to[i] = from[i];
-    #endif
-}
-/** 
- * Add a constant factor 'fac' to elements of y, and write result to
- * x.
- *
- * @param x Array to add to
- * @param y Array to add to x
- * @param fac Factor with which to multiply y
- * @param size Size of the arrays
- */
-static inline void d_add_to(d x[],const d y[],d fac,us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
-    cblas_daxpy(size,fac,y,1,x,1);
-    #else
-    cblas_saxpy(size,fac,y,1,x,1);
-    #endif
-    #else
-    us i;
-    for(i=0;i<size;i++)
-        x[i]+=fac*y[i];
-    #endif
-}
-
-/** 
- * Scale an array of doubles
- *
- * @param a array
- * @param scale_fac scale factor
- * @param size size of the array
- */
-static inline void d_scale(d a[],const d scale_fac,us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION    
-    cblas_dscal(size,scale_fac,a,1);
-    #else
-    cblas_sscal(size,scale_fac,a,1);
-    #endif
-    #else
-    us i;
-    for(i=0;i<size;i++)
-        a[i]*=scale_fac;
-    #endif
-}
-
-/** 
- * Scale an array of complex floats
- *
- * @param a array
- * @param scale_fac scale factor
- * @param size size of the array
- */
-static inline void c_scale(c a[],const c scale_fac,us size){
-    #if ASCEE_USE_BLAS == 1
-    // Complex argument should be given in as array of two double
-    // values. The first the real part, the second the imaginary
-    // part. Fortunately the (c) type stores the two values in this
-    // order. To be portable and absolutely sure anything goes well,
-    // we convert it explicitly here.
-    d scale_fac_d [] = {creal(scale_fac),cimag(scale_fac)};
-
-    #if ASCEE_DOUBLE_PRECISION
-    cblas_zscal(size,scale_fac_d,(d*) a,1);
-    #else
-    cblas_cscal(size,scale_fac_d,(d*) a,1);
-    #endif
-    #else
-    us i;
-    for(i=0;i<size;i++)
-        a[i]*=scale_fac;
-    #endif
-}
-
-
-/** 
- * Compute the maximum value of an array
- *
- * @param a array
- * @param size size of the array
- * @return maximum
- */
-static inline d d_max(const d a[],us size){
-    us i;
-    d max = a[0];
-    for(i=1;i<size;i++){
-        if(a[i] > max) max=a[i];
-    }
-    return max;
-}
-/** 
- * Compute the minimum of an array
- *
- * @param a array
- * @param size size of the array
- * @return minimum
- */
-static inline d d_min(const d a[],us size){
-    us i;
-    d min = a[0];
-    for(i=1;i<size;i++){
-        if(a[i] > min) min=a[i];
-    }
-    return min;
-}
-
-/** 
- * Compute the \f$ L_2 \f$ norm of an array of doubles
- *
- * @param a Array
- * @param size Size of array
- */
-static inline d d_norm(const d a[],us size){
-    #if ASCEE_USE_BLAS == 1
-    return cblas_dnrm2(size,a,1);
-    #else	
-    d norm = 0;
-    us i;
-    for(i=0;i<size;i++){
-        norm+=a[i]*a[i];
-    }
-    norm = d_sqrt(norm);
-    return norm;
-    #endif
-	
-}
-/** 
- * Compute the \f$ L_2 \f$ norm of an array of complex floats
- *
- * @param a Array
- * @param size Size of array
- */
-static inline d c_norm(const c a[],us size){
-    #if ASCEE_USE_BLAS == 1
-    return cblas_dznrm2(size,(d*) a,1);
-    #else	
-    d norm = 0;
-    us i;
-    for(i=0;i<size;i++){
-        d absa = c_abs(a[i]);
-        norm+=absa*absa;
-    }
-    norm = d_sqrt(norm);
-    return norm;
-    #endif
-	
-}
-
-/** 
- * Computes the Kronecker product of a kron b, stores result in result.
- *
- * @param a a
- * @param b b
- * @param result a kron b
- */
-void kronecker_product(const cmat* a,const cmat* b,cmat* result);
-
-#ifdef ASCEE_DEBUG
-void print_cmat(const cmat* m);
-void print_vc(const vc* m);
-void print_vd(const vd* m);
-void print_dmat(const dmat* m);
-#else
-#define print_cmat(m)
-#define print_vc(m)
-#define print_dmat(m)
-#endif
-
 
 /** 
  * Allocate data for a float vector.
@@ -553,8 +113,10 @@ void print_dmat(const dmat* m);
  * @return vd with allocated data
  */
 static inline vd vd_alloc(us size) {
-    vd result = { size, NULL};
+    vd result = { size, NULL,NULL};
     result.data = (d*) a_malloc(size*sizeof(d));
+    result.ptr = result.data;
+    dbgassert(result.data,ALLOCFAILED);
     #ifdef ASCEE_DEBUG
     vd_set(&result,NAN);
     #endif // ASCEE_DEBUG    
@@ -568,34 +130,14 @@ static inline vd vd_alloc(us size) {
  * @return vc with allocated data
  */
 static inline vc vc_alloc(us size) {
-    vc result = { size, NULL};
+    vc result = { size, NULL, NULL};
     result.data = (c*) a_malloc(size*sizeof(c));
+    result.ptr = result.data;
     #ifdef ASCEE_DEBUG
     vc_set(&result,NAN+I*NAN);
     #endif // ASCEE_DEBUG    
     return result;
 }
-
-/**
- * Free the data of a dmat, cmat, vd, or vc. This function is
- * macro-nized as what is to be done is the same for each of these
- * types, free-ing the buffer.
- */
-#define matvec_free(type)                       \
-    static inline void type##_free(type * buf) {       \
-    a_free(buf->data);                                  \
-    }
-matvec_free(vd);
-matvec_free(vc);
-matvec_free(dmat);
-matvec_free(cmat);
-
-/**
- * Now the following functions exist: vd_free, vc_free, dmat_free and
- * cmat_free.
- */
-
-
 /** 
  * Allocate data for a matrix of floating points
  *
@@ -607,18 +149,31 @@ matvec_free(cmat);
  */
 static inline dmat dmat_alloc(us n_rows,
                               us n_cols) {
-    dmat result = { n_rows, n_cols, NULL};
-    result.data = (d*) a_malloc(n_rows*n_cols*sizeof(d));
+    dmat result = { n_rows, n_cols, NULL, NULL};
+    
+    /**
+     * Here storage is allocated for both the data, as well as the
+     * column pointers. The column pointer data is stored at the end
+     * of the allocated block.
+     */
+    result.data = (d*) a_malloc(n_rows*n_cols*sizeof(d)
+                                +sizeof(d*)*n_cols);
+
+    dbgassert(result.data,ALLOCFAILED);
+    result.col_ptrs = (d**) &result.data[n_rows*n_cols];
+    for(us col=0;col<n_cols;col++) {
+        result.col_ptrs[col] = &result.data[n_rows*col];
+    }
     #ifdef ASCEE_DEBUG
     dmat_set(&result,NAN);
     #endif // ASCEE_DEBUG
-    assert(result.data);
+
     return result;
 }
 
 
 /** 
- * Allocate data for a matrix of complex floating points
+ * Allocate a matrix of complex floating points
  *
  * @param n_rows Number of rows
  * @param n_cols Number of columns
@@ -626,29 +181,190 @@ static inline dmat dmat_alloc(us n_rows,
  *
  * @return cmat with allocated data
  */
-static inline cmat cmat_alloc(us n_rows,
-                              us n_cols) {
-    cmat result = { n_rows, n_cols, NULL};
-    result.data = (c*) a_malloc(n_rows*n_cols*sizeof(c));
+static inline cmat cmat_alloc(const us n_rows,
+                              const us n_cols) {
+    cmat result = { n_rows, n_cols, NULL, NULL};
+    /**
+     * Here storage is allocated for both the data, as well as the
+     * column pointers. The column pointer data is stored at the end
+     * of the allocated block.
+     */
+    result.data = (c*) a_malloc(n_rows*n_cols*sizeof(c)
+                                +sizeof(c*)*n_cols);
+
+    dbgassert(result.data,ALLOCFAILED);
+    result.col_ptrs = (c**) &result.data[n_rows*n_cols];
+    for(us col=0;col<n_cols;col++) {
+        result.col_ptrs[col] = &result.data[n_rows*col];
+    }
+
     #ifdef ASCEE_DEBUG
     cmat_set(&result,NAN+I*NAN);
     #endif // ASCEE_DEBUG
-    assert(result.data);
+    return result;
+}
+/** 
+ * Creates a dmat from foreign data. Does not copy the data, but only
+ * initializes the row pointers. Assumes column-major ordering for the
+ * data. Please do not keep this one alive after the data has been
+ * destroyed.
+ *
+ * @param n_rows Number of rows
+ * @param n_cols Number of columns
+ * @param data 
+ *
+ * @return 
+ */
+static inline dmat dmat_foreign(const us n_rows,
+                                const us n_cols,
+                                d* data) {
+
+    dbgassert(data,NULLPTRDEREF);
+    dmat result = {n_rows,n_cols,NULL,NULL};
+    d** colptrs = malloc(sizeof(d*)*n_cols);
+    dbgassert(colptrs,ALLOCFAILED);
+    result.col_ptrs = colptrs;
+    for(us i=0;i<n_cols;i++) {
+        colptrs[i] = &data[i*n_rows];
+    }
+    return result;
+}
+/** 
+ * Creates a cmat from foreign data. Does not copy the data, but only
+ * initializes the row pointers. Assumes column-major ordering for the
+ * data. Please do not keep this one alive after the data has been
+ * destroyed.
+ *
+ * @param n_rows 
+ * @param n_cols 
+ * @param data 
+ *
+ * @return 
+ */
+static inline cmat cmat_foreign(const us n_rows,
+                                const us n_cols,
+                                c* data) {
+    dbgassert(data,NULLPTRDEREF);
+    cmat result = {n_rows,n_cols,NULL,NULL};
+    c** colptrs = malloc(sizeof(c*)*n_cols);
+    dbgassert(colptrs,ALLOCFAILED);
+    result.col_ptrs = colptrs;
+    for(us i=0;i<n_cols;i++) {
+        colptrs[i] = &data[i*n_rows];
+    }
     return result;
 }
 
-/**
- * Resize an existing dmat or a cmat 
+/** 
+ * Free's data of a vector. Is safe to run on sub-vecs as well, to
+ * make API consistent. (Only free's data if data pointer is set)
+ *
+ * @param f Vector to free
  */
-#define type_mat_resize(type)       \
-    static inline void type##mat_resize(type##mat * mat,\
-                                        us nrows,us ncols) {    \
-    mat->n_rows = nrows;                                        \
-    mat->n_cols = ncols;                                        \
-    mat->data = realloc(mat->data,(nrows*ncols)*sizeof( type ));        \
+static inline void vd_free(vd* f) {
+    dbgassert(f,NULLPTRDEREF);
+    if(likely(f->data)) a_free(f->data);
+}
+/** 
+ * Free's data of a vector. Is safe to run on sub-vecs as well, to
+ * make API consistent. (Only free's data if data pointer is set)
+ *
+ * @param f Vector to free
+ */
+static inline void vc_free(vc* f) {
+    dbgassert(f,NULLPTRDEREF);
+    if(likely(f->data)) a_free(f->data);
+}
+/** 
+ * Free's data of dmat. Safe to run on sub-matrices as well.
+ *
+ * @param m Matrix to free
+ */
+static inline void dmat_free(dmat* m) {
+    if(likely(m->data)) {
+        a_free(m->data);
     }
-type_mat_resize(d);
-type_mat_resize(c);
+    else {
+        // Only column pointers allocated. This was a submat
+        dbgassert(m->col_ptrs,NULLPTRDEREF);
+        a_free(m->col_ptrs);
+    }
+}
+/** 
+ * Free's data of dmat. Safe to run on sub-matrices as well.
+ *
+ * @param m Matrix to free
+ */
+static inline void cmat_free(cmat* m) {
+    if(likely(m->data)) {
+        a_free(m->data);
+    }
+    else {
+        // Only column pointers allocated. This was a submat
+        dbgassert(m->col_ptrs,NULLPTRDEREF);
+        a_free(m->col_ptrs);
+    }
+}
+
+#define setvecval(vec,index,val)                              \
+    dbgassert((((us) index) <= (vec)->size),OUTOFBOUNDSVEC);  \
+    (vec)->data[index] = val;
+
+    
+#define setmatval(mat,row,col,val)                              \
+    dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
+    dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
+    (mat)->data[(col)*(mat)->n_rows+(row)] = val;
+
+/** 
+ * Return pointer to a value from a vector
+ *
+ * @param mat The vector
+ * @param row The row
+ */
+static inline d* getvdval(const vd* vec,us row){
+    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
+    return &vec->ptr[row];
+}
+
+/** 
+ * Return pointer to a value from a complex vector
+ *
+ * @param mat The vector
+ * @param row The row
+ */
+static inline c* getvcval(const vc* vec,us row){
+    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
+    return &vec->ptr[row];
+}
+
+/** 
+ * Return a value from a matrix of floating points
+ *
+ * @param mat The matrix
+ * @param row The row
+ * @param col The column
+ */
+static inline d* getdmatval(const dmat* mat,us row,us col){
+    dbgassert(mat,NULLPTRDEREF);
+    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
+    return &mat->col_ptrs[col][row];
+}
+
+/** 
+ * Return a value from a matrix of complex floating points
+ *
+ * @param mat The matrix
+ * @param row The row
+ * @param col The column
+ */
+static inline c* getcmatval(const cmat* mat,const us row,const us col){
+    dbgassert(mat,NULLPTRDEREF);
+    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
+    return &mat->col_ptrs[col][row];
+}
 
 /** 
  * Copy some rows from one matrix to another
@@ -672,81 +388,190 @@ static inline void copy_dmat_rows(dmat* to,const dmat* from,
         d* from_d = getdmatval(from,startrow_from,col);
         d_copy(to_d,from_d,nrows);
     }
+}
+/** 
+ * Allocate a sub-matrix view of the parent
+ *
+ * @param parent Parent matrix
+ * @param startrow Startrow
+ * @param startcol Start column
+ * @param n_rows Number of rows in sub-matrix
+ * @param n_cols Number of columns in sub-matrix
+ *
+ * @return submatrix view
+ */
+static inline dmat dmat_submat(const dmat* parent,
+                               const us startrow,
+                               const us startcol,
+                               const us n_rows,
+                               const us n_cols) {
 
+    dbgassert(parent,NULLPTRDEREF);
+    dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
+
+    d** col_ptrs = malloc(sizeof(d*)*n_cols);
+    dbgassert(col_ptrs,ALLOCFAILED);
+    for(us col=0;col<n_cols;col++) {
+        col_ptrs[col] = getdmatval(parent,
+                                   startrow,
+                                   startcol+col);
+
+    }
+    dmat result = { n_rows,n_cols,col_ptrs,NULL};
+    return result;
+}
+/** 
+ * Allocate a sub-matrix view of the parent
+ *
+ * @param parent Parent matrix
+ * @param startrow Startrow
+ * @param startcol Start column
+ * @param n_rows Number of rows in sub-matrix
+ * @param n_cols Number of columns in sub-matrix
+ *
+ * @return submatrix view
+ */
+static inline cmat cmat_submat(cmat* parent,
+                               const us startrow,
+                               const us startcol,
+                               const us n_rows,
+                               const us n_cols) {
+
+    dbgassert(parent,NULLPTRDEREF);
+    dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
+
+    c** col_ptrs = malloc(sizeof(c*)*n_cols);
+    dbgassert(col_ptrs,ALLOCFAILED);
+    for(us col=0;col<n_cols;col++) {
+        col_ptrs[col] = getcmatval(parent,
+                                   startrow,
+                                   startcol+col);
+
+    }
+    cmat result = { n_rows,n_cols,col_ptrs,NULL};
+    return result;
 }
 
 /** 
- * Computes the element-wise vector product, or Hadamard product of
- * arr1 and arr2
+ * Copy contents of one vector to another
  *
- * @param res Where the result will be stored
- * @param arr1 Array 1
- * @param vec2 Array 2
- * @param size: Size of the arrays
+ * @param to : Vector to write to
+ * @param from : Vector to read from
  */
-void d_elem_prod_d(d res[],
-                   const d arr1[],
-                   const d arr2[],
-                   const us size);
-
+static inline void vd_copy(vd* to,vd* from) {
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(to->size==from->size,SIZEINEQUAL);
+    d_copy(to->ptr,from->ptr,to->size);
+}
 /** 
- * Computes the element-wise vector product, or Hadamard product of
- * arr1 and arr2 for complex floats
+ * Copy contents of one vector to another
  *
- * @param res Where the result will be stored
- * @param arr1 Array 1
- * @param vec2 Array 2
- * @param size: Size of the arrays
+ * @param to : Vector to write to
+ * @param from : Vector to read from
  */
-void c_elem_prod_c(c res[],
-                   const c arr1[],
-                   const c arr2[],
-                   const us size);
-
+static inline void vc_copy(vc* to,vc* from) {
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(to->size==from->size,SIZEINEQUAL);
+    c_copy(to->ptr,from->ptr,to->size);
+}
 /** 
- * Compute the complex conjugate of a complex vector and store the
- * result.
+ * Copy contents of one matrix to another. Sizes should be equal
  *
- * @param res Result vector
- * @param in Input vector
- * @param size Size of the vector
+ * @param to 
+ * @param from 
  */
-static inline void c_conj_c(c res[],const c in[],us size) {
-    for(us i=0;i<size;i++) {
-        res[i] = c_conj(in[i]);
+static inline void dmat_copy(dmat* to,const dmat* from) {
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
+    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
+    for(us col=0;col<to->n_cols;col++) {
+        d_copy(to->col_ptrs[col],from->col_ptrs[col],to->n_rows);
     }
 }
 /** 
- * In place complex conjugation
+ * Copy contents of one matrix to another. Sizes should be equal
  *
- * @param res Result vector
- * @param size Size of the vector
+ * @param to 
+ * @param from 
  */
-static inline void c_conj_inplace(c res[],us size) {
-    for(us i=0;i<size;i++) {
-        res[i] = c_conj(res[i]);
+static inline void cmat_copy(cmat* to,const cmat* from) {
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
+    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
+    for(us col=0;col<to->n_cols;col++) {
+        c_copy(to->col_ptrs[col],from->col_ptrs[col],to->n_rows);
     }
 }
 
 
 /** 
- * Compute the matrix vector product for complex-valued types: b = A*x.
+ * Get a reference to a column of a matrix as a vector
  *
- * @param[in] A Matrix A
- * @param[in] x Vector x
- * @param[out] b Result of computation
+ * @param x Matrix
+ * @param col Column number
+ *
+ * @return vector with reference to column
  */
-void cmv_dot(const cmat* A,
-             const vc* restrict x,
-             vc* restrict b);
+static inline vd dmat_column(dmat* x,us col) {
+    vd res = { x->n_rows, getdmatval(x,0,col),NULL};
+    return res;
+}
 
-int lsq_solve(const cmat* A,
-              const vc* restrict b,
-              vc* restrict x);
+/** 
+ * Get a reference to a column of a matrix as a vector
+ *
+ * @param x Matrix
+ * @param col Column number
+ *
+ * @return vector with reference to column
+ */
+static inline vc cmat_column(cmat* x,us col) {
+    vc res = { x->n_rows, getcmatval(x,0,col),NULL};
+    return res;
+}
 
-// Compute the Frobenius norm of A-B
-d c_normdiff(const cmat* A,const cmat* B);
+/** 
+ * Compute the complex conjugate of b and store result in a
+ *
+ * @param a 
+ * @param b 
+ */
+static inline void vc_conj_vc(vc* a,const vc* b) {
+    dbgassert(a && b,NULLPTRDEREF);
+    dbgassert(a->size == b->size,SIZEINEQUAL);
+    c_conj_c(a->ptr,b->ptr,a->size);
+}
+
+/** 
+ * Take the complex conjugate of x, in place
+ *
+ * @param x 
+ */
+static inline void cmat_conj(cmat* x) {
+    dbgassert(x,NULLPTRDEREF);
+    if(likely(x->data)) {
+        c_conj_inplace(x->data,x->n_cols*x->n_rows);
+    }
+    else {
+        for(us col=0;col<x->n_cols;col++) {
+            c_conj_inplace(x->col_ptrs[col],x->n_rows);
+        }
+    }
+}
 
 
-#endif // SI_MATH_H
+#ifdef ASCEE_DEBUG
+void print_cmat(const cmat* m);
+void print_vc(const vc* m);
+void print_vd(const vd* m);
+void print_dmat(const dmat* m);
+#else
+#define print_cmat(m)
+#define print_vc(m)
+#define print_dmat(m)
+#endif
+
+#endif // ASCEE_MATH_H
 //////////////////////////////////////////////////////////////////////

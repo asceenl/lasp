@@ -6,10 +6,13 @@ endif(!ASCEE_DEBUG)
 add_library(beamforming_lib
   fft.c
   ascee_math.c
+  ascee_math_raw.c
+  ascee_alg.c
   ascee_assert.c
-  tracer.c
+  ascee_tracer.c
   window.c
-  # ps.c
+  aps.c
+  ps.c
   mq.c
   worker.c
   )

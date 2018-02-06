@@ -1,4 +1,4 @@
-// tracer.h
+// ascee_tracer.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,8 +6,8 @@
 // Basic tracing code for debugging.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef TRACER_H
-#define TRACER_H
+#ifndef ASCEE_TRACER_H
+#define ASCEE_TRACER_H
 
 // Some console colors
 #define RESET   "\033[0m"
@@ -214,6 +214,5 @@ void uvartrace_impl(const char* pos,int line,const char* varname,size_t var);
 #endif	// ######################################## TRACER ==1
 
 
-
-#endif // TRACER_H
+#endif // ASCEE_TRACER_H
 //////////////////////////////////////////////////////////////////////

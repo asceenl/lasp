@@ -8,10 +8,10 @@ Created on Mon Jan 15 19:45:33 2018
 import numpy as np
 from beamforming.fft import Fft, PowerSpectra
 
-nfft=2**10
+nfft=2**4
 print('nfft:',nfft)
-print(nfft)
-nchannels = 8
+#print(nfft)
+nchannels = 2
 
 t = np.linspace(0,1,nfft+1)
 # print(t)

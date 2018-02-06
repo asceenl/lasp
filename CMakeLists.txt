@@ -13,6 +13,9 @@ add_definitions(-DASCEE_MAX_NUM_THREADS=8)
 
 add_definitions(-DASCEE_MAX_NUM_CHANNELS=80)
 
+# Reasonable maximum to the nfft size, at 48kHz this is 700s of data..
+add_definitions(-DASCEE_MAX_NFFT=33554432) # 2**25
+
 # ####################################### End of user-adjustable variables section
 
 add_definitions(-D_REENTRANT)

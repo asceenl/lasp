@@ -18,25 +18,26 @@ ELSE:
 
 ctypedef size_t us
 
-cdef extern from "math.h":
+cdef extern from "ascee_tracer.h":
+    void setTracerLevel(int)
+
+cdef extern from "ascee_math.h":
     ctypedef struct dmat:
         d* data
+        d** col_ptrs
         us n_cols,n_rows
     ctypedef struct cmat:
         c* data
+        c** col_ptrs
         us n_cols,n_rows
 
-# cdef np.ndarray empty(us nrows,us ncols,dtype):
-cdef dmat dmat_from_array(d[::1,:] arr):
-    cdef dmat result
-    result.data = &arr[0,0]
-    result.n_rows = arr.shape[0]
-    result.n_cols = arr.shape[1]
-    return result
+    dmat dmat_foreign(us n_rows,
+                      us n_cols,
+                      d* data)
+    cmat cmat_foreign(us n_rows,
+                      us n_cols,
+                      c* data)
 
-cdef cmat cmat_from_array(c[::1,:] arr):
-    cdef cmat result
-    result.data = &arr[0,0]
-    result.n_rows = arr.shape[0]
-    result.n_cols = arr.shape[1]
-    return result
+    void dmat_free(dmat*)
+    void cmat_free(cmat*)
+    void cmat_copy(cmat* to,cmat* from_)

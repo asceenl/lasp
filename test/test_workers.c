@@ -7,8 +7,8 @@
 //////////////////////////////////////////////////////////////////////
 #include "worker.h"
 #include "mq.h"
-#include "tracer.h"
-
+#include "ascee_tracer.h"
+#include <unistd.h>
 static void* walloc(void*);
 static int worker(void*,void*);
 static void wfree(void*);
@@ -20,7 +20,7 @@ int main() {
 
     iVARTRACE(15,getTracerLevel());
 
-    int njobs = 4;
+    us njobs = 4;
     JobQueue* jq = JobQueue_alloc(njobs);
     assert(jq);
 
@@ -43,11 +43,10 @@ int main() {
 
     return 0;
 }
-
 static void* walloc(void* data) {
     TRACE(15,"WALLOC");
-    uVARTRACE(15,(int) data);
-    return (void*) getpid();
+    uVARTRACE(15,(us) data);
+    return (void*) 1;
 }
 
 static int worker(void* w_data,void* tj) {

@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////////
 #if TRACER == 1
 #include <stdio.h>
-#include "tracer.h"
+#include "ascee_tracer.h"
 #include "types.h"
 
 #ifdef _REENTRANT

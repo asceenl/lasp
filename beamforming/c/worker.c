@@ -11,7 +11,7 @@
 #include "ascee_alloc.h"
 #include <pthread.h>
 #include "ascee_assert.h"
-#include "tracer.h"
+#include "ascee_tracer.h"
 
 typedef struct Workers_s {
     JobQueue* jq;

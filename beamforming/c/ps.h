@@ -9,59 +9,54 @@
 #ifndef PS_H
 #define PS_H
 #include "window.h"
-
-struct PowerSpectra_s;
-struct AvPowerSpectra_s;
-
 typedef struct PowerSpectra_s PowerSpectra;
-typedef struct AvPowerSpectra_s AvPowerSpectra;
 
 
+/** 
+ * Allocate a PowerSpectra computer
+ *
+ * @param nfft fft length
+ * @param nchannels Number of channels
+ * @param wt Windowtype, as defined in window.h
+ *
+ * @return PowerSpectra handle, NULL on error
+ */
 PowerSpectra* PowerSpectra_alloc(const us nfft,
                                  const us nchannels,
                                  const WindowType wt);
 
 /** 
- * Compute power spectra, returns to a complex array
+ * Compute power spectra.
  *
- * @param[in] timedata Time data, should be of size nfft*nchannels
- * @param [out] Cross-power spectra, array should be of size
- * (nfft/2+1) x (nchannels*nchannels), such that the cross spectra of
- * channel i with channel j at can be found as
- * getvcval(0,i+j*nchannels).
- * @return status code, SUCCESS on succes.
+ * @param ps[in] PowerSpectra handle
+ * @param[in] timedata Time data. Should have size nfft*nchannels
+ *
+ * @param[out] result Here, the result will be stored. Should have
+ * size (nfft/2+1)*nchannels^2, such that the Cij at frequency index f
+ * can be obtained as result[f,i+j*nchannels]
+ *
  */
-int PowerSpectra_compute(const PowerSpectra*,
+void PowerSpectra_compute(const PowerSpectra* ps,
                          const dmat* timedata,
                          cmat *result);
 
 /** 
- * Free storage of the PowerSpectra
- */
-void PowerSpectra_free(PowerSpectra*);
-
-
-// AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
-//                                      const us nchannels,
-//                                      const d overlap_percentage,
-//                                      const WindowType wt);
-                                 
-
-/** 
- * Return the current number of averages taken to obtain the result.
+ * Return nfft 
  *
- * @return The number of averages taken.
+ * @param ps[in] PowerSpectra handle
+ *
+ * @return nfft
  */
-us AvPowerSpectra_getAverages(const AvPowerSpectra*);
-
-
-int AvPowerSpectra_addTimeData(AvPowerSpectra*,
-                             const dmat* timedata);
+us PowerSpectra_getnfft(const PowerSpectra* ps);
 
 /** 
- * Free storage of the AvPowerSpectra
+ * Free PowerSpectra
+ *
+ * @param[in] ps PowerSpectra handle
  */
-void AvPowerSpectra_free(AvPowerSpectra*);
+void PowerSpectra_free(PowerSpectra* ps);
+
+
 
 #endif // PS_H
 //////////////////////////////////////////////////////////////////////

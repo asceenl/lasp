@@ -8,7 +8,7 @@
 #pragma once
 #ifndef FFTPACK_H
 #define FFTPACK_H
-#include "tracer.h"
+#include "ascee_tracer.h"
 #include "ascee_alloc.h"
 #include "npy_fftpack.h"
 

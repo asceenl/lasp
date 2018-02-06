@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-6)
 #include "types.h"
-#include "tracer.h"
+#include "ascee_tracer.h"
 #include "ascee_assert.h"
 #include "ascee_alloc.h"
 #include "mq.h"
@@ -257,8 +257,6 @@ void* JobQueue_assign(JobQueue* jq) {
     pid_t tid = syscall(SYS_gettid);    
     iVARTRACE(16,tid);    
     #endif // __linux__
-    
-    
     #endif //  ASCEE_DEBUG
 
 

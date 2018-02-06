@@ -10,6 +10,15 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+// Branch prediction performance improvement
+#if !defined(likely) && defined(__GNUC__) && !defined(ASCEE_DEBUG)
+#define likely(x)       __builtin_expect(!!(x), 1)
+#define unlikely(x)     __builtin_expect(!!(x), 0)
+#else
+#define likely(x)       (x)
+#define unlikely(x)     (x)
+#endif
+
 /// We often use boolean values
 #include <stdbool.h>            // true, false
 #include <stddef.h>

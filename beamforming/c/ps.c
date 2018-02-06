@@ -5,11 +5,11 @@
 // Description:
 //
 //////////////////////////////////////////////////////////////////////
-#define TRACERPLUS 1000
+/* #define TRACERPLUS 1000 */
 #include "ps.h"
 #include "fft.h"
 #include "ascee_alloc.h"
-#include "ascee_math.h"
+#include "ascee_alg.h"
 #include "ascee_assert.h"
 
 typedef struct PowerSpectra_s {
@@ -27,7 +27,7 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
                                  const us nchannels,
                                  const WindowType wt) {
     
-    TRACE(15,"PowerSpectra_alloc");
+    fsTRACE(15);
     int rv;
 
     /* Check nfft */
@@ -61,11 +61,12 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
     if(rv!=0) {
         WARN("Error creating window function, continuing anyway");
     }
+    feTRACE(15);
     return ps;
 }
 
 void PowerSpectra_free(PowerSpectra* ps) {
-    TRACE(15,"PowerSpectra_free");
+    fsTRACE(15);
 
     Fft_free(ps->fft);
     vd_free(&ps->window);
@@ -73,15 +74,19 @@ void PowerSpectra_free(PowerSpectra* ps) {
     dmat_free(&ps->timedata_work);
     vc_free(&ps->j_vec_conj);
     a_free(ps);
+
+    feTRACE(15);
 }
 
 
-int PowerSpectra_compute(const PowerSpectra* ps,
+void PowerSpectra_compute(const PowerSpectra* ps,
                          const dmat * timedata,
                          cmat * result) {
     
-    TRACE(15,"PowerSpectra_compute");
+    fsTRACE(15);
 
+    dbgassert(ps && timedata && result,NULLPTRDEREF);
+    
     const us nchannels = Fft_nchannels(ps->fft);
     const us nfft = Fft_nfft(ps->fft);
     uVARTRACE(15,nchannels);
@@ -125,11 +130,13 @@ int PowerSpectra_compute(const PowerSpectra* ps,
             &timedata_work,
             &fft_work);
 
+    TRACE(15,"fft done");
     
     /* Scale fft such that power is easily comxputed */
     const c scale_fac = d_sqrt(2/win_pow)/nfft;
-    c_scale(fft_work.data,scale_fac,(nfft/2+1)*nchannels);
-
+    cmat_scale(&fft_work,scale_fac);
+    TRACE(15,"scale done");
+    
     for(i=0;i< nchannels;i++) {
         /* Multiply DC term with 1/sqrt(2) */
         *getcmatval(&fft_work,0,i) *= 1/d_sqrt(2.)+0*I;
@@ -139,166 +146,34 @@ int PowerSpectra_compute(const PowerSpectra* ps,
     }
 
     /* print_cmat(&fft_work); */
+    TRACE(15,"Nyquist and DC correction done");
 
-    c* j_vec_conj = ps->j_vec_conj.data;
+    vc j_vec_conj = ps->j_vec_conj;
 
     /* Compute Cross-power spectra and store result */
     for(i =0; i<nchannels;i++) {
         for(j=0;j<nchannels;j++) {
+            iVARTRACE(15,i);
+            iVARTRACE(15,j);
             /* The indices here are important. This is also how it
              * is documented */
-            c* res = getcmatval(result,0,i+j*nchannels);
-
-            c* i_vec = getcmatval(&fft_work,0,i);
-            c* j_vec = getcmatval(&fft_work,0,j);
-
+            vc res = cmat_column(result,i+j*nchannels);
+            TRACE(15,"SFSG");
+            vc i_vec = cmat_column(&fft_work,i);
+            vc j_vec = cmat_column(&fft_work,j);
+            TRACE(15,"SFSG");
             /* Compute the conjugate of spectra j */
-            c_conj_c(j_vec_conj,j_vec,nfft/2+1);
-
-            /* Compute the product of the two vectors and store the
-             * result as the result */
-            c_elem_prod_c(res,i_vec,j_vec_conj,nfft/2+1);
-
+            vc_conj_vc(&j_vec_conj,&j_vec);
+            TRACE(15,"SFSG");
+            /* Compute the element-wise product of the two vectors and
+             * store the result as the result */
+            vc_elem_prod(&res,&i_vec,&j_vec_conj);
+            TRACE(15,"SFSG");
         }
     }
-
-    return SUCCESS;
+    feTRACE(15);
 }
 
 
-
-
-/* typedef struct AvPowerSpectra_s { */
-
-
-/*     us overlap_offset; */
-/*     us naverages;               /\* The number of averages taken *\/ */
-    
-/*     dmat prev_timedata;         /\**< Storage for previous */
-/*                                  * timedata buffer *\/ */
-
-/*     vc* ps;           /\**< Here we store the averaged */
-/*                        * results for each Cross-power */
-/*                        * spectra. These are */
-/*                        * nchannels*nchannels vectors *\/ */
-
-/*     vc* ps_work;         /\**< Work area for the results, also */
-/*                           * nchannels*nchannels *\/ */
-
-/* } AvPowerSpectra; */
-
-/* AvPowerSpectra* AvPowerSpectra_alloc(const us nfft, */
-/*                                      const us nchannels, */
-/*                                      const d overlap_percentage) { */
-    
-/*     TRACE(15,"AvPowerSpectra_alloc"); */
-/*     int rv; */
-
-/*     /\* Check nfft *\/ */
-/*     if(nfft % 2 != 0) { */
-/*         WARN("nfft should be even"); */
-/*         return NULL; */
-/*     } */
-
-/*     /\* Check overlap percentage *\/ */
-/*     us overlap_offset = nfft - (us) overlap_percentage*nfft/100; */
-
-/*     if(overlap_offset == 0 || overlap_offset > nfft) { */
-
-/*         WARN("Overlap percentage results in offset of 0, or a too high number of */
-/* overlap" */
-/*              " samples. Number of overlap samples should be < nfft"); */
-
-/*         WARN("Illegal overlap percentage. Should be 0 <= %% < 100"); */
-/*         return NULL; */
-/*     } */
-
-
-/*     /\* ALlocate space *\/ */
-/*     Fft fft; */
-/*     rv = Fft_alloc(&fft,nfft,nchannels); */
-/*     if(rv != SUCCESS) { */
-/*         WARN("Fft allocation failed"); */
-/*         return NULL; */
-/*     } */
-
-/*     AvPowerSpectra* aps = a_malloc(sizeof(AvPowerSpectra)); */
-/*     if(!aps) { */
-/*         WARN("Allocation of AvPowerSpectra memory failed"); */
-/*         return NULL; */
-/*     } */
-/*     ps->naverages = 0; */
-/*     ps->overlap_offset = overlap_offset; */
-
-/*     /\* Allocate vectors and matrices *\/ */
-/*     ps->prev_timedata = dmat_alloc(nfft,nchannels); */
-
-/*     return ps; */
-/* } */
-/* us AvPowerSpectra_getAverages(const AvPowerSpectra* ps) { */
-/*     return ps->naverages; */
-/* } */
-
-/* /\**  */
-/*  * Compute single power spectra by  */
-/*  * */
-/*  * @param ps Initialized AvPowerSpectra structure */
-/*  * @param timedata Timedata to compute for */
-/*  * @param result Result */
-/*  * */
-/*  * @return  */
-/*  *\/ */
-/* static int AvPowerSpectra_computeSingle(const AvPowerSpectra* ps, */
-/*                                       const dmat* timedata, */
-/*                                       vc* results) { */
-
-/*     us nchannels = ps->fft.nchannels; */
-/*     for(us channel=0;channel<ps;channel++) { */
-
-/*     } */
-/*     return SUCCESS; */
-/* } */
-
-
-/* int AvPowerSpectra_addTimeData(AvPowerSpectra* ps, */
-/*                              const dmat* timedata) { */
-    
-/*     TRACE(15,"AvPowerSpectra_addTimeData"); */
-/*     dbgassert(ps,"Null pointer given for ps"); */
-    
-/*     const us nchannels = ps->fft.nchannels; */
-/*     const us nfft = ps->fft.nfft; */
-
-/*     dbgassert(timedata->n_cols == nchannels,"Invalid time data"); */
-/*     dbgassert(timedata->n_rows == nfft,"Invalid time data"); */
-
-/*     dmat prevt = ps->prev_timedata; */
-/*     us noverlap = ps->noverlap; */
-
-/*     if(ps->naverages != 0) { */
-/*         /\* Copy the overlap buffer to the tbuf *\/ */
-/*         copy_dmat_rows(&tbuf,&overlap,0,0,noverlap); */
-
-/*         /\* Copy the new timedata buffer to the tbuf *\/ */
-/*         copy_dmat_rows(&tbuf,timedata,0,noverlap,(nfft-noverlap)); */
-/*     } */
-/*     else { */
-/*         /\* Copy the overlap buffer to the tbuf *\/ */
-/*         copy_dmat_rows(&tbuf,&overlap,0,0,noverlap); */
-
-
-/*     } */
-
-/*     return SUCCESS; */
-/* } */
-/* void AvPowerSpectra_free(AvPowerSpectra* ps) { */
-/*     TRACE(15,"AvPowerSpectra_free"); */
-
-/*     Fft_free(&ps->fft); */
-/*     dmat_free(&ps->prev_timedata); */
-/*     vd_free(&ps->window);     */
-
-/*     a_free(ps); */
-/* } */
 
 //////////////////////////////////////////////////////////////////////
