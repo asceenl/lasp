@@ -120,7 +120,7 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
     dbgassert(aps && block,NULLPTRDEREF);
     dbgassert(block->n_rows == aps->nfft,"Invalid block n_rows");
     dbgassert(block->n_cols == aps->nchannels,"Invalid block n_cols");
-    const us nchannels = aps->nchannels;
+
     const us nfft = aps->nfft;
     iVARTRACE(15,nfft);
     
