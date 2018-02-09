@@ -30,8 +30,8 @@ static inline d vd_dot(const vd * a,const vd* b) {
  */
 static inline void dmat_scale(dmat* y,const c fac){
     dbgassert(y,NULLPTRDEREF);
-    if(likely(y->data)) {
-        d_scale(y->data,fac,y->n_cols*y->n_rows);
+    if(likely(y->_data)) {
+        d_scale(y->_data,fac,y->n_cols*y->n_rows);
     }
     else {
         for(us col=0;col<y->n_cols;col++) {
@@ -48,8 +48,8 @@ static inline void dmat_scale(dmat* y,const c fac){
 static inline void cmat_scale(cmat* y,const c fac){
     dbgassert(y,NULLPTRDEREF);
     dbgassert(y,NULLPTRDEREF);
-    if(likely(y->data)) {
-        c_scale(y->data,fac,y->n_cols*y->n_rows);
+    if(likely(y->_data)) {
+        c_scale(y->_data,fac,y->n_cols*y->n_rows);
     }
     else {
         for(us col=0;col<y->n_cols;col++) {
@@ -69,8 +69,8 @@ static inline void dmat_add_dmat(dmat* x,dmat* y,d fac) {
     dbgassert(x && y,NULLPTRDEREF);
     dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
     dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
-    if(likely(x->data && y->data)) {
-        d_add_to(x->data,y->data,fac,x->n_cols*x->n_rows);
+    if(likely(x->_data && y->_data)) {
+        d_add_to(x->_data,y->_data,fac,x->n_cols*x->n_rows);
     }
     else {
         for(us col=0;col<y->n_cols;col++) {
