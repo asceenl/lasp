@@ -5,7 +5,6 @@
 // Description:
 // (Linear) algebra routine implementations
 //////////////////////////////////////////////////////////////////////
-
 #include "ascee_alg.h"
 
 
@@ -13,11 +12,13 @@
 
 void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
 
-    assert(A->n_rows == b->size);
-    assert(A->n_cols == x->size);
+    dbgassert(A->n_rows == b->size,SIZEINEQUAL);
+    dbgassert(A->n_cols == x->size,SIZEINEQUAL);
 	
     #if ASCEE_USE_BLAS == 1
 
+    dbgassert(A->_data,"Matrix-vector product only works for allocated data matrices");
+    
     /* typedef enum CBLAS_ORDER     {CblasRowMajor=101, CblasColMajor=102} CBLAS_ORDER; */
     /* typedef enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113, CblasConjNoTrans=114} CBLAS_TRANSPOSE; */
     /* 
@@ -41,12 +42,12 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
                 A->n_rows,
                 A->n_cols,
                 (d*) &alpha,			/* alpha */
-                (d*) A->data,		/* A */
+                (d*) A->_data,		/* A */
                 A->n_rows,		/* lda */
-                (d*) x->data,		/*  */
+                (d*) x->ptr,		/*  */
                 1,
                 (d*) &beta,			/* beta */
-                (d*) b->data,
+                (d*) b->ptr,
                 1);
 				
 				

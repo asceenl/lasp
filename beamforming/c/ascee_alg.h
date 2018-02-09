@@ -86,16 +86,17 @@ static inline void dmat_add_dmat(dmat* x,dmat* y,d fac) {
  * @param[in] fac 
  */
 static inline void cmat_add_cmat(cmat* x,cmat* y,c fac) {
-    dbgassert(x && y,NULLPTRDEREF);
-    dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
-    dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
-    if(likely(x->data && y->data)) {
-        c_add_to(x->data,y->data,fac,x->n_cols*x->n_rows);
-    }
-    else {
-        for(us col=0;col<y->n_cols;col++) {
-            c_add_to(x->col_ptrs[col],y->col_ptrs[col],fac,x->n_rows);
-        }
+    // dbgassert(x && y,NULLPTRDEREF);
+    // dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
+    // dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
+    // if(likely(x->data && y->data)) {
+    //     TRACE(15,"Scale whole");
+    //     c_add_to(x->data,y->data,fac,x->n_cols*x->n_rows);
+    // }
+    // else {
+    for(us col=0;col<y->n_cols;col++) {
+        TRACE(15,"Scale columns");
+        c_add_to(x->col_ptrs[col],y->col_ptrs[col],fac,x->n_rows);
     }
 }
 
@@ -107,11 +108,30 @@ static inline void cmat_add_cmat(cmat* x,cmat* y,c fac) {
  * @param[in] a 
  * @param[in] b 
  */
-static inline void vc_elem_prod(vc* result,vc* a,vc* b) {
+static inline void vd_elem_prod(vd* result,const vd* a,const vd* b) {
     dbgassert(result  && a && b,NULLPTRDEREF);
     dbgassert(result->size==a->size,SIZEINEQUAL);
     dbgassert(b->size==a->size,SIZEINEQUAL);
-    c_elem_prod_c(result->ptr,a->ptr,b->ptr,a->size);
+    d_elem_prod_d(result->ptr,a->ptr,b->ptr,a->size);
+}
+/** 
+ * Compute the element-wise (Hadamard) product of a and b, and store
+ * in result
+ *
+ * @param[out] result 
+ * @param[in] a 
+ * @param[in] b 
+ */
+static inline void vc_hadamard(vc* result,const vc* a,const vc* b) {
+    fsTRACE(15);
+    dbgassert(result  && a && b,NULLPTRDEREF);
+    dbgassert(result->size==a->size,SIZEINEQUAL);
+    dbgassert(b->size==a->size,SIZEINEQUAL);
+    c_hadamard(result->ptr,a->ptr,b->ptr,a->size);
+    check_overflow_vx(*result);
+    check_overflow_vx(*a);
+    check_overflow_vx(*b);    
+    feTRACE(15);
 }
 /** 
  * Compute the matrix vector product for complex-valued types: b = A*x.

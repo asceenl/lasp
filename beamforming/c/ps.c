@@ -15,12 +15,8 @@
 typedef struct PowerSpectra_s {
 
     vd window;
-
     d win_pow;                  /**< The power of the window */
     Fft* fft;                    /**< Fft routines storage */
-    cmat fft_work;              /**< Work area for FFt's */
-    dmat timedata_work;         /**< Work area for timedata */
-    vc j_vec_conj;              /**< Work area for conjugate of j */
 } PowerSpectra;
 
 PowerSpectra* PowerSpectra_alloc(const us nfft,
@@ -53,11 +49,9 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
 
     /* Allocate vectors and matrices */
     ps->window = vd_alloc(nfft);
-    ps->fft_work = cmat_alloc(nfft/2+1,nchannels);
-    ps->timedata_work= dmat_alloc(nfft,nchannels);
-    ps->j_vec_conj = vc_alloc(nfft/2+1);
     
     rv = window_create(wt,&ps->window,&ps->win_pow);
+    check_overflow_vx(ps->window);
     if(rv!=0) {
         WARN("Error creating window function, continuing anyway");
     }
@@ -67,14 +61,9 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
 
 void PowerSpectra_free(PowerSpectra* ps) {
     fsTRACE(15);
-
     Fft_free(ps->fft);
     vd_free(&ps->window);
-    cmat_free(&ps->fft_work);
-    dmat_free(&ps->timedata_work);
-    vc_free(&ps->j_vec_conj);
     a_free(ps);
-
     feTRACE(15);
 }
 
@@ -93,8 +82,6 @@ void PowerSpectra_compute(const PowerSpectra* ps,
     const d win_pow = ps->win_pow;
     dVARTRACE(15,win_pow);
 
-    us i,j;
-
     /* Sanity checks for the matrices */
     dbgassert(timedata->n_cols == nchannels,"timedata n_cols "
               "should be equal to nchannels");
@@ -111,66 +98,81 @@ void PowerSpectra_compute(const PowerSpectra* ps,
 
     /* Multiply time data with the window and store result in
      * timedata_work. */
-    dmat timedata_work = ps->timedata_work;
+    dmat timedata_work = dmat_alloc(nfft,nchannels);
+    for(us i=0;i<nchannels;i++) {
+        vd column = dmat_column((dmat*) timedata,i);
+        vd column_work = dmat_column(&timedata_work,i);
 
-    for(i=0;i<nchannels;i++) {
-
-        d_elem_prod_d(getdmatval(&timedata_work,0,i), /* Result */
-                      getdmatval(timedata,0,i),
-                      ps->window.data,
-                      nfft);
-                                 
+        vd_elem_prod(&column_work,&column,&ps->window);
+        
+        vd_free(&column);
+        vd_free(&column_work);
     }
-
+    check_overflow_xmat(timedata_work);
     /* print_dmat(&timedata_work); */
     
     /* Compute fft of the time data */
-    cmat fft_work = ps->fft_work;
+    cmat fft_work = cmat_alloc(nfft/2+1,nchannels);
     Fft_fft(ps->fft,
             &timedata_work,
             &fft_work);
 
+    dmat_free(&timedata_work);
+    
     TRACE(15,"fft done");
     
     /* Scale fft such that power is easily comxputed */
     const c scale_fac = d_sqrt(2/win_pow)/nfft;
     cmat_scale(&fft_work,scale_fac);
     TRACE(15,"scale done");
-    
-    for(i=0;i< nchannels;i++) {
+
+    for(us i=0;i< nchannels;i++) {
         /* Multiply DC term with 1/sqrt(2) */
         *getcmatval(&fft_work,0,i) *= 1/d_sqrt(2.)+0*I;
 
         /* Multiply Nyquist term with 1/sqrt(2) */
         *getcmatval(&fft_work,nfft/2,i) *= 1/d_sqrt(2.)+0*I;
     }
+    check_overflow_xmat(fft_work);
 
     /* print_cmat(&fft_work); */
     TRACE(15,"Nyquist and DC correction done");
 
-    vc j_vec_conj = ps->j_vec_conj;
+    vc j_vec_conj = vc_alloc(nfft/2+1);
 
     /* Compute Cross-power spectra and store result */
-    for(i =0; i<nchannels;i++) {
-        for(j=0;j<nchannels;j++) {
-            iVARTRACE(15,i);
-            iVARTRACE(15,j);
+    for(us i =0; i<nchannels;i++) {
+        for(us j=0;j<nchannels;j++) {
+
             /* The indices here are important. This is also how it
              * is documented */
             vc res = cmat_column(result,i+j*nchannels);
-            TRACE(15,"SFSG");
+
+            check_overflow_vx(res);
             vc i_vec = cmat_column(&fft_work,i);
             vc j_vec = cmat_column(&fft_work,j);
-            TRACE(15,"SFSG");
+
+            check_overflow_xmat(fft_work);
+
             /* Compute the conjugate of spectra j */
-            vc_conj_vc(&j_vec_conj,&j_vec);
-            TRACE(15,"SFSG");
+            vc_conj(&j_vec_conj,&j_vec);
+
+            check_overflow_xmat(fft_work);
+
             /* Compute the element-wise product of the two vectors and
              * store the result as the result */
-            vc_elem_prod(&res,&i_vec,&j_vec_conj);
-            TRACE(15,"SFSG");
+            vc_hadamard(&res,&i_vec,&j_vec_conj);
+
+            vc_free(&i_vec);
+            vc_free(&j_vec);
+            vc_free(&res);
+
         }
     }
+    check_overflow_xmat(*result);
+    check_overflow_xmat(*timedata);
+    cmat_free(&fft_work);
+    vc_free(&j_vec_conj);
     feTRACE(15);
 }
 

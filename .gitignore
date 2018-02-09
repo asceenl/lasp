@@ -10,7 +10,7 @@ build
 __pycache__
 cython_debug
 beamforming/config.pxi
-beamforming/fft.c
+beamforming/wrappers.c
 *.so
 test/test_bf
 test/test_fft

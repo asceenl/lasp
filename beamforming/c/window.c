@@ -8,7 +8,7 @@
 
 #include "window.h"
 #include "signals.h"
-
+#include <stdlib.h>
 /** 
  * Compute the Hann window
  *
@@ -53,9 +53,12 @@ static d rectangle(us i,us N) {
     dbgassert(i<N,"Invalid index for window function Hann");
     return 1.0;
 }
-
+static d bartlett(us n,us N) {
+    dbgassert(n<N,"Invalid index for window function Bartlett");
+    return 1 - d_abs(2*(n - (N-1)/2.)/(N-1));
+}
 int window_create(const WindowType wintype,vd* result,d* win_pow) {
-
+    fsTRACE(15);
     us nfft = result->size;
     d (*win_fun)(us,us);
     switch (wintype) {
@@ -67,21 +70,26 @@ int window_create(const WindowType wintype,vd* result,d* win_pow) {
         win_fun = hamming;
         break;
     }
-    case Blackman: {
-        win_fun = blackman;
-        break;
-    }
     case Rectangular: {
         win_fun = rectangle;
         break;
     }
+    case Bartlett: {
+        win_fun = bartlett;
+        break;
+    }
+    case Blackman: {
+        win_fun = blackman;
+        break;
+    }
     default:
-        WARN("Unkown window function");
-        return FAILURE;
+        DBGWARN("BUG: Unknown window function");
+        abort();
         break;
     }
     us index;
     for(index=0;index<nfft;index++) {
+
         /* Compute the window function value */
         d val = win_fun(index,nfft);
 
@@ -89,10 +97,10 @@ int window_create(const WindowType wintype,vd* result,d* win_pow) {
         setvecval(result,index,val);
     }
 
+    /* Store window power in result */
     *win_pow = signal_power(result);
 
-    /* Store window power in result */
-    
+    feTRACE(15);
     return SUCCESS;
 }
 

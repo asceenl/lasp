@@ -49,26 +49,31 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     /* Check nfft */
     if(nfft % 2 != 0 || nfft > ASCEE_MAX_NFFT) {
         WARN("nfft should be even");
+        feTRACE(15);
         return NULL;
     }
 
     /* Check overlap percentage */
     if(overlap_percentage >= 100) {
         WARN("Overlap percentage >= 100!");
+        feTRACE(15);
         return NULL;
     }
     if(overlap_percentage < 0) {
         WARN("Overlap percentage should be positive!");
+        feTRACE(15);
         return NULL;
     }
     
     /* Compute and check overlap offset */
-    us oo = nfft - (us) (overlap_percentage*nfft/100);
+    us oo = (us) (((d) nfft)-overlap_percentage*((d) nfft)/100);
+    iVARTRACE(15,oo);
     if(oo == 0) {oo++;}
         
     PowerSpectra* ps = PowerSpectra_alloc(nfft,nchannels,wt);
     if(!ps) {
         WARN(ALLOCFAILED "ps");
+        feTRACE(15);
         return NULL;
     }
 
@@ -76,8 +81,10 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     if(!aps) {
         WARN("Allocation of AvPowerSpectra memory failed");
         PowerSpectra_free(ps);
+        feTRACE(15);        
         return NULL;
     }
+    
     aps->nchannels = nchannels;
     aps->nfft = nfft;
     aps->ps = ps;
@@ -91,7 +98,7 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     aps->ps_single = cmat_alloc(nfft/2+1,nchannels*nchannels);
 
     cmat_set(&aps->ps_storage,0);
-    
+    feTRACE(15);
     return aps;
 }
 
@@ -113,26 +120,30 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
     dbgassert(aps && block,NULLPTRDEREF);
     dbgassert(block->n_rows == aps->nfft,"Invalid block n_rows");
     dbgassert(block->n_cols == aps->nchannels,"Invalid block n_cols");
-
-    cmat ps_single = aps->ps_single;
-    cmat ps_storage = aps->ps_storage;
+    const us nchannels = aps->nchannels;
+    const us nfft = aps->nfft;
+    iVARTRACE(15,nfft);
+    
+    cmat* ps_single = &aps->ps_single;
+    cmat* ps_storage = &aps->ps_storage;
     
     c naverages = (++aps->naverages);
-    
+    cVARTRACE(15,naverages);
+
     /* Scale previous result */
-    cmat_scale(&ps_storage,
+    cmat_scale(ps_storage,
                (naverages-1)/naverages);
 
-
+    uVARTRACE(15,(us) aps->ps);
+    
     PowerSpectra_compute(aps->ps,
                          block,
-                         &ps_single);
+                         ps_single);
 
 
     /* Add new result, scaled properly */
-    cmat_add_cmat(&ps_storage,
-                  &ps_single,1/naverages);
-
+    cmat_add_cmat(ps_storage,
+                  ps_single,1/naverages);
     
     feTRACE(15);
 }
@@ -153,60 +164,71 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
 
     const us oo = aps->oo;
     us* os = &aps->os;
+    iVARTRACE(15,*os);
     us os_timedata = 0;
 
     dmat buffer = aps->buffer;
 
     /* Retrieve the buffer and use it to make the first time block. */
     if(*os < oo) {
-
+        TRACE(15,"Using saved data from previous run");
+        dbgassert(false,"not tested")
         dmat tmp = dmat_alloc(nfft,nchannels);
+        dbgassert(0 <= *os,"BUG");
+        dbgassert(*os <= nfft,"BUG"); 
 
-        copy_dmat_rows(&tmp,
-                       &buffer,
-                       *os,       /* Startrow_from */
-                       0,         /* Startrow to */
-                       nfft - *os /* nrows */
-            );
+        /* copy_dmat_rows(&tmp, */
+        /*                &buffer, */
+        /*                *os,       /\* Startrow_from *\/ */
+        /*                0,         /\* Startrow to *\/ */
+        /*                nfft - *os /\* nrows *\/ */
+        /*     ); */
 
-        copy_dmat_rows(&tmp,
-                       timedata,
-                       0,
-                       nfft - *os,
-                       *os
-            );
+        /* copy_dmat_rows(&tmp, */
+        /*                timedata, */
+        /*                0, */
+        /*                nfft - *os, */
+        /*                *os */
+        /*     ); */
 
 
         AvPowerSpectra_addBlock(aps,&tmp);
 
         os_timedata = oo + *os - nfft;
-        
+        dbgassert(os_timedata < nfft,"BUG");
         dmat_free(&tmp);
     }
 
     /* Run until we cannot go any further */
-    while (os_timedata + nfft <= timedata->n_rows) {
-        dmat tmp = dmat_submat(timedata,
-                               os_timedata,
-                               0,nfft,nchannels);
+    while ((os_timedata + nfft) <= timedata->n_rows) {
 
+        dmat tmp = dmat_submat(timedata,
+                               os_timedata, /* Startrow */
+                               0,           /* Start column */
+                               nfft,        /* Number of rows */
+                               nchannels);  /* Number of columns */
+
+        /* Process the block of time data */
         AvPowerSpectra_addBlock(aps,&tmp);
-        
+
+        iVARTRACE(15,os_timedata);
         os_timedata += oo;
 
         dmat_free(&tmp);
+        iVARTRACE(15,os_timedata);
     }
 
     /* We copy the last piece of samples from the timedata to the
      * buffer */
     copy_dmat_rows(&buffer,
                    timedata,
-                   timedata->n_rows-nfft,
-                   0,
-                   nfft);
+                   timedata->n_rows-nfft, /* startrow_from */
+                   0,           /* startrow_to */
+                   nfft);       /* Number of rows */
+    
     *os = os_timedata+nfft-timedata->n_rows;
     
-    dbgassert(*os < nfft,"BUG");
+    dbgassert(*os <= nfft,"BUG");
 
     feTRACE(15);
     return &aps->ps_storage;

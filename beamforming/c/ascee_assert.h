@@ -34,6 +34,8 @@ void DBG_AssertFailedExtImplementation(const char* file,
 
 #define dbgassert(assertion, assert_string)
 
+#define assertvalidptr(ptr) dbgassert(ptr,NULLPTRDEREF)
+
 #endif  // ASCEE_DEBUG
 
 #endif // ASCEE_ASSERT_H

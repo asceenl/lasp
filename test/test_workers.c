@@ -8,6 +8,7 @@
 #include "worker.h"
 #include "mq.h"
 #include "ascee_tracer.h"
+#include "ascee_assert.h"
 #include <unistd.h>
 static void* walloc(void*);
 static int worker(void*,void*);
@@ -22,7 +23,7 @@ int main() {
 
     us njobs = 4;
     JobQueue* jq = JobQueue_alloc(njobs);
-    assert(jq);
+    dbgassert(jq,NULLPTRDEREF);
 
     Workers* w = Workers_create(njobs,
                                 jq,
@@ -30,7 +31,7 @@ int main() {
                                 worker,
                                 wfree,
                                 (void*) 101);
-    assert(w);
+    dbgassert(jq,NULLPTRDEREF);
 
     for(us i=0; i< njobs; i++) {
         iVARTRACE(15,i);

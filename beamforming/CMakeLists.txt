@@ -13,7 +13,6 @@ include_directories(
   )
 
 
-set_source_files_properties(fft.c PROPERTIES COMPILE_FLAGS
-  "-Wno-cpp -Wno-sign-compare -Wno-incompatible-pointer-types -Wno-strict-aliasing -Wno-implicit-fallthrough")
-cython_add_module(fft fft.pyx)
-target_link_libraries(fft beamforming_lib )
+set_source_files_properties(wrappers.c PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} ${CYTHON_EXTRA_C_FLAGS}")  
+cython_add_module(wrappers wrappers.pyx)
+target_link_libraries(wrappers beamforming_lib )

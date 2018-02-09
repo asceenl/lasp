@@ -15,7 +15,7 @@ void d_elem_prod_d(d res[],
                    const d arr2[],
                    const us size) {
 
-    #if ASCEE_USE_BLAS
+    #if ASCEE_USE_BLAS == 1
 
     #if ASCEE_DEBUG
 
@@ -77,15 +77,16 @@ void d_elem_prod_d(d res[],
     #endif
 }
 
-void c_elem_prod_c(c res[],
-                   const c arr1[],
-                   const c arr2[],
-                   const us size) {
+void c_hadamard(c res[],
+                const c arr1[],
+                const c arr2[],
+                const us size) {
 
-    TRACE(15,"c_elem_prod_c");
+    fsTRACE(15);
     uVARTRACE(15,size);
+    dbgassert(arr1 && arr2 && res,NULLPTRDEREF);
     
-    #if ASCEE_USE_BLAS
+    #if ASCEE_USE_BLAS == 1
 
     #if ASCEE_DEBUG
 
@@ -105,38 +106,36 @@ void c_elem_prod_c(c res[],
     #define elem_prod_fun cblas_cgbmv
     #endif
 
-    /* These parameters do not matter for this specific case */
-    const CBLAS_ORDER  mat_order= CblasColMajor;
-    const CBLAS_TRANSPOSE tr = CblasNoTrans;
+    c alpha = 1.0;
+    c beta = 0.0;
 
-    const c alpha = 1.0;
-    const c beta = 0.0;
     TRACE(15,"Calling " annestr(elem_prod_fun));
-    
-    elem_prod_fun(mat_order,
-                  tr,
+    uVARTRACE(15,size);
+    elem_prod_fun(CblasColMajor,
+                  CblasNoTrans,
                   (blasint) size, /* M: Number of rows */
                   (blasint) size, /* B: Number of columns */
                   0,              /* KL: Number of sub-diagonals */
                   0,              /* KU: Number of super-diagonals */
-                  (d*) &alpha,        /* Multiplication factor */
-                  (d*) arr2,          /* A */
-                  1,            /* LDA */
-                  (d*) arr1,    /* x */
-                  1, /* incX = 1 */
+                  (d*) &alpha,    /* Multiplication factor */
+                  (d*) arr2,      /* A */
+                  1,              /* LDA */
+                  (d*) arr1,      /* x */
+                  1,              /* incX = 1 */
                   (d*) &beta,
                   (d*) res,    /* The Y matrix to write to */
-                  1); /* incY */
+                  1);          /* incY (increment in res) */
 
     #undef elem_prod_fun
 
     #else  /* No blas routines, routine is very simple, but here we
             * go! */
-    DBGWARN("Performing slow non-blas vector-vector multiplication");
+    DBGWARN("Performing slower non-blas vector-vector multiplication");
     for(us i=0;i<size;i++) {
         res[i] = arr1[i]*arr2[i];
     }
     #endif
+    feTRACE(15);
 }
 
 

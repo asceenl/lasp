@@ -38,6 +38,12 @@ cdef extern from "ascee_math.h":
                       us n_cols,
                       c* data)
 
+    cmat cmat_alloc(us n_rows,us n_cols)
+    dmat dmat_alloc(us n_rows,us n_cols)
+    
     void dmat_free(dmat*)
     void cmat_free(cmat*)
     void cmat_copy(cmat* to,cmat* from_)
+
+cdef extern from "ascee_tracer.h":
+    void clearScreen()

@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 3.0)
 project(beamforming)
 
 # Whether we want to use blas yes or no
-set(ASCEE_USE_BLAS 1)
-add_definitions(-DASCEE_USE_BLAS=1)
+set(ASCEE_USE_BLAS TRUE)
+# set(ASCEE_USE_BLAS FALSE)
 
 set(ASCEE_FLOAT double)
 # set(ASCEE_FLOAT float)
@@ -68,10 +68,12 @@ endif(ASCEE_DEBUG)
 # The last argument here takes care of calling SIGABRT when an integer overflow
 # occures.
 ############################## General compilation flags (independent of debug mode, windows or linux)
+set(CYTHON_EXTRA_C_FLAGS "-Wno-sign-compare -Wno-cpp -Wno-implicit-fallthrough\
+ -Wno-incompatible-pointer-types -Wno-strict-aliasing")
 
 # General make flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=c11  -Wall -Wextra \
-  -Wimplicit-function-declaration -ftrapv -Wno-type-limits")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=c11  -Wall -Wextra -Wno-type-limits \
+ -Werror=implicit-function-declaration -Werror=incompatible-pointer-types")
 
 # Debug make flags
 set(CMAKE_C_FLAGS_DEBUG "-g" )

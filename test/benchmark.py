@@ -1,12 +1,15 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 15 19:45:33 2018
 
 @author: anne
 """
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+
 import numpy as np
-from beamforming.fft import Fft
+from beamforming import Fft
 
 nfft=2**17
 

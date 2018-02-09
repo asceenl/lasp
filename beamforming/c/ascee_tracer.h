@@ -8,6 +8,17 @@
 #pragma once
 #ifndef ASCEE_TRACER_H
 #define ASCEE_TRACER_H
+#include <string.h>
+#include <stdio.h>
+
+static inline void clearScreen() {
+    printf("\033c\n");
+}
+
+/** 
+ * Indent the rule for tracing visibility.
+ */
+void indent_trace();
 
 // Some console colors
 #define RESET   "\033[0m"
@@ -27,9 +38,6 @@
 #define BOLDMAGENTA "\033[1m\033[35m"      /* Bold Magenta */
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
-
-#include <assert.h>
-#include <string.h>
 
 // Not so interesting part
 #define rawstr(x) #x

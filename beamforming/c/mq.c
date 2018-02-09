@@ -14,11 +14,12 @@
 #include "mq.h"
 #include <pthread.h>
 
-#ifdef __linux__
+/* #ifdef linux */
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#endif
+/* #endif */
 
 typedef struct {
     void* job_ptr;
@@ -252,13 +253,9 @@ void* JobQueue_assign(JobQueue* jq) {
 
     TRACE(16,"JobQueue_assign: found ready job. Assigned to:");
     #ifdef ASCEE_DEBUG
-    #ifdef __linux__
-    
-    pid_t tid = syscall(SYS_gettid);    
-    iVARTRACE(16,tid);    
-    #endif // __linux__
-    #endif //  ASCEE_DEBUG
-
+    pthread_t thisthread = pthread_self();
+    iVARTRACE(16,thisthread);    
+    #endif
 
     /* print_job_queue(jq); */
     /* Find a job from the queue, assign it and return it */

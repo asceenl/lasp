@@ -15,6 +15,9 @@
 
 #if ASCEE_USE_BLAS == 1
 #include <cblas.h>
+#elif ASCEE_USE_BLAS == 0
+#else
+#error "ASCEE_USE_BLAS should be set to either 0 or 1"
 #endif
 
 #ifdef ASCEE_DOUBLE_PRECISION
@@ -249,6 +252,7 @@ static inline void d_add_to(d x[],const d y[],d fac,us size){
  * @param size Size of the arrays
  */
 static inline void c_add_to(c x[],const c y[],c fac,us size){
+    fsTRACE(15);
     #if ASCEE_USE_BLAS == 1
     #if ASCEE_DOUBLE_PRECISION
     cblas_zaxpy(size,(d*) &fac,(d*) y,1,(d*) x,1);
@@ -260,6 +264,7 @@ static inline void c_add_to(c x[],const c y[],c fac,us size){
     for(i=0;i<size;i++)
         x[i]+=fac*y[i];
     #endif
+    feTRACE(15);
 }
 
 /** 
@@ -298,12 +303,11 @@ static inline void c_scale(c a[],const c scale_fac,us size){
     // part. Fortunately the (c) type stores the two values in this
     // order. To be portable and absolutely sure anything goes well,
     // we convert it explicitly here.
-    d scale_fac_d [] = {creal(scale_fac),cimag(scale_fac)};
 
     #if ASCEE_DOUBLE_PRECISION
-    cblas_zscal(size,scale_fac_d,(d*) a,1);
+    cblas_zscal(size,(d*) &scale_fac,(d*) a,1);
     #else
-    cblas_cscal(size,scale_fac_d,(d*) a,1);
+    cblas_cscal(size,(d*) &scale_fac,(d*) a,1);
     #endif
     #else
     us i;
@@ -411,10 +415,10 @@ void d_elem_prod_d(d res[],
  * @param vec2 Array 2
  * @param size: Size of the arrays
  */
-void c_elem_prod_c(c res[],
-                   const c arr1[],
-                   const c arr2[],
-                   const us size);
+void c_hadamard(c res[],
+                const c arr1[],
+                const c arr2[],
+                const us size);
 
 /** 
  * Compute the complex conjugate of a complex vector and store the
@@ -424,15 +428,16 @@ void c_elem_prod_c(c res[],
  * @param in Input vector
  * @param size Size of the vector
  */
-static inline void c_conj_c(c res[],const c in[],const us size) {
+static inline void carray_conj(c res[],const c in[],const us size) {
     // First set the result vector to zero
+    fsTRACE(15);
     c_set(res,0,size);
-    #ifdef ASCEE_USE_BLAS
+    #if ASCEE_USE_BLAS == 1
     #if ASCEE_DOUBLE_PRECISION
     // Cast as a float, scale all odd elements with minus one to find
     // the complex conjugate.
-    cblas_daxpy(size ,1,(d*) in,2,(d*) res,2);
-    cblas_daxpy(size,-1,&((d*) in)[1],2,&((d*) res)[1],2);
+    cblas_daxpy(size ,1.0,(d*) in,2,(d*) res,2);
+    cblas_daxpy(size,-1.0,&((d*) in)[1],2,&((d*) res)[1],2);
     #else
     cblas_faxpy(size ,1,(d*) in,2,(d*) res,2);
     cblas_faxpy(size,-1,&((d*) in)[1],2,&((d*) res)[1],2);
@@ -442,6 +447,7 @@ static inline void c_conj_c(c res[],const c in[],const us size) {
         res[i] = c_conj(in[i]);
     }
     #endif  // ASCEE_USE_BLAS
+    feTRACE(15);
 }
 /** 
  * In place complex conjugation
@@ -450,7 +456,7 @@ static inline void c_conj_c(c res[],const c in[],const us size) {
  * @param size Size of the vector
  */
 static inline void c_conj_inplace(c res[],us size) {
-    #ifdef ASCEE_USE_BLAS
+    #if ASCEE_USE_BLAS
     #if ASCEE_DOUBLE_PRECISION
     // Cast as a float, scale all odd elements with minus one to find
     // the complex conjugate.

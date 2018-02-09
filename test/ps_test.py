@@ -6,9 +6,9 @@ Created on Mon Jan 15 19:45:33 2018
 @author: anne
 """
 import numpy as np
-from beamforming.fft import Fft, PowerSpectra
-
-nfft=2**4
+from beamforming import Fft, PowerSpectra, cls
+cls
+nfft=2048
 print('nfft:',nfft)
 #print(nfft)
 nchannels = 2

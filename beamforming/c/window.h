@@ -13,8 +13,10 @@
 typedef enum {
     Hann = 0,
     Hamming = 1,
-    Blackman = 2,
-    Rectangular = 3,
+    Rectangular = 2,    
+    Bartlett = 3,
+    Blackman = 4,
+
 } WindowType;
 
 /** 

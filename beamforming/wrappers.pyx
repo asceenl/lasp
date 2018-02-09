@@ -1,6 +1,19 @@
 include "config.pxi"
 
-# setTracerLevel(0)
+setTracerLevel(-5)
+cdef extern from "cblas.h":
+    int openblas_get_num_threads()
+    void openblas_set_num_threads(int)
+
+# If we touch this variable: we get segfaults when running from
+# Spyder!
+#openblas_set_num_threads(8)
+# print("Number of threads: ",
+# openblas_get_num_threads())
+
+def cls():
+    clearScreen()
+cls()
 
 cdef extern from "fft.h":
     ctypedef struct c_Fft "Fft"
@@ -30,14 +43,16 @@ cdef class Fft:
         assert timedata.shape[0] ==nfft
         assert timedata.shape[1] == nchannels
         
-        result = np.empty((nfft//2+1,
-                           nchannels),
-                           dtype=NUMPY_COMPLEX_TYPE,order='F')
+        result = np.empty((nfft//2+1,nchannels),
+                          dtype=NUMPY_COMPLEX_TYPE,
+                          order='F')
+
         # result[:,:] = np.nan+1j*np.nan
         cdef c[::1,:] result_view = result
         cdef cmat r = cmat_foreign(result.shape[0],
                                    result.shape[1],
                                    &result_view[0,0])
+        
         cdef dmat t = dmat_foreign(timedata.shape[0],
                                    timedata.shape[1],
                                    &timedata[0,0])
@@ -54,8 +69,14 @@ cdef extern from "window.h":
     ctypedef enum WindowType:
         Hann = 0
         Hamming = 1
-        Blackman = 2
-        Rectangular = 3
+        Rectangular = 2
+        Bartlett = 3
+        Blackman = 4
+hann = 0
+hamming = 1
+rectangular = 2
+bartlett = 3
+blackman = 4
 
 cdef extern from "ps.h":
     ctypedef struct c_PowerSpectra "PowerSpectra"
@@ -73,8 +94,8 @@ cdef class PowerSpectra:
     cdef:
         c_PowerSpectra* _ps
 
-    def __cinit__(self, us nfft,us nchannels):
-        self._ps = PowerSpectra_alloc(nfft,nchannels,Rectangular)
+    def __cinit__(self, us nfft,us nchannels,us window=rectangular):
+        self._ps = PowerSpectra_alloc(nfft,nchannels,<WindowType> window)
         if self._ps == NULL:
             raise RuntimeError('PowerSpectra allocation failed')
 
@@ -85,6 +106,8 @@ cdef class PowerSpectra:
             int rv
             dmat td
             cmat result_mat
+
+        
         td = dmat_foreign(nfft,
                           nchannels,
                           &timedata[0,0])
@@ -99,12 +122,15 @@ cdef class PowerSpectra:
         result = np.empty((nfft//2+1,nchannels,nchannels),
                           dtype = NUMPY_COMPLEX_TYPE,
                           order='F')
+        
         cdef c[::1,:,:] result_view = result
 
         result_mat = cmat_foreign(nfft//2+1,
                                   nchannels*nchannels,
                                   &result_view[0,0,0])
 
+
+        
         PowerSpectra_compute(self._ps,&td,&result_mat)
 
         dmat_free(&td)
@@ -137,11 +163,14 @@ cdef class AvPowerSpectra:
         c_AvPowerSpectra* aps
         us nfft, nchannels
 
-    def __cinit__(self,us nfft,us nchannels,d overlap_percentage):
+    def __cinit__(self,us nfft,
+                  us nchannels,
+                  d overlap_percentage,
+                  us window=rectangular):
         self.aps = AvPowerSpectra_alloc(nfft,
                                         nchannels,
                                         overlap_percentage,
-                                        Rectangular)
+                                        <WindowType> window)
         self.nchannels = nchannels
         self.nfft = nfft
 
@@ -196,3 +225,8 @@ cdef class AvPowerSpectra:
 
 
         return result
+    
+    def getFreq(self, d fs):
+        cdef d df = fs/self.nfft  # frequency resolution 
+        cdef us K = self.nfft//2+1      # number of frequency bins
+        return np.linspace(0, (K-1)*df, K)

@@ -9,25 +9,39 @@
 #include "fft.h"
 #include "ascee_math.h"
 #include "ascee_tracer.h"
+#include "ascee_alg.h"
 
 int main() {
 
     iVARTRACE(15,getTracerLevel());
 
-    vc a = vc_alloc(5);
-    vc_set(&a,2+3*I);
+    c a[5];
+    c_set(a,1-I,5);
 
-    c_conj_inplace(a.data,a.size);
-    print_vc(&a);
+    /* print_vc(&a); */
 
     vc b = vc_alloc(5);    
+    vc_set(&b,2);
 
-    c_conj_c(b.data,a.data,5);
 
+    printf("b:\n");    
     print_vc(&b);    
 
-    vc_free(&a);
-    vc_free(&b);    
+
+    vc c1 = vc_alloc(5);
+    /* vc_set(&c1,10); */
+    /* c_add_to(c1.ptr,a.ptr,1,3); */
+    c_hadamard(c1.ptr,a,b.ptr,5);
+
+
+
+    printf("c1:\n");
+    print_vc(&c1); 
+    
+    vc_free(&b);
+
+
+    
     return 0;
 }
 
