@@ -164,7 +164,7 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
 
     const us oo = aps->oo;
     us* os = &aps->os;
-    iVARTRACE(15,*os);
+
     us os_timedata = 0;
 
     dmat buffer = aps->buffer;

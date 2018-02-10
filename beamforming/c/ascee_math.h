@@ -483,7 +483,7 @@ static inline cmat cmat_submat(cmat* parent,
  * @param to : Vector to write to
  * @param from : Vector to read from
  */
-static inline void vd_copy(vd* to,vd* from) {
+static inline void vd_copy(vd* to,const vd* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
     d_copy(to->ptr,from->ptr,to->size);
@@ -494,7 +494,7 @@ static inline void vd_copy(vd* to,vd* from) {
  * @param to : Vector to write to
  * @param from : Vector to read from
  */
-static inline void vc_copy(vc* to,vc* from) {
+static inline void vc_copy(vc* to,const vc* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
     c_copy(to->ptr,from->ptr,to->size);

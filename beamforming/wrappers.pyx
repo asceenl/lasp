@@ -7,28 +7,27 @@ cdef extern from "cblas.h":
 
 # If we touch this variable: we get segfaults when running from
 # Spyder!
-#openblas_set_num_threads(8)
+# openblas_set_num_threads(8)
 # print("Number of threads: ",
 # openblas_get_num_threads())
 
 def cls():
     clearScreen()
-cls()
+# cls()
 
 cdef extern from "fft.h":
     ctypedef struct c_Fft "Fft"
-    c_Fft* Fft_alloc(us nfft,us nchannels)
+    c_Fft* Fft_alloc(us nfft)
     void Fft_free(c_Fft*)
     void Fft_fft(c_Fft*,dmat * timedate,cmat * res) nogil
-    us Fft_nchannels(c_Fft*)
     us Fft_nfft(c_Fft*)
 
 cdef class Fft:
     cdef:
         c_Fft* _fft
 
-    def __cinit__(self, us nfft,us nchannels):
-        self._fft = Fft_alloc(nfft,nchannels)
+    def __cinit__(self, us nfft):
+        self._fft = Fft_alloc(nfft)
         if self._fft == NULL:
             raise RuntimeError('Fft allocation failed')
 
@@ -39,9 +38,8 @@ cdef class Fft:
     def fft(self,d[::1,:] timedata):
 
         cdef us nfft = Fft_nfft(self._fft)
-        cdef us nchannels = Fft_nchannels(self._fft)
+        cdef us nchannels = timedata.shape[1]
         assert timedata.shape[0] ==nfft
-        assert timedata.shape[1] == nchannels
         
         result = np.empty((nfft//2+1,nchannels),
                           dtype=NUMPY_COMPLEX_TYPE,
@@ -67,22 +65,25 @@ cdef class Fft:
 
 cdef extern from "window.h":
     ctypedef enum WindowType:
-        Hann = 0
-        Hamming = 1
-        Rectangular = 2
-        Bartlett = 3
-        Blackman = 4
-hann = 0
-hamming = 1
-rectangular = 2
-bartlett = 3
-blackman = 4
+        Hann
+        Hamming
+        Rectangular
+        Bartlett
+        Blackman
+
+# Export these constants to Python
+hann = Hann
+hamming = Hamming
+rectangular = Rectangular
+bartlett = Bartlett
+blackman = Blackman
 
 cdef extern from "ps.h":
     ctypedef struct c_PowerSpectra "PowerSpectra"
     c_PowerSpectra* PowerSpectra_alloc(const us nfft,
                                        const us nchannels,
                                        const WindowType wt)
+    
     void PowerSpectra_compute(const c_PowerSpectra* ps,
                              const dmat * timedata,
                              cmat * result)
@@ -156,7 +157,7 @@ cdef extern from "aps.h":
     
 
     void AvPowerSpectra_free(c_AvPowerSpectra*)
-
+    us AvPowerSpectra_getAverages(const c_AvPowerSpectra*);
             
 cdef class AvPowerSpectra:
     cdef:
@@ -180,7 +181,9 @@ cdef class AvPowerSpectra:
     def __dealloc__(self):
         if self.aps:
             AvPowerSpectra_free(self.aps)
-        
+    def getAverages(self):
+        return AvPowerSpectra_getAverages(self.aps)
+    
     def addTimeData(self,d[::1,:] timedata):
         """!
         Adds time data, returns current result
@@ -222,7 +225,6 @@ cdef class AvPowerSpectra:
 
         cmat_free(&res)
         dmat_free(&td)
-
 
         return result
     

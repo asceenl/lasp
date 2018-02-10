@@ -21,19 +21,10 @@ typedef struct Fft_s Fft;
  * Construct an Fft object
  *
  * @param nfft Nfft size
- * @param nchannels Number of channels
  *
  * @return Pointer to Fft handle, NULL on error
  */
-Fft* Fft_alloc(const us nfft,const us nchannels);
-
-/** 
- * Returns the number of channels for this Fft instance
- *
- * @return nchannels
- */
-us Fft_nchannels(const Fft*);
-
+Fft* Fft_alloc(const us nfft);
 /** 
  * Returns the nfft for this Fft instance
  *
@@ -41,18 +32,36 @@ us Fft_nchannels(const Fft*);
  */
 us Fft_nfft(const Fft*);
 
+/** 
+ * Compute the fft of a single channel.
+ *
+ * @param[in] fft Fft handle.
+ *
+ * @param[in] timedata Input time data pointer, should have size nfft
+ * @param[out] result Pointer to result vector should have size
+ * nfft/2+1
+ */
+void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result);
 
 /** 
  * Compute the fft of the data matrix, first axis is assumed to be
  * the time axis.
  *
- * @param[in] timedata Input time data pointer, such that
- * data[i*nfft+j) is the i-th channel from data stream j.
- *
- * @param[out] result: Fft't data, size should be (nfft/2+1)*nchannels
- */
-void Fft_fft(const Fft*,const dmat* timedata,cmat* result);
+ * @param[in] fft Fft handle.
 
+ * @param[in] timedata Input time data. First axis is assumed to be
+ * the time, second the channel number.
+ *
+ * @param[out] result: Fft't data, should have size (nfft/2+1) *
+ * nchannels
+ */
+void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result);
+
+/** 
+ * 
+ *
+ * @param fft 
+ */
 void Fft_free(Fft* fft);
 
 #endif // FFT_H

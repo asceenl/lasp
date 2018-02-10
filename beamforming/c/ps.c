@@ -5,7 +5,7 @@
 // Description:
 //
 //////////////////////////////////////////////////////////////////////
-/* #define TRACERPLUS 1000 */
+#define TRACERPLUS (-5)
 #include "ps.h"
 #include "fft.h"
 #include "ascee_alloc.h"
@@ -33,7 +33,7 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
     }
 
     /* ALlocate space */
-    Fft* fft = Fft_alloc(nfft,nchannels);
+    Fft* fft = Fft_alloc(nfft);
     if(fft == NULL) {
         WARN("Fft allocation failed");
         return NULL;
@@ -76,7 +76,7 @@ void PowerSpectra_compute(const PowerSpectra* ps,
 
     dbgassert(ps && timedata && result,NULLPTRDEREF);
     
-    const us nchannels = Fft_nchannels(ps->fft);
+    const us nchannels = timedata->n_rows;
     const us nfft = Fft_nfft(ps->fft);
     uVARTRACE(15,nchannels);
     const d win_pow = ps->win_pow;

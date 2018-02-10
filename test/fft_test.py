@@ -26,7 +26,7 @@ X = np.fft.rfft(x,axis=0)
 print('Numpy fft')
 print(X)
 
-fft = Fft(nfft,nchannels)
+fft = Fft(nfft)
 Y = fft.fft(x)
 print('Fftpack fft')
 print(Y)
