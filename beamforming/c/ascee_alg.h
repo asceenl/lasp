@@ -18,8 +18,9 @@
  * @return dot product as float
  */
 static inline d vd_dot(const vd * a,const vd* b) {
+    dbgassert(a && b,NULLPTRDEREF);
     dbgassert(a->size == b->size,SIZEINEQUAL);
-    return d_dot(a->ptr,b->ptr,a->size);
+    return d_dot(getvdval(a,0),getvdval(b,0),a->size);
 }
 
 /** 
@@ -30,14 +31,10 @@ static inline d vd_dot(const vd * a,const vd* b) {
  */
 static inline void dmat_scale(dmat* y,const c fac){
     dbgassert(y,NULLPTRDEREF);
-    if(likely(y->_data)) {
-        d_scale(y->_data,fac,y->n_cols*y->n_rows);
+    for(us col=0;col<y->n_cols;col++) {
+        d_scale(getdmatval(y,0,col),fac,y->n_rows);
     }
-    else {
-        for(us col=0;col<y->n_cols;col++) {
-            d_scale(y->col_ptrs[col],fac,y->n_rows);
-        }
-    }
+
 }
 /** 
  * y = fac * y
@@ -48,13 +45,8 @@ static inline void dmat_scale(dmat* y,const c fac){
 static inline void cmat_scale(cmat* y,const c fac){
     dbgassert(y,NULLPTRDEREF);
     dbgassert(y,NULLPTRDEREF);
-    if(likely(y->_data)) {
-        c_scale(y->_data,fac,y->n_cols*y->n_rows);
-    }
-    else {
-        for(us col=0;col<y->n_cols;col++) {
-            c_scale(y->col_ptrs[col],fac,y->n_rows);
-        }
+    for(us col=0;col<y->n_cols;col++) {
+        c_scale(getcmatval(y,0,col),fac,y->n_rows);
     }
 }
 
@@ -69,13 +61,9 @@ static inline void dmat_add_dmat(dmat* x,dmat* y,d fac) {
     dbgassert(x && y,NULLPTRDEREF);
     dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
     dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
-    if(likely(x->_data && y->_data)) {
-        d_add_to(x->_data,y->_data,fac,x->n_cols*x->n_rows);
-    }
-    else {
-        for(us col=0;col<y->n_cols;col++) {
-            d_add_to(x->col_ptrs[col],y->col_ptrs[col],fac,x->n_rows);
-        }
+    for(us col=0;col<y->n_cols;col++) {
+        d_add_to(getdmatval(x,0,col),
+                 getdmatval(y,0,col),fac,x->n_rows);
     }
 }
 /** 
@@ -86,17 +74,12 @@ static inline void dmat_add_dmat(dmat* x,dmat* y,d fac) {
  * @param[in] fac 
  */
 static inline void cmat_add_cmat(cmat* x,cmat* y,c fac) {
-    // dbgassert(x && y,NULLPTRDEREF);
-    // dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
-    // dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
-    // if(likely(x->data && y->data)) {
-    //     TRACE(15,"Scale whole");
-    //     c_add_to(x->data,y->data,fac,x->n_cols*x->n_rows);
-    // }
-    // else {
+    dbgassert(x && y,NULLPTRDEREF);
+    dbgassert(x->n_cols == y->n_cols,SIZEINEQUAL);
+    dbgassert(x->n_rows == y->n_rows,SIZEINEQUAL);
     for(us col=0;col<y->n_cols;col++) {
-        TRACE(15,"Scale columns");
-        c_add_to(x->col_ptrs[col],y->col_ptrs[col],fac,x->n_rows);
+        c_add_to(getcmatval(x,0,col),
+                 getcmatval(y,0,col),fac,x->n_rows);
     }
 }
 
@@ -112,7 +95,9 @@ static inline void vd_elem_prod(vd* result,const vd* a,const vd* b) {
     dbgassert(result  && a && b,NULLPTRDEREF);
     dbgassert(result->size==a->size,SIZEINEQUAL);
     dbgassert(b->size==a->size,SIZEINEQUAL);
-    d_elem_prod_d(result->ptr,a->ptr,b->ptr,a->size);
+    d_elem_prod_d(getvdval(result,0),
+                  getvdval(a,0),
+                  getvdval(b,0),a->size);
 }
 /** 
  * Compute the element-wise (Hadamard) product of a and b, and store
@@ -127,7 +112,11 @@ static inline void vc_hadamard(vc* result,const vc* a,const vc* b) {
     dbgassert(result  && a && b,NULLPTRDEREF);
     dbgassert(result->size==a->size,SIZEINEQUAL);
     dbgassert(b->size==a->size,SIZEINEQUAL);
-    c_hadamard(result->ptr,a->ptr,b->ptr,a->size);
+    c_hadamard(getvcval(result,0),
+               getvcval(a,0),
+               getvcval(b,0),
+               a->size);
+    
     check_overflow_vx(*result);
     check_overflow_vx(*a);
     check_overflow_vx(*b);    
@@ -153,9 +142,9 @@ static inline void cmat_hadamard(cmat* result,
     dbgassert(b->n_cols==a->n_cols,SIZEINEQUAL);
 
     for(us col=0;col<result->n_cols;col++) {
-        c_hadamard(result->col_ptrs[col],
-                   a->col_ptrs[col],
-                   b->col_ptrs[col],
+        c_hadamard(getcmatval(result,0,col),
+                   getcmatval(a,0,col),
+                   getcmatval(b,0,col),
                    a->n_rows);
     }
 

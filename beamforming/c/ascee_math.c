@@ -72,7 +72,7 @@ void print_vd(const vd* m) {
     iVARTRACE(20,m->size);
     for(row=0;row<m->size;row++){
 	
-        d rval = m->ptr[row];
+        d rval = *getvdval(m,row);
         indent_trace();
         printf("%c%2.2e ",rval< 0 ? '\r': ' ',rval);
         printf("\n");

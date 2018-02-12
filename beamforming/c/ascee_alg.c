@@ -16,9 +16,7 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
     dbgassert(A->n_cols == x->size,SIZEINEQUAL);
 	
     #if ASCEE_USE_BLAS == 1
-
-    dbgassert(A->_data,"Matrix-vector product only works for allocated data matrices");
-    
+    dbgassert(false,"Untested function");
     /* typedef enum CBLAS_ORDER     {CblasRowMajor=101, CblasColMajor=102} CBLAS_ORDER; */
     /* typedef enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113, CblasConjNoTrans=114} CBLAS_TRANSPOSE; */
     /* 
@@ -44,10 +42,10 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
                 (d*) &alpha,			/* alpha */
                 (d*) A->_data,		/* A */
                 A->n_rows,		/* lda */
-                (d*) x->ptr,		/*  */
+                (d*) x->_data,		/*  */
                 1,
                 (d*) &beta,			/* beta */
-                (d*) b->ptr,
+                (d*) b->_data,
                 1);
 				
 				

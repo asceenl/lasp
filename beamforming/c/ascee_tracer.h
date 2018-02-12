@@ -10,6 +10,7 @@
 #define ASCEE_TRACER_H
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static inline void clearScreen() {
     printf("\033c\n");

@@ -9,12 +9,18 @@
 #ifndef ASCEE_ALLOC_H
 #define ASCEE_ALLOC_H
 #include <malloc.h>
-
+#include "ascee_tracer.h"
 /**
  * Reserved words for memory allocation. Can be changed to something
  * else when required. For example for debugging purposes.
  */
-#define a_malloc malloc
+static inline void* a_malloc(size_t nbytes) {
+    void* ptr = malloc(nbytes);
+    if(!ptr) {
+        FATAL("Memory allocation failed. Exiting");
+    }
+    return ptr;
+}
 #define a_free free
 #define a_realloc realloc
 

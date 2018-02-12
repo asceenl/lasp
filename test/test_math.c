@@ -31,7 +31,7 @@ int main() {
     vc c1 = vc_alloc(5);
     /* vc_set(&c1,10); */
     /* c_add_to(c1.ptr,a.ptr,1,3); */
-    c_hadamard(c1.ptr,a,b.ptr,5);
+    c_hadamard(c1._data,a,b._data,5);
 
 
 

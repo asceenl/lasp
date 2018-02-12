@@ -33,7 +33,7 @@ Fft* Fft_alloc(const us nfft) {
     fft->fft_work = vd_alloc(2*nfft+15);
     fft->fft_result = vd_alloc(nfft);
 
-    npy_rffti(nfft,fft->fft_work.ptr);
+    npy_rffti(nfft,getvdval(&fft->fft_work,0));
     check_overflow_vx(fft->fft_work);
 
     /* print_vd(&fft->fft_work); */
@@ -70,7 +70,8 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
     vd_copy(&fft_result,timedata);
 
     /* Perform fft */
-    npy_rfftf(nfft,fft_result.ptr,fft->fft_work.ptr);
+    npy_rfftf(nfft,getvdval(&fft_result,0),
+              getvdval(&fft->fft_work,0));
 
     /* Fftpack stores the data a bit strange, the resulting array
      * has the DC value at 0,the first cosine at 1, the first sine

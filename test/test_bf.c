@@ -35,7 +35,7 @@ int main() {
 
 
     vc res2 = vc_alloc(3);
-    c_hadamard(res2.ptr,vc1.ptr,vc2.ptr,3);
+    c_hadamard(res2._data,vc1._data,vc2._data,3);
 
     print_vc(&res2);
 

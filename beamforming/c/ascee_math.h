@@ -16,8 +16,7 @@
 /// Vector of floating point numbers
 typedef struct {
     us size;
-    d* ptr;                     /**< This pointer points to the data
-                                   of this vector */
+    bool _foreign_data;
     d* _data;                    /**< Pointer set if data storage is
                                    intern. If this is set to zero, the
                                    vector is a sub-vector. */
@@ -25,8 +24,7 @@ typedef struct {
 /// Vector of complex floating point numbers
 typedef struct {
     us size;
-    c* ptr;                     /**< This pointer points to the data
-                                   of this vector */
+    bool _foreign_data;
     c* _data;                    /**< Pointer set if data storage is
                                    intern. If this is set to zero, the
                                    vector is a sub-vector. */
@@ -35,33 +33,101 @@ typedef struct {
 typedef struct { 
     us n_rows; 
     us n_cols;
-    d** col_ptrs;
+    bool _foreign_data;
+    us stride;
     d* _data;
 } dmat; 
 /// Dense matrix of complex floating point values
 typedef struct { 
     us n_rows; 
     us n_cols;
-    c** col_ptrs;
+    bool _foreign_data;
+    us stride;
     c* _data; 
 } cmat; 
+
+#define setvecval(vec,index,val)                              \
+    dbgassert((((us) index) <= (vec)->size),OUTOFBOUNDSVEC);  \
+    (vec)->_data[index] = val;
+
+    
+#define setmatval(mat,row,col,val)                              \
+    dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
+    dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
+    (mat)->data[(col)*(mat)->stride+(row)] = val;
+
+/** 
+ * Return pointer to a value from a vector
+ *
+ * @param mat The vector
+ * @param row The row
+ */
+static inline d* getvdval(const vd* vec,us row){
+    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
+    return &vec->_data[row];
+}
+
+/** 
+ * Return pointer to a value from a complex vector
+ *
+ * @param mat The vector
+ * @param row The row
+ */
+static inline c* getvcval(const vc* vec,us row){
+    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
+    return &vec->_data[row];
+}
+
+/** 
+ * Return a value from a matrix of floating points
+ *
+ * @param mat The matrix
+ * @param row The row
+ * @param col The column
+ */
+static inline d* getdmatval(const dmat* mat,us row,us col){
+    dbgassert(mat,NULLPTRDEREF);
+    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
+    return &mat->_data[col*mat->stride+row];
+}
+
+/** 
+ * Return a value from a matrix of complex floating points
+ *
+ * @param mat The matrix
+ * @param row The row
+ * @param col The column
+ */
+static inline c* getcmatval(const cmat* mat,const us row,const us col){
+    dbgassert(mat,NULLPTRDEREF);
+    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
+    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
+    return &mat->_data[col*mat->stride+row];
+}
 
 #ifdef ASCEE_DEBUG
 #define OVERFLOW_MAGIC_NUMBER (-10e-45)
 
 #define check_overflow_vx(vx)                   \
     TRACE(15,"Checking overflow " #vx);          \
-    if((vx)._data) {                                            \
+    if(!(vx)._foreign_data) {                                            \
         dbgassert((vx)._data[(vx).size] == OVERFLOW_MAGIC_NUMBER,       \
                   "Buffer overflow detected on" #vx );          \
-              }
+    }                                                           \
+    else {                                                      \
+    WARN("Cannot check overflow on foreign buffer");            \
+    }
+
 #define check_overflow_xmat(xmat)                               \
     TRACE(15,"Checking overflow " #xmat);                        \
-    if((xmat)._data) {                                            \
-        for(us _overflow=0;_overflow<(xmat).n_cols;_overflow++)   \
-            dbgassert((xmat)._data[(xmat).n_rows*(xmat).n_cols+   \
-                                   _overflow] == OVERFLOW_MAGIC_NUMBER, \
-                  "Buffer overflow detected on" #xmat );          \
+    if(!(xmat)._foreign_data) {                                  \
+        dbgassert((xmat)._data[((xmat).n_cols-1)*(xmat).stride+(xmat).n_rows] \
+                  == OVERFLOW_MAGIC_NUMBER,                             \
+                  "Buffer overflow detected on" #xmat );                \
+    }                                                                   \
+    else {                                                      \
+    WARN("Cannot check overflow on foreign buffer");            \
     }
 
 #else
@@ -76,7 +142,7 @@ typedef struct {
  * @param value 
  */
 static inline void vd_set(vd* vec, d value){
-    d_set(vec->ptr,value,vec->size);
+    d_set(vec->_data,value,vec->size);
 }
 
 /** 
@@ -86,7 +152,7 @@ static inline void vd_set(vd* vec, d value){
  * @param value 
  */
 static inline void vc_set(vc* vec,const c value){
-    c_set(vec->ptr,value,vec->size);
+    c_set(vec->_data,value,vec->size);
 }
 
 /** 
@@ -98,7 +164,7 @@ static inline void vc_set(vc* vec,const c value){
 static inline void dmat_set(dmat* mat,const d value){
     dbgassert(mat,NULLPTRDEREF);
     for(us col=0;col<mat->n_cols;col++) {
-        d_set(mat->col_ptrs[col],value,mat->n_rows);
+        d_set(getdmatval(mat,0,col),value,mat->n_rows);
     }
 }
 
@@ -112,7 +178,7 @@ static inline void dmat_set(dmat* mat,const d value){
 static inline void cmat_set(cmat* mat,const c value){
     dbgassert(mat,NULLPTRDEREF);
     for(us col=0;col<mat->n_cols;col++) {
-        c_set(mat->col_ptrs[col],value,mat->n_rows);
+        c_set(getcmatval(mat,0,col),value,mat->n_rows);
     }
 }
 
@@ -126,14 +192,12 @@ static inline void cmat_set(cmat* mat,const c value){
 static inline vd vd_alloc(us size) {
     vd result = { size, NULL,NULL};
     #ifdef ASCEE_DEBUG
-    result._data = (d*) a_malloc((size+1)*sizeof(d));    
+    result._data = (d*) a_malloc((size+1)*sizeof(d));
     result._data[size] = OVERFLOW_MAGIC_NUMBER;
     #else
     result._data = (d*) a_malloc(size*sizeof(d));    
     #endif //  ASCEE_DEBUG
-
-    result.ptr = result._data;
-    dbgassert(result._data,ALLOCFAILED);
+    result._foreign_data = false;
     #ifdef ASCEE_DEBUG
     vd_set(&result,NAN);
     #endif // ASCEE_DEBUG    
@@ -154,8 +218,7 @@ static inline vc vc_alloc(us size) {
     #else
     result._data = (c*) a_malloc(size*sizeof(c));    
     #endif //  ASCEE_DEBUG
-    dbgassert(result._data,ALLOCFAILED);
-    result.ptr = result._data;
+    result._foreign_data = false;
     #ifdef ASCEE_DEBUG
     vc_set(&result,NAN+I*NAN);
     #endif // ASCEE_DEBUG    
@@ -172,26 +235,15 @@ static inline vc vc_alloc(us size) {
  */
 static inline dmat dmat_alloc(us n_rows,
                               us n_cols) {
-    dmat result = { n_rows, n_cols, NULL, NULL};
+    dmat result = { n_rows, n_cols, false, n_rows, NULL};
     
-    /**
-     * Here storage is allocated for both the data, as well as the
-     * column pointers. In debug mode, extra memory is allocated to
-     * check for possible buffer overflows.
-     */
     #ifdef ASCEE_DEBUG
-    result._data = (d*) a_malloc((n_rows*n_cols+n_cols)*sizeof(d));
-    for(us i=0;i<n_cols;i++)
-        result._data[n_rows*n_cols+i] = OVERFLOW_MAGIC_NUMBER;
+    result._data = (d*) a_malloc((n_rows*n_cols+1)*sizeof(d));
+    result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
-    result._data = (d*) a_malloc((n_rows*n_cols+1)*sizeof(d));    
+    result._data = (d*) a_malloc((n_rows*n_cols)*sizeof(d));    
     #endif //  ASCEE_DEBUG
 
-    dbgassert(result._data,ALLOCFAILED);
-    result.col_ptrs = a_malloc(n_cols*sizeof(d*));
-    for(us col=0;col<n_cols;col++) {
-        result.col_ptrs[col] = &result._data[n_rows*col];
-    }
     #ifdef ASCEE_DEBUG
     dmat_set(&result,NAN);
     #endif // ASCEE_DEBUG
@@ -211,23 +263,14 @@ static inline dmat dmat_alloc(us n_rows,
  */
 static inline cmat cmat_alloc(const us n_rows,
                               const us n_cols) {
-    cmat result = { n_rows, n_cols, NULL, NULL};
-    /**
-     * Here storage is allocated for both the data, as well as the
-     * column pointers. In debug mode, extra memory is allocated to
-     * check for possible buffer overflows.
-     */
+    cmat result = { n_rows, n_cols, false, n_rows, NULL};
+
     #ifdef ASCEE_DEBUG
-    result._data = (c*) a_malloc((n_rows*n_cols+n_cols)*sizeof(c));
-    for(us i=0;i<n_cols;i++)
-        result._data[n_rows*n_cols+i] = OVERFLOW_MAGIC_NUMBER;
+    result._data = (c*) a_malloc((n_rows*n_cols+1)*sizeof(c));
+    result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
-    result._data = (c*) a_malloc((n_rows*n_cols+1)*sizeof(c));    
+    result._data = (c*) a_malloc((n_rows*n_cols)*sizeof(c));    
     #endif //  ASCEE_DEBUG
-    result.col_ptrs = a_malloc(n_cols*sizeof(c*));
-    for(us col=0;col<n_cols;col++) {
-        result.col_ptrs[col] = &result._data[n_rows*col];
-    }
 
     #ifdef ASCEE_DEBUG
     cmat_set(&result,NAN+I*NAN);
@@ -238,7 +281,7 @@ static inline cmat cmat_alloc(const us n_rows,
  * Creates a dmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
- * destroyed.
+ * destroyed. Assumes the column stride equals to n_rows.
  *
  * @param n_rows Number of rows
  * @param n_cols Number of columns
@@ -251,21 +294,14 @@ static inline dmat dmat_foreign(const us n_rows,
                                 d* data) {
 
     dbgassert(data,NULLPTRDEREF);
-    dmat result = {n_rows,n_cols,NULL,NULL};
-    d** colptrs = malloc(sizeof(d*)*n_cols);
-    
-    dbgassert(colptrs,ALLOCFAILED);
-    result.col_ptrs = colptrs;
-    for(us i=0;i<n_cols;i++) {
-        colptrs[i] = &data[i*n_rows];
-    }
+    dmat result = {n_rows,n_cols,true,n_rows,data};
     return result;
 }
 /** 
  * Creates a cmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
- * destroyed.
+ * destroyed. Assumes the column stride equals to n_rows.
  *
  * @param n_rows 
  * @param n_cols 
@@ -277,13 +313,7 @@ static inline cmat cmat_foreign(const us n_rows,
                                 const us n_cols,
                                 c* data) {
     dbgassert(data,NULLPTRDEREF);
-    cmat result = {n_rows,n_cols,NULL,NULL};
-    c** colptrs = malloc(sizeof(c*)*n_cols);
-    dbgassert(colptrs,ALLOCFAILED);
-    result.col_ptrs = colptrs;
-    for(us i=0;i<n_cols;i++) {
-        colptrs[i] = &data[i*n_rows];
-    }
+    cmat result = {n_rows,n_cols,true,n_rows,data};
     return result;
 }
 
@@ -295,7 +325,7 @@ static inline cmat cmat_foreign(const us n_rows,
  */
 static inline void vd_free(vd* f) {
     dbgassert(f,NULLPTRDEREF);
-    if(likely(f->_data)) a_free(f->_data);
+    if(!(f->_foreign_data)) a_free(f->_data);
 }
 /** 
  * Free's data of a vector. Is safe to run on sub-vecs as well, to
@@ -305,7 +335,7 @@ static inline void vd_free(vd* f) {
  */
 static inline void vc_free(vc* f) {
     dbgassert(f,NULLPTRDEREF);
-    if(likely(f->_data)) a_free(f->_data);
+    if(!(f->_foreign_data)) a_free(f->_data);
 }
 /** 
  * Free's data of dmat. Safe to run on sub-matrices as well.
@@ -313,9 +343,8 @@ static inline void vc_free(vc* f) {
  * @param m Matrix to free
  */
 static inline void dmat_free(dmat* m) {
-    if(m->_data) a_free(m->_data);
-    dbgassert(m->col_ptrs,NULLPTRDEREF);
-    a_free(m->col_ptrs);
+    dbgassert(m,NULLPTRDEREF);
+    if(!(m->_foreign_data)) a_free(m->_data);
 }
 /** 
  * Free's data of dmat. Safe to run on sub-matrices as well.
@@ -323,70 +352,10 @@ static inline void dmat_free(dmat* m) {
  * @param m Matrix to free
  */
 static inline void cmat_free(cmat* m) {
-    if(m->_data) a_free(m->_data);
-    dbgassert(m->col_ptrs,NULLPTRDEREF);
-    a_free(m->col_ptrs);
+    dbgassert(m,NULLPTRDEREF);
+    if(!(m->_foreign_data)) a_free(m->_data);
 }
 
-#define setvecval(vec,index,val)                              \
-    dbgassert((((us) index) <= (vec)->size),OUTOFBOUNDSVEC);  \
-    (vec)->ptr[index] = val;
-
-    
-#define setmatval(mat,row,col,val)                              \
-    dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
-    dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
-    (mat)->data[(col)*(mat)->n_rows+(row)] = val;
-
-/** 
- * Return pointer to a value from a vector
- *
- * @param mat The vector
- * @param row The row
- */
-static inline d* getvdval(const vd* vec,us row){
-    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
-    return &vec->ptr[row];
-}
-
-/** 
- * Return pointer to a value from a complex vector
- *
- * @param mat The vector
- * @param row The row
- */
-static inline c* getvcval(const vc* vec,us row){
-    dbgassert(row < vec->size,OUTOFBOUNDSVEC);
-    return &vec->ptr[row];
-}
-
-/** 
- * Return a value from a matrix of floating points
- *
- * @param mat The matrix
- * @param row The row
- * @param col The column
- */
-static inline d* getdmatval(const dmat* mat,us row,us col){
-    dbgassert(mat,NULLPTRDEREF);
-    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
-    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
-    return &mat->col_ptrs[col][row];
-}
-
-/** 
- * Return a value from a matrix of complex floating points
- *
- * @param mat The matrix
- * @param row The row
- * @param col The column
- */
-static inline c* getcmatval(const cmat* mat,const us row,const us col){
-    dbgassert(mat,NULLPTRDEREF);
-    dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
-    dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
-    return &mat->col_ptrs[col][row];
-}
 
 /** 
  * Copy some rows from one matrix to another
@@ -432,16 +401,9 @@ static inline dmat dmat_submat(const dmat* parent,
     dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
     dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
 
-    d** col_ptrs = malloc(sizeof(d*)*n_cols);
-    dbgassert(col_ptrs,ALLOCFAILED);
-    for(us col=0;col<n_cols;col++) {
-        col_ptrs[col] = getdmatval(parent,
-                                   startrow,
-                                   startcol+col);
+    dmat result = { n_rows,n_cols,true,n_rows-startrow,
+                    getdmatval(parent,startrow,startcol)};
 
-    }
-    dmat result = { n_rows,n_cols,NULL,NULL};
-    result.col_ptrs = col_ptrs;
     return result;
 }
 /** 
@@ -465,15 +427,9 @@ static inline cmat cmat_submat(cmat* parent,
     dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
     dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
 
-    c** col_ptrs = malloc(sizeof(c*)*n_cols);
-    dbgassert(col_ptrs,ALLOCFAILED);
-    for(us col=0;col<n_cols;col++) {
-        col_ptrs[col] = getcmatval(parent,
-                                   startrow,
-                                   startcol+col);
+    cmat result = { n_rows,n_cols,true,n_rows-startrow,
+                    getcmatval(parent,startrow,startcol)};
 
-    }
-    cmat result = { n_rows,n_cols,col_ptrs,NULL};
     return result;
 }
 
@@ -486,7 +442,7 @@ static inline cmat cmat_submat(cmat* parent,
 static inline void vd_copy(vd* to,const vd* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
-    d_copy(to->ptr,from->ptr,to->size);
+    d_copy(to->_data,from->_data,to->size);
 }
 static inline void vd_copy_rows(vd* to,
                                 const vd* from,
@@ -496,8 +452,8 @@ static inline void vd_copy_rows(vd* to,
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(startrow_from+nrows <= from->size,OUTOFBOUNDSMATR);    
     dbgassert(startrow_to+nrows <= to->size,OUTOFBOUNDSMATR);
-    d_copy(&to->ptr[startrow_to],
-           &from->ptr[startrow_from],
+    d_copy(&to->_data[startrow_to],
+           &from->_data[startrow_from],
            nrows);
 }
 /** 
@@ -509,7 +465,7 @@ static inline void vd_copy_rows(vd* to,
 static inline void vc_copy(vc* to,const vc* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
-    c_copy(to->ptr,from->ptr,to->size);
+    c_copy(to->_data,from->_data,to->size);
 }
 /** 
  * Copy contents of one matrix to another. Sizes should be equal
@@ -522,7 +478,9 @@ static inline void dmat_copy(dmat* to,const dmat* from) {
     dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
     dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
     for(us col=0;col<to->n_cols;col++) {
-        d_copy(to->col_ptrs[col],from->col_ptrs[col],to->n_rows);
+        d_copy(getdmatval(to,0,col),
+               getdmatval(from,0,col),
+               to->n_rows);
     }
 }
 /** 
@@ -536,7 +494,9 @@ static inline void cmat_copy(cmat* to,const cmat* from) {
     dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
     dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
     for(us col=0;col<to->n_cols;col++) {
-        c_copy(to->col_ptrs[col],from->col_ptrs[col],to->n_rows);
+        c_copy(getcmatval(to,0,col),
+               getcmatval(from,0,col),
+               to->n_rows);
     }
 }
 
@@ -550,10 +510,7 @@ static inline void cmat_copy(cmat* to,const cmat* from) {
  * @return vector with reference to column
  */
 static inline vd dmat_column(dmat* x,us col) {
-    vd res;
-    res.size = x->n_rows;
-    res.ptr = getdmatval(x,0,col);
-    res._data = NULL;
+    vd res = {x->n_rows,true,getdmatval(x,0,col)};
     return res;
 }
 
@@ -566,10 +523,7 @@ static inline vd dmat_column(dmat* x,us col) {
  * @return vector with reference to column
  */
 static inline vc cmat_column(cmat* x,us col) {
-    vc res;
-    res.size = x->n_rows;
-    res.ptr = getcmatval(x,0,col);
-    res._data = NULL;
+    vc res = {x->n_rows,true,getcmatval(x,0,col)};
     return res;
 }
 
@@ -583,7 +537,7 @@ static inline void vc_conj(vc* a,const vc* b) {
     fsTRACE(15);
     dbgassert(a && b,NULLPTRDEREF);
     dbgassert(a->size == b->size,SIZEINEQUAL);
-    carray_conj(a->ptr,b->ptr,a->size);
+    carray_conj(a->_data,b->_data,a->size);
     feTRACE(15);
 }
 
@@ -595,7 +549,7 @@ static inline void vc_conj(vc* a,const vc* b) {
 static inline void cmat_conj(cmat* x) {
     dbgassert(x,NULLPTRDEREF);
     for(us col=0;col<x->n_cols;col++) {
-        c_conj_inplace(x->col_ptrs[col],x->n_rows);
+        c_conj_inplace(getcmatval(x,0,col),x->n_rows);
     }
 }
 
