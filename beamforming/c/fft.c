@@ -14,6 +14,8 @@
 typedef struct Fft_s {
     us nfft;
     vd fft_work;
+    vd fft_result;              /**< Temporary storage for the FFT
+                                 * result */
 } Fft;
 
 Fft* Fft_alloc(const us nfft) {
@@ -29,6 +31,8 @@ Fft* Fft_alloc(const us nfft) {
 
     /* Initialize foreign fft lib */
     fft->fft_work = vd_alloc(2*nfft+15);
+    fft->fft_result = vd_alloc(nfft);
+
     npy_rffti(nfft,fft->fft_work.ptr);
     check_overflow_vx(fft->fft_work);
 
@@ -41,6 +45,7 @@ void Fft_free(Fft* fft) {
     fsTRACE(15);
     dbgassert(fft,NULLPTRDEREF);
     vd_free(&fft->fft_work);
+    vd_free(&fft->fft_result);
     a_free(fft);
     feTRACE(15);
 }
@@ -51,7 +56,6 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
     dbgassert(fft && timedata && result,NULLPTRDEREF);
 
     const us nfft = fft->nfft;
-
     dbgassert(timedata->size == nfft,
               "Invalid size for time data rows."
               " Should be equal to nfft");
@@ -59,8 +63,10 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
     dbgassert(result->size == (nfft/2+1),"Invalid number of rows in"
               " result array");
 
-    vd fft_result = vd_alloc(nfft);
+    /* Obtain fft_result */
+    vd fft_result = fft->fft_result;
 
+    /* Copy timedata, as it will be overwritten in the fft pass. */
     vd_copy(&fft_result,timedata);
 
     /* Perform fft */
@@ -83,7 +89,6 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
 
     check_overflow_vx(fft_result);
     check_overflow_vx(fft->fft_work);
-    vd_free(&fft_result);
     feTRACE(15);
 
 }
@@ -109,7 +114,6 @@ void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result) {
     }
     check_overflow_xmat(*timedata);
     check_overflow_xmat(*result);    
-
 
     feTRACE(15);
 }

@@ -397,9 +397,9 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
  * @param startrow_to Starting row where to insert the values
  * @param nrows Number of rows to copy
  */
-static inline void copy_dmat_rows(dmat* to,const dmat* from,
-                                  us startrow_from,
+static inline void dmat_copy_rows(dmat* to,const dmat* from,
                                   us startrow_to,
+                                  us startrow_from,
                                   us nrows) {
     us col,ncols = to->n_cols;
 
@@ -487,6 +487,18 @@ static inline void vd_copy(vd* to,const vd* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
     d_copy(to->ptr,from->ptr,to->size);
+}
+static inline void vd_copy_rows(vd* to,
+                                const vd* from,
+                                const us startrow_to,
+                                const us startrow_from,
+                                const us nrows) {
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(startrow_from+nrows <= from->size,OUTOFBOUNDSMATR);    
+    dbgassert(startrow_to+nrows <= to->size,OUTOFBOUNDSMATR);
+    d_copy(&to->ptr[startrow_to],
+           &from->ptr[startrow_from],
+           nrows);
 }
 /** 
  * Copy contents of one vector to another

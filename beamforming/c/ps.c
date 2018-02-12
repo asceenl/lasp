@@ -76,16 +76,13 @@ void PowerSpectra_compute(const PowerSpectra* ps,
 
     dbgassert(ps && timedata && result,NULLPTRDEREF);
     
-    const us nchannels = timedata->n_rows;
+    const us nchannels = timedata->n_cols;
     const us nfft = Fft_nfft(ps->fft);
     uVARTRACE(15,nchannels);
     const d win_pow = ps->win_pow;
     dVARTRACE(15,win_pow);
 
     /* Sanity checks for the matrices */
-    dbgassert(timedata->n_cols == nchannels,"timedata n_cols "
-              "should be equal to nchannels");
-
     dbgassert(timedata->n_rows == nfft,"timedata n_rows "
               "should be equal to nfft");
 

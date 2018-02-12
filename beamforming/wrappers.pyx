@@ -22,6 +22,8 @@ cdef extern from "fft.h":
     void Fft_fft(c_Fft*,dmat * timedate,cmat * res) nogil
     us Fft_nfft(c_Fft*)
 
+
+
 cdef class Fft:
     cdef:
         c_Fft* _fft
@@ -227,8 +229,3 @@ cdef class AvPowerSpectra:
         dmat_free(&td)
 
         return result
-    
-    def getFreq(self, d fs):
-        cdef d df = fs/self.nfft  # frequency resolution 
-        cdef us K = self.nfft//2+1      # number of frequency bins
-        return np.linspace(0, (K-1)*df, K)

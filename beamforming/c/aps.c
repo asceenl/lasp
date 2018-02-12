@@ -128,13 +128,11 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
     cmat* ps_storage = &aps->ps_storage;
     
     c naverages = (++aps->naverages);
-    cVARTRACE(15,naverages);
 
     /* Scale previous result */
     cmat_scale(ps_storage,
                (naverages-1)/naverages);
 
-    uVARTRACE(15,(us) aps->ps);
     
     PowerSpectra_compute(aps->ps,
                          block,
@@ -220,10 +218,10 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
 
     /* We copy the last piece of samples from the timedata to the
      * buffer */
-    copy_dmat_rows(&buffer,
+    dmat_copy_rows(&buffer,
                    timedata,
-                   timedata->n_rows-nfft, /* startrow_from */
                    0,           /* startrow_to */
+                   timedata->n_rows-nfft, /* startrow_from */
                    nfft);       /* Number of rows */
     
     *os = os_timedata+nfft-timedata->n_rows;

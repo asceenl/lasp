@@ -58,6 +58,15 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result);
 void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result);
 
 /** 
+ * Perform inverse FFT
+ *
+ * @param[in] fft Fft handle
+ * @param[in] freqdata Frequency domain data
+ * @param[out] timedata 
+ */
+void Fft_ifft(const Fft* fft,const cmat* freqdata,dmat* timedata);
+
+/** 
  * 
  *
  * @param fft 

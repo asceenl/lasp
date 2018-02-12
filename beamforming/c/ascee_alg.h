@@ -134,6 +134,36 @@ static inline void vc_hadamard(vc* result,const vc* a,const vc* b) {
     feTRACE(15);
 }
 /** 
+ * Compute the element-wise (Hadamard) product of a and b, and store
+ * in result
+ *
+ * @param[out] result 
+ * @param[in] a 
+ * @param[in] b 
+ */
+static inline void cmat_hadamard(cmat* result,
+                                 const cmat* a,
+                                 const cmat* b) {
+    fsTRACE(15);
+    dbgassert(result  && a && b,NULLPTRDEREF);
+
+    dbgassert(result->n_rows==a->n_rows,SIZEINEQUAL);
+    dbgassert(result->n_cols==a->n_cols,SIZEINEQUAL);
+    dbgassert(b->n_rows==a->n_rows,SIZEINEQUAL);
+    dbgassert(b->n_cols==a->n_cols,SIZEINEQUAL);
+
+    for(us col=0;col<result->n_cols;col++) {
+        c_hadamard(result->col_ptrs[col],
+                   a->col_ptrs[col],
+                   b->col_ptrs[col],
+                   a->n_rows);
+    }
+
+    feTRACE(15);
+}
+
+
+/** 
  * Compute the matrix vector product for complex-valued types: b = A*x.
  *
  * @param[in] A Matrix A
