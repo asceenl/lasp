@@ -22,7 +22,6 @@ typedef struct PowerSpectra_s PowerSpectra;
  * @return PowerSpectra handle, NULL on error
  */
 PowerSpectra* PowerSpectra_alloc(const us nfft,
-                                 const us nchannels,
                                  const WindowType wt);
 
 /** 

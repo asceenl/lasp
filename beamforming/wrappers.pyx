@@ -83,7 +83,6 @@ blackman = Blackman
 cdef extern from "ps.h":
     ctypedef struct c_PowerSpectra "PowerSpectra"
     c_PowerSpectra* PowerSpectra_alloc(const us nfft,
-                                       const us nchannels,
                                        const WindowType wt)
     
     void PowerSpectra_compute(const c_PowerSpectra* ps,
@@ -97,8 +96,8 @@ cdef class PowerSpectra:
     cdef:
         c_PowerSpectra* _ps
 
-    def __cinit__(self, us nfft,us nchannels,us window=rectangular):
-        self._ps = PowerSpectra_alloc(nfft,nchannels,<WindowType> window)
+    def __cinit__(self, us nfft,us window=rectangular):
+        self._ps = PowerSpectra_alloc(nfft,<WindowType> window)
         if self._ps == NULL:
             raise RuntimeError('PowerSpectra allocation failed')
 

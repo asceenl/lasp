@@ -70,7 +70,7 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     iVARTRACE(15,oo);
     if(oo == 0) {oo++;}
         
-    PowerSpectra* ps = PowerSpectra_alloc(nfft,nchannels,wt);
+    PowerSpectra* ps = PowerSpectra_alloc(nfft,wt);
     if(!ps) {
         WARN(ALLOCFAILED "ps");
         feTRACE(15);
@@ -78,12 +78,6 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     }
 
     AvPowerSpectra* aps = a_malloc(sizeof(AvPowerSpectra));
-    if(!aps) {
-        WARN("Allocation of AvPowerSpectra memory failed");
-        PowerSpectra_free(ps);
-        feTRACE(15);        
-        return NULL;
-    }
     
     aps->nchannels = nchannels;
     aps->nfft = nfft;

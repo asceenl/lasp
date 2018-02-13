@@ -39,11 +39,12 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                  
 
 /** 
- * Computes the real overlap offset 
+ * Computes the real overlap percentage, from the integer overlap
+ * offset.
  *
  * @param aps 
  */
-d AvPowerSpectra_realoverlappct(const AvPowerSpectra* aps);
+d AvPowerSpectra_realoverlap_pct(const AvPowerSpectra* aps);
 
 /** 
  * Return the current number of averages taken to obtain the result.

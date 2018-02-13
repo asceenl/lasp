@@ -20,7 +20,6 @@ typedef struct PowerSpectra_s {
 } PowerSpectra;
 
 PowerSpectra* PowerSpectra_alloc(const us nfft,
-                                 const us nchannels,
                                  const WindowType wt) {
     
     fsTRACE(15);
