@@ -1,6 +1,6 @@
 include "config.pxi"
 
-setTracerLevel(-5)
+setTracerLevel(15)
 cdef extern from "cblas.h":
     int openblas_get_num_threads()
     void openblas_set_num_threads(int)

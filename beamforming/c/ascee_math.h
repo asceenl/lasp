@@ -116,7 +116,7 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
                   "Buffer overflow detected on" #vx );          \
     }                                                           \
     else {                                                      \
-    WARN("Cannot check overflow on foreign buffer");            \
+    DBGWARN("Cannot check overflow on foreign buffer");            \
     }
 
 #define check_overflow_xmat(xmat)                               \
@@ -127,7 +127,7 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
                   "Buffer overflow detected on" #xmat );                \
     }                                                                   \
     else {                                                      \
-    WARN("Cannot check overflow on foreign buffer");            \
+    DBGWARN("Cannot check overflow on foreign buffer");            \
     }
 
 #else
@@ -401,7 +401,10 @@ static inline dmat dmat_submat(const dmat* parent,
     dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
     dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
 
-    dmat result = { n_rows,n_cols,true,n_rows-startrow,
+    dmat result = { n_rows,n_cols,
+                    true,           // Foreign data = true
+                    parent->n_rows, // This is the stride to get to
+                    // the next column.
                     getdmatval(parent,startrow,startcol)};
 
     return result;
@@ -427,7 +430,11 @@ static inline cmat cmat_submat(cmat* parent,
     dbgassert(n_rows+startrow <= parent->n_rows,OUTOFBOUNDSMATR);
     dbgassert(n_cols+startcol <= parent->n_cols,OUTOFBOUNDSMATC);
 
-    cmat result = { n_rows,n_cols,true,n_rows-startrow,
+
+    cmat result = { n_rows,n_cols,
+                    true,           // Foreign data = true
+                    parent->n_rows, // This is the stride to get to
+                    // the next column.
                     getcmatval(parent,startrow,startcol)};
 
     return result;

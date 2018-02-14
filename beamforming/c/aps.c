@@ -9,13 +9,16 @@
 #include "aps.h"
 #include "ps.h"
 #include "ascee_alg.h"
+#include "dfifo.h"
+
+/* Multiplication factor for the maximum size of the fifo queue. This
+ * factor is multiplied by nfft to obtain the maximum size of the
+ * fifo. */
+#define FIFO_SIZE_MULT (5)
 
 typedef struct AvPowerSpectra_s {
-    us os;              /**< Counter set to the position where
-                         * the next time block should be taken
-                         * from */
     us nfft, nchannels;
-    us oo;
+    us overlap;                 /* Number of samples to overlap */
 
     us naverages;               /* Counter that counts the number of
                                  * averages taken for the computation
@@ -25,6 +28,8 @@ typedef struct AvPowerSpectra_s {
                                  * previous samples. Number of rows is
                                  * equal to nfft. */
 
+
+    dFifo* fifo;          /* Sample fifo storage */
 
     cmat ps_storage;           /**< Here we store the averaged
                                 * results for each Cross-power
@@ -39,6 +44,19 @@ typedef struct AvPowerSpectra_s {
     
 } AvPowerSpectra;
 
+void AvPowerSpectra_free(AvPowerSpectra* aps) {
+    fsTRACE(15);
+
+    PowerSpectra_free(aps->ps);
+    dFifo_free(aps->fifo);
+    dmat_free(&aps->buffer);
+    cmat_free(&aps->ps_storage);
+    cmat_free(&aps->ps_single);
+    a_free(aps);
+    
+    feTRACE(15);
+}
+
 AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                      const us nchannels,
                                      const d overlap_percentage,
@@ -47,29 +65,26 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     fsTRACE(15);
     
     /* Check nfft */
-    if(nfft % 2 != 0 || nfft > ASCEE_MAX_NFFT) {
-        WARN("nfft should be even");
+    if(nfft==0 || nfft % 2 != 0 || nfft > ASCEE_MAX_NFFT) {
+        WARN("Invalid nfft");
         feTRACE(15);
         return NULL;
     }
 
     /* Check overlap percentage */
-    if(overlap_percentage >= 100) {
-        WARN("Overlap percentage >= 100!");
-        feTRACE(15);
-        return NULL;
-    }
-    if(overlap_percentage < 0) {
-        WARN("Overlap percentage should be positive!");
+    if(overlap_percentage < 0. || overlap_percentage >= 100.) {
+        WARN("Invalid overlap percentage");
         feTRACE(15);
         return NULL;
     }
     
     /* Compute and check overlap offset */
-    us oo = (us) (((d) nfft)-overlap_percentage*((d) nfft)/100);
-    iVARTRACE(15,oo);
-    if(oo == 0) {oo++;}
-        
+    us overlap = (us) (overlap_percentage*((d) nfft)/100);
+    if(overlap == nfft) {
+        WARN("Overlap percentage results in full overlap, decreasing overlap.");
+        overlap--;
+    }
+    
     PowerSpectra* ps = PowerSpectra_alloc(nfft,wt);
     if(!ps) {
         WARN(ALLOCFAILED "ps");
@@ -83,14 +98,15 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     aps->nfft = nfft;
     aps->ps = ps;
     aps->naverages = 0;
-    aps->oo = oo;
-    aps->os = oo;
+    aps->overlap = overlap;
+
+    aps->buffer = dmat_alloc(nfft,nchannels);
 
     /* Allocate vectors and matrices */
-    aps->buffer = dmat_alloc(nfft,nchannels);
     aps->ps_storage = cmat_alloc(nfft/2+1,nchannels*nchannels);
     aps->ps_single = cmat_alloc(nfft/2+1,nchannels*nchannels);
-
+    aps->fifo = dFifo_create(nchannels,FIFO_SIZE_MULT*nfft);
+    
     cmat_set(&aps->ps_storage,0);
     feTRACE(15);
     return aps;
@@ -142,7 +158,7 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
 
 
 cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
-                                const dmat* timedata) {
+                                 const dmat* timedata) {
     
     fsTRACE(15);
     
@@ -151,92 +167,65 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
     const us nfft = aps->nfft;
     
     dbgassert(timedata->n_cols == nchannels,"Invalid time data");
-    dbgassert(timedata->n_rows >= nfft,"Invalid time data. "
-              "Should at least have nfft rows");
+    dbgassert(timedata->n_rows > 0,"Invalid time data. "
+              "Should at least have one row");
 
-    const us oo = aps->oo;
-    us* os = &aps->os;
+    const us nsamples = timedata->n_rows;
 
-    us os_timedata = 0;
+    /* Split up timedata in blocks of size ~ (FIFO_SIZE_MULT-1)nfft */
+    const us max_blocksize = (FIFO_SIZE_MULT-1)*nfft;
 
-    dmat buffer = aps->buffer;
+    us pos = 0; /* Current position in timedata buffer */
 
-    /* Retrieve the buffer and use it to make the first time block. */
-    if(*os < oo) {
-        TRACE(15,"Using saved data from previous run");
-        dbgassert(false,"not tested")
-        dmat tmp = dmat_alloc(nfft,nchannels);
-        dbgassert(0 <= *os,"BUG");
-        dbgassert(*os <= nfft,"BUG"); 
+    /* dFifo handle */
+    dFifo* fifo = aps->fifo;
 
-        /* copy_dmat_rows(&tmp, */
-        /*                &buffer, */
-        /*                *os,       /\* Startrow_from *\/ */
-        /*                0,         /\* Startrow to *\/ */
-        /*                nfft - *os /\* nrows *\/ */
-        /*     ); */
+    do {
+        us nsamples_part = pos+max_blocksize <= nsamples ?
+            max_blocksize : nsamples-pos;
 
-        /* copy_dmat_rows(&tmp, */
-        /*                timedata, */
-        /*                0, */
-        /*                nfft - *os, */
-        /*                *os */
-        /*     ); */
-
-
-        AvPowerSpectra_addBlock(aps,&tmp);
-
-        os_timedata = oo + *os - nfft;
-        dbgassert(os_timedata < nfft,"BUG");
-        dmat_free(&tmp);
-    }
-
-    /* Run until we cannot go any further */
-    while ((os_timedata + nfft) <= timedata->n_rows) {
-
-        dmat tmp = dmat_submat(timedata,
-                               os_timedata, /* Startrow */
-                               0,           /* Start column */
-                               nfft,        /* Number of rows */
-                               nchannels);  /* Number of columns */
-
-        /* Process the block of time data */
-        AvPowerSpectra_addBlock(aps,&tmp);
-
-        iVARTRACE(15,os_timedata);
-        os_timedata += oo;
-
-        dmat_free(&tmp);
-        iVARTRACE(15,os_timedata);
-    }
-
-    /* We copy the last piece of samples from the timedata to the
-     * buffer */
-    dmat_copy_rows(&buffer,
-                   timedata,
-                   0,           /* startrow_to */
-                   timedata->n_rows-nfft, /* startrow_from */
-                   nfft);       /* Number of rows */
+        /* Obtain sub matrix */
+        dmat timedata_part = dmat_submat(timedata,
+                                         pos, /* Startrow */
+                                         0,   /* Startcol */
+                                         nsamples_part, /* n_rows */
+                                         nchannels);    /* n_cols */
     
-    *os = os_timedata+nfft-timedata->n_rows;
-    
-    dbgassert(*os <= nfft,"BUG");
+        if(dFifo_push(fifo,&timedata_part)!=SUCCESS) {
+            WARN("Fifo push failed.");
+        }
 
+        /* Temporary storage buffer */
+        dmat* buffer = &aps->buffer;
+
+        /* Pop samples from the fifo while there are still at
+         * least nfft samples available */
+        while (dFifo_size(fifo) >= nfft) {
+            int popped = dFifo_pop(fifo,
+                                   buffer,
+                                   aps->overlap); /* Keep 'overlap'
+                                                   * number of samples
+                                                   * in the queue */
+
+            dbgassert((us) popped == nfft,"Bug in dFifo");
+            /* Process the block of time data */
+            AvPowerSpectra_addBlock(aps,buffer);
+
+        }
+
+        dmat_free(&timedata_part);
+
+        /* Update position */
+        pos+=nsamples_part;
+        
+    } while (pos < nsamples);
+    dbgassert(pos == nsamples,"BUG");
+    
     feTRACE(15);
     return &aps->ps_storage;
 }
 
-void AvPowerSpectra_free(AvPowerSpectra* aps) {
-    fsTRACE(15);
 
-    PowerSpectra_free(aps->ps);
-    dmat_free(&aps->buffer);
-    cmat_free(&aps->ps_storage);
-    cmat_free(&aps->ps_single);
-    a_free(aps);
-    
-    feTRACE(15);
-}
 
 
 //////////////////////////////////////////////////////////////////////

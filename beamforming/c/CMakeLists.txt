@@ -15,6 +15,7 @@ add_library(beamforming_lib
   ps.c
   mq.c
   worker.c
+  dfifo.c
   )
 
 

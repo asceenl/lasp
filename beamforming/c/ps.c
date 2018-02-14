@@ -144,11 +144,8 @@ void PowerSpectra_compute(const PowerSpectra* ps,
              * is documented */
             vc res = cmat_column(result,i+j*nchannels);
 
-            check_overflow_vx(res);
             vc i_vec = cmat_column(&fft_work,i);
             vc j_vec = cmat_column(&fft_work,j);
-
-            check_overflow_xmat(fft_work);
 
             /* Compute the conjugate of spectra j */
             vc_conj(&j_vec_conj,&j_vec);
