@@ -18,7 +18,7 @@ typedef struct dFifo_s dFifo;
  * @param nchannels Number of channels to store for
  * @param max_size Maximum size of the queue.
  *
- * @return Pointer to fifo queue.
+ * @return Pointer to fifo queue (no null ptr)
  */
 dFifo* dFifo_create(const us nchannels,
                     const us max_size);
