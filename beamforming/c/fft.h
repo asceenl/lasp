@@ -58,18 +58,27 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result);
 void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result);
 
 /** 
+ * Perform inverse fft on a single channel.
+ * 
+ * @param[in] fft Fft handle.
+ * @param[in] freqdata Frequency domain input data, to be iFft'th.
+ * @param[out] result: iFft't data, should have size (nfft).
+ */
+void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* result);
+
+/** 
  * Perform inverse FFT
  *
  * @param[in] fft Fft handle
  * @param[in] freqdata Frequency domain data
- * @param[out] timedata 
+ * @param[out] timedata Time domain result
  */
 void Fft_ifft(const Fft* fft,const cmat* freqdata,dmat* timedata);
 
 /** 
- * 
+ * Free up resources of Fft handle.
  *
- * @param fft 
+ * @param fft Fft handle.
  */
 void Fft_free(Fft* fft);
 

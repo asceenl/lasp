@@ -20,6 +20,7 @@ cdef extern from "fft.h":
     c_Fft* Fft_alloc(us nfft)
     void Fft_free(c_Fft*)
     void Fft_fft(c_Fft*,dmat * timedate,cmat * res) nogil
+    void Fft_ifft(c_Fft*,cmat * freqdata,dmat* timedata) nogil
     us Fft_nfft(c_Fft*)
 
 
@@ -63,6 +64,36 @@ cdef class Fft:
         cmat_free(&r)
 
         return result
+
+    def ifft(self,c[::1,:] freqdata):
+
+        cdef us nfft = Fft_nfft(self._fft)
+        cdef us nchannels = freqdata.shape[1]
+        assert freqdata.shape[0] == nfft//2+1
+        
+
+        # result[:,:] = np.nan+1j*np.nan
+
+        cdef cmat f = cmat_foreign(freqdata.shape[0],
+                                   freqdata.shape[1],
+                                   &freqdata[0,0])
+        
+        timedata = np.empty((nfft,nchannels),
+                            dtype=NUMPY_FLOAT_TYPE,
+                            order='F')
+
+        cdef d[::1,:] timedata_view = timedata
+        cdef dmat t = dmat_foreign(timedata.shape[0],
+                                   timedata.shape[1],
+                                   &timedata_view[0,0])
+
+        Fft_ifft(self._fft,&f,&t)
+
+        dmat_free(&t)
+        cmat_free(&f)
+
+        return timedata
+
 
 
 cdef extern from "window.h":
