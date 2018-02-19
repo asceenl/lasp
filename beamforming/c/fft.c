@@ -18,8 +18,12 @@ typedef struct Fft_s {
                                  * result */
 } Fft;
 
-Fft* Fft_alloc(const us nfft) {
+Fft* Fft_create(const us nfft) {
     fsTRACE(15);
+    if(nfft == 0) {
+        WARN("nfft > 0");
+        return NULL;
+    }
 
     Fft* fft = a_malloc(sizeof(Fft));
     if(fft==NULL) {

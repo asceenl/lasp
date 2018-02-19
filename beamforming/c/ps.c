@@ -32,7 +32,7 @@ PowerSpectra* PowerSpectra_alloc(const us nfft,
     }
 
     /* ALlocate space */
-    Fft* fft = Fft_alloc(nfft);
+    Fft* fft = Fft_create(nfft);
     if(fft == NULL) {
         WARN("Fft allocation failed");
         return NULL;

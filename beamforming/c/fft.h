@@ -24,7 +24,7 @@ typedef struct Fft_s Fft;
  *
  * @return Pointer to Fft handle, NULL on error
  */
-Fft* Fft_alloc(const us nfft);
+Fft* Fft_create(const us nfft);
 /** 
  * Returns the nfft for this Fft instance
  *
@@ -62,9 +62,9 @@ void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result);
  * 
  * @param[in] fft Fft handle.
  * @param[in] freqdata Frequency domain input data, to be iFft'th.
- * @param[out] result: iFft't data, should have size (nfft).
+ * @param[out] timedata: iFft't data, should have size (nfft).
  */
-void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* result);
+void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* timedata);
 
 /** 
  * Perform inverse FFT

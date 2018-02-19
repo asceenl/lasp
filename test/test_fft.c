@@ -16,7 +16,7 @@ int main() {
 
     iVARTRACE(15,getTracerLevel());
 
-    Fft* fft = Fft_alloc(100000);
+    Fft* fft = Fft_create(100000);
 
     /* Fft_fft(fft,NULL,NULL); */
 

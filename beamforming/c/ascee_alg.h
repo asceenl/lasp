@@ -122,6 +122,7 @@ static inline void vc_hadamard(vc* result,const vc* a,const vc* b) {
     check_overflow_vx(*b);    
     feTRACE(15);
 }
+
 /** 
  * Compute the element-wise (Hadamard) product of a and b, and store
  * in result

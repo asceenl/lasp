@@ -5,7 +5,7 @@
 // Description:
 //
 //////////////////////////////////////////////////////////////////////
-
+#define TRACERPLUS (-5)
 #include "aps.h"
 #include "ps.h"
 #include "ascee_alg.h"
@@ -170,56 +170,27 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
     dbgassert(timedata->n_rows > 0,"Invalid time data. "
               "Should at least have one row");
 
-    const us nsamples = timedata->n_rows;
-
-    /* Split up timedata in blocks of size ~ (FIFO_SIZE_MULT-1)nfft */
-    const us max_blocksize = (FIFO_SIZE_MULT-1)*nfft;
-
-    us pos = 0; /* Current position in timedata buffer */
-
     /* dFifo handle */
     dFifo* fifo = aps->fifo;
+    dFifo_push(fifo,timedata);
 
-    do {
-        us nsamples_part = pos+max_blocksize <= nsamples ?
-            max_blocksize : nsamples-pos;
+    /* Temporary storage buffer */
+    dmat* buffer = &aps->buffer;
 
-        /* Obtain sub matrix */
-        dmat timedata_part = dmat_submat(timedata,
-                                         pos, /* Startrow */
-                                         0,   /* Startcol */
-                                         nsamples_part, /* n_rows */
-                                         nchannels);    /* n_cols */
-    
-        if(dFifo_push(fifo,&timedata_part)!=SUCCESS) {
-            WARN("Fifo push failed.");
-        }
+    /* Pop samples from the fifo while there are still at
+     * least nfft samples available */
+    while (dFifo_size(fifo) >= nfft) {
+        int popped = dFifo_pop(fifo,
+                               buffer,
+                               aps->overlap); /* Keep 'overlap'
+                                               * number of samples
+                                               * in the queue */
 
-        /* Temporary storage buffer */
-        dmat* buffer = &aps->buffer;
+        dbgassert((us) popped == nfft,"Bug in dFifo");
+        /* Process the block of time data */
+        AvPowerSpectra_addBlock(aps,buffer);
 
-        /* Pop samples from the fifo while there are still at
-         * least nfft samples available */
-        while (dFifo_size(fifo) >= nfft) {
-            int popped = dFifo_pop(fifo,
-                                   buffer,
-                                   aps->overlap); /* Keep 'overlap'
-                                                   * number of samples
-                                                   * in the queue */
-
-            dbgassert((us) popped == nfft,"Bug in dFifo");
-            /* Process the block of time data */
-            AvPowerSpectra_addBlock(aps,buffer);
-
-        }
-
-        dmat_free(&timedata_part);
-
-        /* Update position */
-        pos+=nsamples_part;
-        
-    } while (pos < nsamples);
-    dbgassert(pos == nsamples,"BUG");
+    }
     
     feTRACE(15);
     return &aps->ps_storage;

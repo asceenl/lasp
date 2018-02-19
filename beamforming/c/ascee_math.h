@@ -163,8 +163,10 @@ static inline void vc_set(vc* vec,const c value){
  */
 static inline void dmat_set(dmat* mat,const d value){
     dbgassert(mat,NULLPTRDEREF);
-    for(us col=0;col<mat->n_cols;col++) {
-        d_set(getdmatval(mat,0,col),value,mat->n_rows);
+    if(likely(mat->n_cols && mat->n_rows)) {
+        for(us col=0;col<mat->n_cols;col++) {
+            d_set(getdmatval(mat,0,col),value,mat->n_rows);
+        }
     }
 }
 
@@ -177,8 +179,10 @@ static inline void dmat_set(dmat* mat,const d value){
  */
 static inline void cmat_set(cmat* mat,const c value){
     dbgassert(mat,NULLPTRDEREF);
-    for(us col=0;col<mat->n_cols;col++) {
-        c_set(getcmatval(mat,0,col),value,mat->n_rows);
+    if(likely(mat->n_cols && mat->n_rows)) {
+        for(us col=0;col<mat->n_cols;col++) {
+            c_set(getcmatval(mat,0,col),value,mat->n_rows);
+        }
     }
 }
 
@@ -295,6 +299,24 @@ static inline dmat dmat_foreign(const us n_rows,
 
     dbgassert(data,NULLPTRDEREF);
     dmat result = {n_rows,n_cols,true,n_rows,data};
+    return result;
+}
+static inline dmat dmat_foreign_vd(vd* vector) {
+    dbgassert(vector,NULLPTRDEREF);
+    dmat result = {vector->size,1,true,vector->size,vector->_data};
+    return result;
+}
+/** 
+ * Create vd from foreign data
+ *
+ * @param size Size of the vector
+ * @param data Pointer to data
+ *
+ * @return 
+ */
+static inline vd vd_foreign(const us size,d* data) {
+    dbgassert(data,NULLPTRDEREF);
+    vd result = {size,true,data};
     return result;
 }
 /** 

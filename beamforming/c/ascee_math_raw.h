@@ -208,7 +208,7 @@ static inline void cd_copy(c to[],const d from[],const us size) {
  * @param to : Vector to write to
  * @param from : Vector to read from
  */
-static inline void c_copy(c to[],const c from[],us size){
+static inline void c_copy(c to[],const c from[],const us size){
     
     #if ASCEE_USE_BLAS == 1
     #if ASCEE_DOUBLE_PRECISION
@@ -225,12 +225,13 @@ static inline void c_copy(c to[],const c from[],us size){
 /** 
  * Multiply y with fac, and add result to x
  *
- * @param x Array to add to
- * @param y Array to add to x
- * @param fac Factor with which to multiply y
- * @param size Size of the arrays
+ * @param x[in,out] Array to add to
+ * @param y[in] Array to add to x
+ * @param[in] fac Factor with which to multiply y
+ * @param[in] size Size of the arrays
  */
-static inline void d_add_to(d x[],const d y[],d fac,us size){
+static inline void d_add_to(d x[],const d y[],
+                            const d fac,const us size){
     #if ASCEE_USE_BLAS == 1
     #if ASCEE_DOUBLE_PRECISION
     cblas_daxpy(size,fac,y,1,x,1);
@@ -246,12 +247,13 @@ static inline void d_add_to(d x[],const d y[],d fac,us size){
 /** 
  * x = x + fac*y
  *
- * @param x Array to add to
- * @param y Array to add to x
- * @param fac Factor with which to multiply y
- * @param size Size of the arrays
+ * @param[in,out] x Array to add to
+ * @param[in] y Array to add to x
+ * @param[in] fac Factor with which to multiply y
+ * @param[in] size Size of the arrays
  */
-static inline void c_add_to(c x[],const c y[],c fac,us size){
+static inline void c_add_to(c x[],const c y[],
+                            const c fac,const us size){
     fsTRACE(15);
     #if ASCEE_USE_BLAS == 1
     #if ASCEE_DOUBLE_PRECISION

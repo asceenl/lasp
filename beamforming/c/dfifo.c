@@ -5,9 +5,8 @@
 // Description:
 // Implementation of the dFifo queue
 //////////////////////////////////////////////////////////////////////
-
+#define TRACERPLUS (-5)
 #include "dfifo.h"
-#define DFIFO_QUEUE_MAX_BLOCKS (50)
 
 typedef struct dFifo_s {
     dmat queue;
@@ -19,15 +18,46 @@ us dFifo_size(dFifo* fifo) {
     dbgassert(fifo,NULLPTRDEREF);
     dbgassert(fifo->start_row <= fifo->end_row,"BUG");
     feTRACE(15);
-    
     return fifo->end_row-fifo->start_row;
 }
+
+/** 
+ * Change the max size of the dFifo to a new max size specified. Max size
+ * should be larger than fifo size. Resets start row to 0
+ *
+ * @param fifo 
+ * @param new_size 
+ */
+static void dFifo_change_maxsize(dFifo* fifo,const us new_max_size) {
+    fsTRACE(30);
+    dmat old_queue = fifo->queue;
+    
+    dbgassert(new_max_size >= dFifo_size(fifo),"BUG");
+    const us size = dFifo_size(fifo);
+
+    dmat new_queue = dmat_alloc(new_max_size,old_queue.n_cols);
+    if(size > 0) {
+        dmat_copy_rows(&new_queue,
+                       &old_queue,
+                       0,
+                       fifo->start_row,
+                       size);
+    }
+ 
+    dmat_free(&old_queue);
+    fifo->queue = new_queue;
+    fifo->end_row -= fifo->start_row;
+    fifo->start_row = 0;
+
+   feTRACE(30);                   
+}
+
 dFifo* dFifo_create(const us nchannels,
-                    const us max_size) {
+                    const us init_size) {
 
     fsTRACE(15);
     dFifo* fifo = a_malloc(sizeof(dFifo));
-    fifo->queue = dmat_alloc(max_size,nchannels);
+    fifo->queue = dmat_alloc(init_size,nchannels);
     fifo->start_row = 0;
     fifo->end_row = 0;
     feTRACE(15);
@@ -39,54 +69,37 @@ void dFifo_free(dFifo* fifo) {
     a_free(fifo);
     feTRACE(15);
 }
-int dFifo_push(dFifo* fifo,const dmat* data) {
+void dFifo_push(dFifo* fifo,const dmat* data) {
     fsTRACE(15);
     dbgassert(fifo && data, NULLPTRDEREF);
     dbgassert(data->n_cols == fifo->queue.n_cols,
               "Invalid number of columns in data");
 
 
+    const us added_size = data->n_rows;
+
     dmat queue = fifo->queue;
     const us max_size = queue.n_rows;
-    const us nchannels = queue.n_cols;
 
-    us* start_row = &fifo->start_row;
     us* end_row = &fifo->end_row;
-    const us added_size = data->n_rows;
-    const us size_before = dFifo_size(fifo);
 
     if(added_size + dFifo_size(fifo) > max_size) {
-        return FIFO_QUEUE_FULL;
+        dFifo_change_maxsize(fifo,2*(max_size+added_size));
+
+        /* Now the stack of this function is not valid anymore. Best
+         * thing to do is restart the function. */
+         dFifo_push(fifo,data);
+         feTRACE(15);
+         return;
     }
+    else if(*end_row + added_size > max_size) {
+        dFifo_change_maxsize(fifo,max_size);
+        /* Now the stack of this function is not valid anymore. Best
+         * thing to do is restart the function. */
+        dFifo_push(fifo,data);
+        feTRACE(15);
+        return;
 
-    if(*end_row + added_size > max_size) {
-        if(size_before != 0) {
-            /* Shift the samples to the front of the queue. TODO: this
-             * might not be the most optimal implementation (but it is the
-             * most simple). */
-            TRACE(15,"Shift samples back in buffer");
-            uVARTRACE(15,size_before);
-            dmat tmp = dmat_alloc(size_before,nchannels);
-            TRACE(15,"SFSG");
-            dmat_copy_rows(&tmp,
-                           &queue,
-                           0,
-                           *start_row,
-                           size_before);
-            TRACE(15,"SFSG");
-            dmat_copy_rows(&queue,
-                           &tmp,
-                           0,0,size_before);
-
-            *end_row -= *start_row;
-            *start_row = 0;
-
-            dmat_free(&tmp);
-        }
-        else {
-            *start_row = 0;
-            *end_row = 0;
-        }
     }
 
     /* Now, copy samples */
@@ -100,7 +113,6 @@ int dFifo_push(dFifo* fifo,const dmat* data) {
     *end_row += added_size;
 
     feTRACE(15);
-    return SUCCESS;
 }
 int dFifo_pop(dFifo* fifo,dmat* data,const us keep) {
     fsTRACE(15);
@@ -111,18 +123,13 @@ int dFifo_pop(dFifo* fifo,dmat* data,const us keep) {
               " be smaller than requested number of samples");
 
     us* start_row = &fifo->start_row;
-    us* end_row = &fifo->end_row;
-    us cur_contents = dFifo_size(fifo);
+    us cur_size = dFifo_size(fifo);
     us requested = data->n_rows;
     
-    us obtained = requested > cur_contents ? cur_contents : requested;
+    us obtained = requested > cur_size ? cur_size : requested;
     dbgassert(obtained > keep,"Number of samples to keep should be"
               " smaller than requested number of samples");
 
-    uVARTRACE(15,requested);
-    uVARTRACE(15,obtained);
-    uVARTRACE(15,*start_row);
-    uVARTRACE(15,*end_row);
     
     dmat_copy_rows(data,
                    &fifo->queue,

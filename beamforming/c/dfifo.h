@@ -21,10 +21,8 @@ typedef struct dFifo_s dFifo;
  * @return Pointer to fifo queue (no null ptr)
  */
 dFifo* dFifo_create(const us nchannels,
-                    const us max_size);
+                    const us init_size);
 
-
-#define FIFO_QUEUE_FULL (-1)
 
 /** 
  * Pushes samples into the fifo.
@@ -33,10 +31,8 @@ dFifo* dFifo_create(const us nchannels,
  *
  * @param data data to push. Number of columns should be equal to
  * nchannels.
- *
- * @return 0 on success, FIFO_QUEUE_FULL when samples do not fit.
  */
-int dFifo_push(dFifo* fifo,const dmat* data);
+void dFifo_push(dFifo* fifo,const dmat* data);
 
 /** 
  * Pop samples from the queue

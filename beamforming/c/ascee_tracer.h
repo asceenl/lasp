@@ -52,29 +52,29 @@ void indent_trace();
  * Produce a debug warning
  */
 #define DBGWARN(a) \
-	fprintf(stderr,RED);\
-	fprintf(stderr,"%s(%d): ",                \
-                __FILE__,                         \
-                __LINE__                                  \
-                );                                        \
-	fprintf(stderr,a);                                \
-	fprintf(stderr,RESET "\n");
+    printf(RED);                                          \
+    printf("%s(%d): ",                                    \
+           __FILE__,                                      \
+           __LINE__                                       \
+           );                                             \
+    printf(a);                                            \
+    printf(RESET "\n");
 
 /**
  * Produce a runtime warning
  */
-#define WARN(a) \
-	fprintf(stderr,RED);\
-	fprintf(stderr,"WARNING: "); \
-	fprintf(stderr,a);           \
-	fprintf(stderr,RESET "\n");
+#define WARN(a)              \
+    printf(RED);             \
+    printf("WARNING: ");     \
+    printf(a);               \
+    printf(RESET "\n");
 
 /**
  * Fatal error, abort execution
  */
-#define FATAL(a) \
-	WARN(a);	 \
-	abort(); 
+#define FATAL(a)         \
+    WARN(a);             \
+    abort(); 
 
 
 

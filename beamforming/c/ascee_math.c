@@ -16,7 +16,7 @@
 
 #ifdef ASCEE_DEBUG
 void print_dmat(const dmat* m) {
-    feTRACE(50);
+    fsTRACE(50);
     size_t row,col;
     for(row=0;row<m->n_rows;row++){
         indent_trace();
@@ -28,10 +28,10 @@ void print_dmat(const dmat* m) {
         printf("\n");
 
     }
-    fsTRACE(50);
+    feTRACE(50);
 }
 void print_cmat(const cmat* m) {
-    feTRACE(50);
+    fsTRACE(50);
     size_t row,col;
     for(row=0;row<m->n_rows;row++){
         indent_trace();
