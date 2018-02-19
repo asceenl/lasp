@@ -259,3 +259,37 @@ cdef class AvPowerSpectra:
         dmat_free(&td)
 
         return result
+
+cdef extern from "filterbank.h":
+    ctypedef struct c_FilterBank "FilterBank":
+        pass
+    c_FilterBank* FilterBank_create(const dmat* h,const us nfft) nogil
+    dmat FilterBank_filter(c_FilterBank* fb,const vd* x) nogil
+    void FilterBank_free(c_FilterBank* fb) nogil
+
+
+cdef class FilterBank:
+    cdef:
+        c_FilterBank* fb
+    def __cinit__(self,d[::1,:] h, us nfft):
+        cdef dmat hmat = dmat_foreign(h.shape[0],h.shape[1],&h[0,0])
+        self.fb = FilterBank_create(&hmat,nfft)
+        dmat_free(&hmat)
+        if not self.fb:
+            raise RuntimeError('Error creating FilberBank')
+
+    def __dealloc__(self):
+        if self.fb:
+            FilterBank_free(self.fb)
+
+    def filter_(self,d[:] input_):
+        cdef vd input_vd = vd_foreign(input_.size,&input_[0])
+        cdef dmat output = FilterBank_filter(self.fb,&input_vd)
+
+        # Steal the pointer from output
+        result = dmat_to_ndarray(&output,True)
+
+        dmat_free(&output)
+        vd_free(&input_vd)
+
+        return result

@@ -16,7 +16,7 @@ add_library(beamforming_lib
   mq.c
   worker.c
   dfifo.c
-  filter.c
+  filterbank.c
   )
 
 
