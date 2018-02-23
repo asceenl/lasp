@@ -15,7 +15,7 @@ def cls():
     clearScreen()
 # cls()
 
-cdef extern from "fft.h":
+cdef extern from "lasp_fft.h":
     ctypedef struct c_Fft "Fft"
     c_Fft* Fft_create(us nfft)
     void Fft_free(c_Fft*)
@@ -96,7 +96,7 @@ cdef class Fft:
 
 
 
-cdef extern from "window.h":
+cdef extern from "lasp_window.h":
     ctypedef enum WindowType:
         Hann
         Hamming
@@ -111,7 +111,7 @@ rectangular = Rectangular
 bartlett = Bartlett
 blackman = Blackman
 
-cdef extern from "ps.h":
+cdef extern from "lasp_ps.h":
     ctypedef struct c_PowerSpectra "PowerSpectra"
     c_PowerSpectra* PowerSpectra_alloc(const us nfft,
                                        const WindowType wt)
@@ -177,7 +177,7 @@ cdef class PowerSpectra:
             PowerSpectra_free(self._ps)
 
 
-cdef extern from "aps.h":
+cdef extern from "lasp_aps.h":
     ctypedef struct c_AvPowerSpectra "AvPowerSpectra"
     c_AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                            const us nchannels,
@@ -260,7 +260,7 @@ cdef class AvPowerSpectra:
 
         return result
 
-cdef extern from "filterbank.h":
+cdef extern from "lasp_filterbank.h":
     ctypedef struct c_FilterBank "FilterBank":
         pass
     c_FilterBank* FilterBank_create(const dmat* h,const us nfft) nogil

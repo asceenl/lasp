@@ -1,4 +1,4 @@
-// aps.c
+// lasp_aps.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -6,10 +6,10 @@
 //
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "aps.h"
-#include "ps.h"
-#include "ascee_alg.h"
-#include "dfifo.h"
+#include "lasp_aps.h"
+#include "lasp_ps.h"
+#include "lasp_alg.h"
+#include "lasp_dfifo.h"
 
 /* Multiplication factor for the maximum size of the fifo queue. This
  * factor is multiplied by nfft to obtain the maximum size of the
@@ -65,7 +65,7 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     fsTRACE(15);
     
     /* Check nfft */
-    if(nfft==0 || nfft % 2 != 0 || nfft > ASCEE_MAX_NFFT) {
+    if(nfft==0 || nfft % 2 != 0 || nfft > LASP_MAX_NFFT) {
         WARN("Invalid nfft");
         feTRACE(15);
         return NULL;

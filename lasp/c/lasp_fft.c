@@ -1,14 +1,14 @@
-// fft.cpp
+// lasp_fft.c
 //
-// Author: J.A. de Jong -ASCEE
+// Author: J.A. de Jong - ASCEE
 // 
 // Description:
 // 
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "ascee_tracer.h"
-#include "fft.h"
-#include "types.h"
+#include "lasp_tracer.h"
+#include "lasp_fft.h"
+#include "lasp_types.h"
 #include "fftpack.h"
 
 typedef struct Fft_s {

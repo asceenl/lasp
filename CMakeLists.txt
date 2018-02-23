@@ -2,47 +2,47 @@ cmake_minimum_required (VERSION 3.0)
 project(beamforming)
 
 # Whether we want to use blas yes or no
-set(ASCEE_USE_BLAS TRUE)
-# set(ASCEE_USE_BLAS FALSE)
+set(LASP_USE_BLAS TRUE)
+# set(LASP_USE_BLAS FALSE)
 
-set(ASCEE_FLOAT double)
-# set(ASCEE_FLOAT float)
+set(LASP_FLOAT double)
+# set(LASP_FLOAT float)
 
-add_definitions(-DASCEE_PARALLEL)
-add_definitions(-DASCEE_MAX_NUM_THREADS=8)
+add_definitions(-DLASP_PARALLEL)
+add_definitions(-DLASP_MAX_NUM_THREADS=8)
 
-add_definitions(-DASCEE_MAX_NUM_CHANNELS=80)
+add_definitions(-DLASP_MAX_NUM_CHANNELS=80)
 
 # Reasonable maximum to the nfft size, at 48kHz this is 700s of data..
-add_definitions(-DASCEE_MAX_NFFT=33554432) # 2**25
+add_definitions(-DLASP_MAX_NFFT=33554432) # 2**25
 
 # ####################################### End of user-adjustable variables section
 
 add_definitions(-D_REENTRANT)
 
 
-if(ASCEE_FLOAT STREQUAL "double")
-  add_definitions(-DASCEE_FLOAT=64)
-  add_definitions(-DASCEE_DOUBLE_PRECISION)
+if(LASP_FLOAT STREQUAL "double")
+  add_definitions(-DLASP_FLOAT=64)
+  add_definitions(-DLASP_DOUBLE_PRECISION)
 else()
-  add_definitions(-DASCEE_FLOAT=32)
-endif(ASCEE_FLOAT STREQUAL "double")
+  add_definitions(-DLASP_FLOAT=32)
+endif(LASP_FLOAT STREQUAL "double")
 
 
-if(NOT DEFINED ASCEE_DEBUG)
-  message(SEND_ERROR "ASCEE_DEBUG flag not defined. Please set -DASCEE_DEBUG=TRUE or -DASCEE_DEBUG=FALSE")
-endif(NOT DEFINED ASCEE_DEBUG)
+if(NOT DEFINED LASP_DEBUG)
+  message(SEND_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE or -DLASP_DEBUG=FALSE")
+endif(NOT DEFINED LASP_DEBUG)
 
 # ##################### END Cmake variables converted to a macro
 set(Python_ADDITIONAL_VERSIONS "3")
 # #################### Setting definitions and debug-specific compilation flags
 
-if(ASCEE_DEBUG)
-  set(TRACERNAME ASCEETracer)
+if(LASP_DEBUG)
+  set(TRACERNAME LASPTracer)
   set(CMAKE_BUILD_TYPE Debug)
   message("Building debug code")
   set(CMAKE_BUILD_TYPE Debug)
-  add_definitions(-DASCEE_DEBUG=1)
+  add_definitions(-DLASP_DEBUG=1)
   add_definitions(-DTRACERNAME=${TRACERNAME})
   add_definitions(-DDEBUG)
   add_definitions(-DTRACER=1)
@@ -63,7 +63,7 @@ else()
   # set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--gc-sections")
   
   add_definitions(-DTRACER=0 -DNDEBUG)
-endif(ASCEE_DEBUG)
+endif(LASP_DEBUG)
 
 # The last argument here takes care of calling SIGABRT when an integer overflow
 # occures.
@@ -84,11 +84,11 @@ set(CMAKE_C_FLAGS_RELEASE  "-O2 -mfpmath=sse -march=x86-64 -mtune=native \
 # set(CMAKE_C_FLAGS_RELEASE  "-O2 -march=native -mtune=native -fomit-frame-pointer")
 
 
-if(ASCEE_USE_BLAS)
-  add_definitions(-DASCEE_USE_BLAS=1)  
+if(LASP_USE_BLAS)
+  add_definitions(-DLASP_USE_BLAS=1)  
 else()
-  add_definitions(-DASCEE_USE_BLAS=0)  
-endif(ASCEE_USE_BLAS)
+  add_definitions(-DLASP_USE_BLAS=0)  
+endif(LASP_USE_BLAS)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(win32 true)
@@ -109,9 +109,9 @@ endif(DEFINED NUMPY_INCLUDE)
 add_subdirectory(fftpack)
 include_directories(
   fftpack
-  beamforming/c
+  lasp/c
   )
-add_subdirectory(beamforming)
+add_subdirectory(lasp)
 add_subdirectory(test)
 
 find_program(PYTHON "python")
@@ -119,7 +119,7 @@ find_program(PYTHON "python")
 if (PYTHON)
     # set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
     set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-    set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/beamforming/*.py")
+    set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py")
     set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
     # configure_file(${SETUP_PY_IN} ${SETUP_PY})

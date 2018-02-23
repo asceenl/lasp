@@ -1,11 +1,11 @@
-// ascee_alg.c
+// lasp_alg.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
 // Description:
 // (Linear) algebra routine implementations
 //////////////////////////////////////////////////////////////////////
-#include "ascee_alg.h"
+#include "lasp_alg.h"
 
 
 
@@ -15,7 +15,7 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
     dbgassert(A->n_rows == b->size,SIZEINEQUAL);
     dbgassert(A->n_cols == x->size,SIZEINEQUAL);
 	
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     dbgassert(false,"Untested function");
     /* typedef enum CBLAS_ORDER     {CblasRowMajor=101, CblasColMajor=102} CBLAS_ORDER; */
     /* typedef enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113, CblasConjNoTrans=114} CBLAS_TRANSPOSE; */
@@ -108,7 +108,7 @@ lapack_int LAPACKE_zgels( int matrix_layout, char trans, lapack_int m,
 
 
 
-#if ASCEE_FLOAT == 64
+#if LASP_FLOAT == 64
 
 #define lapack_gelss LAPACKE_zgelss
 #define lapack_gels LAPACKE_zgels

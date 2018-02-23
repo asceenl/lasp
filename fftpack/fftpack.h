@@ -8,7 +8,7 @@ extern "C" {
 #endif
 #define NPY_VISIBILITY_HIDDEN
 
-#ifdef ASCEE_DOUBLE_PRECISION
+#ifdef LASP_DOUBLE_PRECISION
 #define Treal double
 #else
 #define Treal float

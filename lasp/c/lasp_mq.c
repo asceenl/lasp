@@ -1,4 +1,4 @@
-// mq.c
+// lasp_mq.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -7,11 +7,11 @@
 // different threads.
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-6)
-#include "types.h"
-#include "ascee_tracer.h"
-#include "ascee_assert.h"
-#include "ascee_alloc.h"
-#include "mq.h"
+#include "lasp_types.h"
+#include "lasp_tracer.h"
+#include "lasp_assert.h"
+#include "lasp_alloc.h"
+#include "lasp_mq.h"
 #include <pthread.h>
 
 /* #ifdef linux */
@@ -89,8 +89,8 @@ void print_job_queue(JobQueue* jq) {
 
 JobQueue* JobQueue_alloc(const us max_jobs) {
     TRACE(15,"JobQueue_alloc");
-    if(max_jobs > ASCEE_MAX_NUM_CHANNELS) {
-        WARN("Max jobs restricted to ASCEE_MAX_NUM_CHANNELS");
+    if(max_jobs > LASP_MAX_NUM_CHANNELS) {
+        WARN("Max jobs restricted to LASP_MAX_NUM_CHANNELS");
         return NULL;
     }
     JobQueue* jq = a_malloc(sizeof(JobQueue));
@@ -252,7 +252,7 @@ void* JobQueue_assign(JobQueue* jq) {
     }
 
     TRACE(16,"JobQueue_assign: found ready job. Assigned to:");
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     pthread_t thisthread = pthread_self();
     iVARTRACE(16,thisthread);    
     #endif

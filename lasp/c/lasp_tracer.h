@@ -129,7 +129,7 @@ extern int TRACERNAME;
 static inline int getTracerLevel() { return TRACERNAME;}
 #endif
 
-#include "types.h"
+#include "lasp_types.h"
 
 // Use this preprocessor command to introduce one TRACERNAME integer per unit
 /* Introduce one static logger */

@@ -3,9 +3,9 @@ import numpy as np
 cimport numpy as np
 from libcpp cimport bool
 
-DEF ASCEE_FLOAT = "@ASCEE_FLOAT@"
+DEF LASP_FLOAT = "@LASP_FLOAT@"
 
-IF ASCEE_FLOAT == "double":
+IF LASP_FLOAT == "double":
     ctypedef  double d
     ctypedef double complex c
     NUMPY_FLOAT_TYPE = np.float64
@@ -23,13 +23,13 @@ ELSE:
 
 ctypedef size_t us
 
-cdef extern from "ascee_tracer.h":
+cdef extern from "lasp_tracer.h":
     void setTracerLevel(int)
     void TRACE(int,const char*)
     void fsTRACE(int)
     void feTRACE(int)
     void clearScreen()
-cdef extern from "ascee_math.h":
+cdef extern from "lasp_math.h":
     ctypedef struct dmat:
         us n_cols
         us n_rows
@@ -60,6 +60,6 @@ cdef extern from "ascee_math.h":
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
-cdef extern from "ascee_python.h":
+cdef extern from "lasp_python.h":
     object dmat_to_ndarray(dmat*,bint transfer_ownership)
 

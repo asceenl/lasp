@@ -1,4 +1,4 @@
-// ascee_alg.h
+// lasp_alg.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,9 +6,9 @@
 // (Linear) algebra routines on matrices and vectors
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_ALG_H
-#define ASCEE_ALG_H
-#include "ascee_math.h"
+#ifndef LASP_ALG_H
+#define LASP_ALG_H
+#include "lasp_math.h"
 
 /** 
  * Compute the dot product of two vectors of floats
@@ -185,5 +185,5 @@ d cmat_normdiff(const cmat* A,const cmat* B);
  */
 void kronecker_product(const cmat* a,const cmat* b,cmat* result);
 
-#endif // ASCEE_ALG_H
+#endif // LASP_ALG_H
 //////////////////////////////////////////////////////////////////////

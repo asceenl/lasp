@@ -1,4 +1,4 @@
-// dfifo.h
+// lasp_dfifo.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,10 +6,11 @@
 // API of a contiguous fifo buffer of samples.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef DFIFO_H
-#define DFIFO_H
-#include "types.h"
-#include "ascee_math.h"
+#ifndef LASP_DFIFO_H
+#define LASPDFIFO_H
+#include "lasp_types.h"
+#include "lasp_math.h"
+
 typedef struct dFifo_s dFifo;
 
 /** 
@@ -67,6 +68,6 @@ us dFifo_size(dFifo* fifo);
  */
 void dFifo_free(dFifo* fifo);
 
-#endif // DFIFO_H
+#endif // LASP_DFIFO_H
 //////////////////////////////////////////////////////////////////////
 

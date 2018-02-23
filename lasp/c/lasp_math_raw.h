@@ -1,4 +1,4 @@
-// ascee_math_raw.h
+// lasp_math_raw.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,21 +6,21 @@
 // complex numbers.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_MATH_RAW_H
-#define ASCEE_MATH_RAW_H
-#include "ascee_assert.h"
-#include "ascee_tracer.h"
-#include "types.h"
+#ifndef LASP_MATH_RAW_H
+#define LASP_MATH_RAW_H
+#include "lasp_assert.h"
+#include "lasp_tracer.h"
+#include "lasp_types.h"
 #include <math.h>
 
-#if ASCEE_USE_BLAS == 1
+#if LASP_USE_BLAS == 1
 #include <cblas.h>
-#elif ASCEE_USE_BLAS == 0
+#elif LASP_USE_BLAS == 0
 #else
-#error "ASCEE_USE_BLAS should be set to either 0 or 1"
+#error "LASP_USE_BLAS should be set to either 0 or 1"
 #endif
 
-#ifdef ASCEE_DOUBLE_PRECISION
+#ifdef LASP_DOUBLE_PRECISION
 #define c_real creal
 #define c_imag cimag
 #define d_abs fabs
@@ -34,7 +34,7 @@
 #define d_cos cos
 #define d_pow pow
 
-#else  // ASCEE_DOUBLE_PRECISION not defined
+#else  // LASP_DOUBLE_PRECISION not defined
 #define c_conj conjf
 #define c_real crealf
 #define c_imag cimagf
@@ -48,7 +48,7 @@
 #define d_cos cosf
 #define d_pow powf
 
-#endif // ASCEE_DOUBLE_PRECISION
+#endif // LASP_DOUBLE_PRECISION
 
 #ifdef M_PI
 static const d number_pi = M_PI;
@@ -114,7 +114,7 @@ static inline c cd_dot(const c a[],const d b[],us size){
 }
 /** 
  * Return the dot product of two complex-valued arrays. Wraps BLAS
- * when ASCEE_USE_BLAS == 1.
+ * when LASP_USE_BLAS == 1.
  *
  * @param a complex-valued array
  * @param b complex-valued array
@@ -123,9 +123,9 @@ static inline c cd_dot(const c a[],const d b[],us size){
  * @return the dot product
  */
 static inline c cc_dot(const c a[],const c b[],us size){
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     WARN("CBlas zdotu not yet tested");
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_DOUBLE_PRECISION
     // assert(0);
     return cblas_zdotu(size,(d*) a,1,(d*) b,1);
     #else
@@ -150,8 +150,8 @@ static inline c cc_dot(const c a[],const c b[],us size){
  * @return The result.
  */
 static inline d d_dot(const d a[],const d b[],const us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION
     return cblas_ddot(size,a,1,b,1);
     #else  // Single precision function
     return cblas_sdot(size,a,1,b,1);
@@ -175,7 +175,7 @@ static inline d d_dot(const d a[],const d b[],const us size){
  * @param size : Size of arrays
  */
 static inline void d_copy(d to[],const d from[],const us size){
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     cblas_dcopy(size,from,1,to,1);
     #else
     us i;
@@ -210,8 +210,8 @@ static inline void cd_copy(c to[],const d from[],const us size) {
  */
 static inline void c_copy(c to[],const c from[],const us size){
     
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION
     cblas_zcopy(size,(d*) from,1,(d*) to,1);
     #else
     cblas_ccopy(size,(d*) from,1,(d*) to,1);
@@ -232,8 +232,8 @@ static inline void c_copy(c to[],const c from[],const us size){
  */
 static inline void d_add_to(d x[],const d y[],
                             const d fac,const us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION
     cblas_daxpy(size,fac,y,1,x,1);
     #else
     cblas_saxpy(size,fac,y,1,x,1);
@@ -255,8 +255,8 @@ static inline void d_add_to(d x[],const d y[],
 static inline void c_add_to(c x[],const c y[],
                             const c fac,const us size){
     fsTRACE(15);
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION
     cblas_zaxpy(size,(d*) &fac,(d*) y,1,(d*) x,1);
     #else
     cblas_caxpy(size,(d*) &fac,(d*) y,1,(d*) x,1);
@@ -277,8 +277,8 @@ static inline void c_add_to(c x[],const c y[],
  * @param size size of the array
  */
 static inline void d_scale(d a[],const d scale_fac,us size){
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION    
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION    
     cblas_dscal(size,scale_fac,a,1);
     #else
     cblas_sscal(size,scale_fac,a,1);
@@ -299,14 +299,14 @@ static inline void d_scale(d a[],const d scale_fac,us size){
  * @param size size of the array
  */
 static inline void c_scale(c a[],const c scale_fac,us size){
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     // Complex argument should be given in as array of two double
     // values. The first the real part, the second the imaginary
     // part. Fortunately the (c) type stores the two values in this
     // order. To be portable and absolutely sure anything goes well,
     // we convert it explicitly here.
 
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_DOUBLE_PRECISION
     cblas_zscal(size,(d*) &scale_fac,(d*) a,1);
     #else
     cblas_cscal(size,(d*) &scale_fac,(d*) a,1);
@@ -357,7 +357,7 @@ static inline d d_min(const d a[],us size){
  * @param size Size of array
  */
 static inline d d_norm(const d a[],us size){
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     return cblas_dnrm2(size,a,1);
     #else	
     d norm = 0;
@@ -378,7 +378,7 @@ static inline d d_norm(const d a[],us size){
  * @param size Size of array
  */
 static inline d c_norm(const c a[],us size){
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
     return cblas_dznrm2(size,(d*) a,1);
     #else	
     d norm = 0;
@@ -434,8 +434,8 @@ static inline void carray_conj(c res[],const c in[],const us size) {
     // First set the result vector to zero
     fsTRACE(15);
     c_set(res,0,size);
-    #if ASCEE_USE_BLAS == 1
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS == 1
+    #if LASP_DOUBLE_PRECISION
     // Cast as a float, scale all odd elements with minus one to find
     // the complex conjugate.
     cblas_daxpy(size ,1.0,(d*) in,2,(d*) res,2);
@@ -443,12 +443,12 @@ static inline void carray_conj(c res[],const c in[],const us size) {
     #else
     cblas_faxpy(size ,1,(d*) in,2,(d*) res,2);
     cblas_faxpy(size,-1,&((d*) in)[1],2,&((d*) res)[1],2);
-    #endif  // ASCEE_DOUBLE_PRECISION
+    #endif  // LASP_DOUBLE_PRECISION
     #else
     for(us i=0;i<size;i++) {
         res[i] = c_conj(in[i]);
     }
-    #endif  // ASCEE_USE_BLAS
+    #endif  // LASP_USE_BLAS
     feTRACE(15);
 }
 /** 
@@ -458,20 +458,20 @@ static inline void carray_conj(c res[],const c in[],const us size) {
  * @param size Size of the vector
  */
 static inline void c_conj_inplace(c res[],us size) {
-    #if ASCEE_USE_BLAS
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_USE_BLAS
+    #if LASP_DOUBLE_PRECISION
     // Cast as a float, scale all odd elements with minus one to find
     // the complex conjugate.
     cblas_dscal(size,-1,&((d*) res)[1],2);
     #else
     cblas_sscal(size,-1,&((d*) res)[1],2);
-    #endif  // ASCEE_DOUBLE_PRECISION
+    #endif  // LASP_DOUBLE_PRECISION
     #else
     for(us i=0;i<size;i++) {
         res[i] = c_conj(res[i]);
     }
-    #endif  // ASCEE_USE_BLAS
+    #endif  // LASP_USE_BLAS
 }
 
-#endif // ASCEE_MATH_RAW_H
+#endif // LASP_MATH_RAW_H
 //////////////////////////////////////////////////////////////////////

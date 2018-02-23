@@ -1,4 +1,4 @@
-// signals.h
+// lasp_signals.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,9 +6,9 @@
 // Several signal functions
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef SIGNALS_H
-#define SIGNALS_H
-#include "ascee_math.h"
+#ifndef LASP_SIGNALS_H
+#define LASP_SIGNALS_H
+#include "lasp_math.h"
 
 /** 
  * Compute the signal power, that is \f$ \frac{1}{N} \sum_{i=0}^{N-1}
@@ -28,5 +28,5 @@ static inline d signal_power(vd* signal) {
 
 
 
-#endif // SIGNALS_H
+#endif // LASP_SIGNALS_H
 //////////////////////////////////////////////////////////////////////

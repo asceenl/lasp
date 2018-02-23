@@ -1,23 +1,23 @@
-if(!ASCEE_DEBUG)
-# SET_SOURCE_FILES_PROPERTIES(si_lpn.c PROPERTIES COMPILE_FLAGS -O3)
-# SET_SOURCE_FILES_PROPERTIES(si_math.c PROPERTIES COMPILE_FLAGS -O3)
-endif(!ASCEE_DEBUG)
+if(!LASP_DEBUG)
+# SET_SOURCE_FILES_PROPERTIES(y.c PROPERTIES COMPILE_FLAGS -O3)
+# SET_SOURCE_FILES_PROPERTIES(x.c PROPERTIES COMPILE_FLAGS -O3)
+endif(!LASP_DEBUG)
 
-add_library(beamforming_lib
-  fft.c
-  ascee_math.c
-  ascee_math_raw.c
-  ascee_alg.c
-  ascee_assert.c
-  ascee_tracer.c
-  window.c
-  aps.c
-  ps.c
-  mq.c
-  worker.c
-  dfifo.c
-  filterbank.c
+add_library(lasp_lib
+  lasp_fft.c
+  lasp_math.c
+  lasp_math_raw.c
+  lasp_alg.c
+  lasp_assert.c
+  lasp_tracer.c
+  lasp_window.c
+  lasp_aps.c
+  lasp_ps.c
+  lasp_mq.c
+  lasp_worker.c
+  lasp_dfifo.c
+  lasp_filterbank.c
   )
 
 
-target_link_libraries(beamforming_lib fftpack openblas)
+target_link_libraries(lasp_lib fftpack openblas)

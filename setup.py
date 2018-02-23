@@ -9,9 +9,9 @@ descr = "Python wrappers around several C++ optimized beamforming codes"
 
 
 setup(
-      name="Beamforming",
+      name="LASP",
       version="1.0",
-      packages=['beamforming'],
+      packages=['lasp'],
       author='J.A. de Jong - ASCEE',
       author_email="j.a.dejong@ascee.nl",
       # Project uses reStructuredText, so ensure that the docutils get
@@ -20,7 +20,7 @@ setup(
       license='MIT',
 
       description=descr,
-      keywords="Beamforming",
-      url="http://www.ascee.nl/beamforming/",   # project home page, if any
+      keywords="",
+      url="http://www.ascee.nl/lasp/",   # project home page, if any
 
 )

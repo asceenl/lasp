@@ -1,4 +1,4 @@
-// ascee_math.c
+// lasp_math.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -6,15 +6,15 @@
 // 
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-10)
-#include "ascee_math.h"
+#include "lasp_math.h"
 
-#include "ascee_assert.h"
-#include "ascee_math.h"
-#include "ascee_tracer.h"
+#include "lasp_assert.h"
+#include "lasp_math.h"
+#include "lasp_tracer.h"
 
 #include <math.h>
 
-#ifdef ASCEE_DEBUG
+#ifdef LASP_DEBUG
 void print_dmat(const dmat* m) {
     fsTRACE(50);
     size_t row,col;

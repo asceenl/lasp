@@ -6,8 +6,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "fft.h"
-#include "ascee_tracer.h"
+#include "lasp_fft.h"
+#include "lasp_tracer.h"
 
 
 int main() {

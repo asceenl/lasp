@@ -6,11 +6,11 @@
 //
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef APS_H
-#define APS_H
-#include "types.h"
-#include "ascee_math.h"
-#include "window.h"
+#ifndef LASP_APS_H
+#define LASP_APS_H
+#include "lasp_types.h"
+#include "lasp_math.h"
+#include "lasp_window.h"
 
 typedef struct AvPowerSpectra_s AvPowerSpectra;
 
@@ -74,5 +74,5 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
 void AvPowerSpectra_free(AvPowerSpectra*);
 
 
-#endif // APS_H
+#endif // LASP_APS_H
 //////////////////////////////////////////////////////////////////////

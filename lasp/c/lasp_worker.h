@@ -8,9 +8,9 @@
 // on the push of a new job.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef WORKER_H
-#define WORKER_H
-#include "types.h"
+#ifndef LASP_WORKER_H
+#define LASP_WORKER_H
+#include "lasp_types.h"
 
 typedef struct Workers_s Workers;
 typedef struct JobQueue_s JobQueue;
@@ -57,5 +57,5 @@ Workers* Workers_create(const us num_workers,
  */
 void Workers_free(Workers* w);
 
-#endif // WORKER_H
+#endif // LASP_WORKER_H
 //////////////////////////////////////////////////////////////////////

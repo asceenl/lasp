@@ -6,9 +6,9 @@
 //
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef WINDOW_H
-#define WINDOW_H
-#include "ascee_math.h"
+#ifndef LASP_WINDOW_H
+#define LASP_WINDOW_H
+#include "lasp_math.h"
 
 typedef enum {
     Hann = 0,
@@ -33,5 +33,5 @@ typedef enum {
 int window_create(const WindowType wintype,vd* result,d* win_power);
 
 
-#endif // WINDOW_H
+#endif // LASP_WINDOW_H
 //////////////////////////////////////////////////////////////////////

@@ -1,4 +1,4 @@
-// si_math.c
+// lasp_math_raw.c
 //
 // last-edit-by: J.A. de Jong 
 // 
@@ -6,7 +6,7 @@
 // Operations working on raw arrays of floating point numbers
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "ascee_math_raw.h"
+#include "lasp_math_raw.h"
 #if ASCEE_USE_BLAS
 #include <cblas.h>
 #endif

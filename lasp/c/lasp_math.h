@@ -1,4 +1,4 @@
-// ascee_math.h
+// lasp_math.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,12 +6,12 @@
 // copying of matrices and vectors.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_MATH_H
-#define ASCEE_MATH_H
-#include "ascee_math_raw.h"
-#include "ascee_alloc.h"
-#include "ascee_tracer.h"
-#include "ascee_assert.h"
+#ifndef LASP_MATH_H
+#define LASP_MATH_H
+#include "lasp_math_raw.h"
+#include "lasp_alloc.h"
+#include "lasp_tracer.h"
+#include "lasp_assert.h"
 
 /// Vector of floating point numbers
 typedef struct {
@@ -106,7 +106,7 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
     return &mat->_data[col*mat->stride+row];
 }
 
-#ifdef ASCEE_DEBUG
+#ifdef LASP_DEBUG
 #define OVERFLOW_MAGIC_NUMBER (-10e-45)
 
 #define check_overflow_vx(vx)                   \
@@ -195,16 +195,16 @@ static inline void cmat_set(cmat* mat,const c value){
  */
 static inline vd vd_alloc(us size) {
     vd result = { size, NULL,NULL};
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     result._data = (d*) a_malloc((size+1)*sizeof(d));
     result._data[size] = OVERFLOW_MAGIC_NUMBER;
     #else
     result._data = (d*) a_malloc(size*sizeof(d));    
-    #endif //  ASCEE_DEBUG
+    #endif //  LASP_DEBUG
     result._foreign_data = false;
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     vd_set(&result,NAN);
-    #endif // ASCEE_DEBUG    
+    #endif // LASP_DEBUG    
     return result;
 }
 /** 
@@ -216,16 +216,16 @@ static inline vd vd_alloc(us size) {
  */
 static inline vc vc_alloc(us size) {
     vc result = { size, NULL, NULL};
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     result._data = (c*) a_malloc((size+1)*sizeof(c));    
     result._data[size] = OVERFLOW_MAGIC_NUMBER;
     #else
     result._data = (c*) a_malloc(size*sizeof(c));    
-    #endif //  ASCEE_DEBUG
+    #endif //  LASP_DEBUG
     result._foreign_data = false;
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     vc_set(&result,NAN+I*NAN);
-    #endif // ASCEE_DEBUG    
+    #endif // LASP_DEBUG    
     return result;
 }
 /** 
@@ -241,16 +241,16 @@ static inline dmat dmat_alloc(us n_rows,
                               us n_cols) {
     dmat result = { n_rows, n_cols, false, n_rows, NULL};
     
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     result._data = (d*) a_malloc((n_rows*n_cols+1)*sizeof(d));
     result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
     result._data = (d*) a_malloc((n_rows*n_cols)*sizeof(d));    
-    #endif //  ASCEE_DEBUG
+    #endif //  LASP_DEBUG
 
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     dmat_set(&result,NAN);
-    #endif // ASCEE_DEBUG
+    #endif // LASP_DEBUG
 
     return result;
 }
@@ -269,16 +269,16 @@ static inline cmat cmat_alloc(const us n_rows,
                               const us n_cols) {
     cmat result = { n_rows, n_cols, false, n_rows, NULL};
 
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     result._data = (c*) a_malloc((n_rows*n_cols+1)*sizeof(c));
     result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
     result._data = (c*) a_malloc((n_rows*n_cols)*sizeof(c));    
-    #endif //  ASCEE_DEBUG
+    #endif //  LASP_DEBUG
 
-    #ifdef ASCEE_DEBUG
+    #ifdef LASP_DEBUG
     cmat_set(&result,NAN+I*NAN);
-    #endif // ASCEE_DEBUG
+    #endif // LASP_DEBUG
     return result;
 }
 /** 
@@ -583,7 +583,7 @@ static inline void cmat_conj(cmat* x) {
 }
 
 
-#ifdef ASCEE_DEBUG
+#ifdef LASP_DEBUG
 void print_cmat(const cmat* m);
 void print_vc(const vc* m);
 void print_vd(const vd* m);
@@ -594,5 +594,5 @@ void print_dmat(const dmat* m);
 #define print_dmat(m)
 #endif
 
-#endif // ASCEE_MATH_H
+#endif // LASP_MATH_H
 //////////////////////////////////////////////////////////////////////

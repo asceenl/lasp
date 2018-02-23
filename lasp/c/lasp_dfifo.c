@@ -1,4 +1,4 @@
-// dfifo.c
+// lasp_dfifo.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -6,7 +6,7 @@
 // Implementation of the dFifo queue
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "dfifo.h"
+#include "lasp_dfifo.h"
 
 typedef struct dFifo_s {
     dmat queue;

@@ -1,4 +1,4 @@
-// si_tracer.c
+// lasp_tracer.c
 //
 // last-edit-by: J.A. de Jong 
 // 
@@ -7,8 +7,8 @@
 //////////////////////////////////////////////////////////////////////
 #if TRACER == 1
 #include <stdio.h>
-#include "ascee_tracer.h"
-#include "types.h"
+#include "lasp_tracer.h"
+#include "lasp_types.h"
 
 #ifdef _REENTRANT
 #include <stdatomic.h>

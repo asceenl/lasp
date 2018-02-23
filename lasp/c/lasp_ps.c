@@ -1,4 +1,4 @@
-// ps.c
+// lasp_ps.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -6,11 +6,11 @@
 //
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "ps.h"
-#include "fft.h"
-#include "ascee_alloc.h"
-#include "ascee_alg.h"
-#include "ascee_assert.h"
+#include "lasp_ps.h"
+#include "lasp_fft.h"
+#include "lasp_alloc.h"
+#include "lasp_alg.h"
+#include "lasp_assert.h"
 
 typedef struct PowerSpectra_s {
 

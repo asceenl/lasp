@@ -1,15 +1,15 @@
-// filterbank.c
+// lasp_filterbank.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
 // Description:
 // FilterBank implementation.
 //////////////////////////////////////////////////////////////////////
-#include "filterbank.h"
-#include "fft.h"
-#include "dfifo.h"
-#include "ascee_tracer.h"
-#include "ascee_alg.h"
+#include "lasp_filterbank.h"
+#include "lasp_fft.h"
+#include "lasp_dfifo.h"
+#include "lasp_tracer.h"
+#include "lasp_alg.h"
 #define FIFO_SIZE_MULT 2
 
 typedef struct FilterBank_s {

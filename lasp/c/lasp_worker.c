@@ -1,4 +1,4 @@
-// worker.c
+// lasp_worker.c
 //
 // Author: J.A. de Jong -ASCEE
 // 
@@ -6,12 +6,12 @@
 //
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "worker.h"
-#include "mq.h"
-#include "ascee_alloc.h"
+#include "lasp_worker.h"
+#include "lasp_mq.h"
+#include "lasp_alloc.h"
 #include <pthread.h>
-#include "ascee_assert.h"
-#include "ascee_tracer.h"
+#include "lasp_assert.h"
+#include "lasp_tracer.h"
 
 typedef struct Workers_s {
     JobQueue* jq;
@@ -22,7 +22,7 @@ typedef struct Workers_s {
     pthread_mutex_t global_data_mutex;
     void* global_data;
 
-    pthread_t worker_threads[ASCEE_MAX_NUM_THREADS];
+    pthread_t worker_threads[LASP_MAX_NUM_THREADS];
     us num_workers;
 } Workers;
 
@@ -37,7 +37,7 @@ Workers* Workers_create(const us num_workers,
 
     TRACE(15,"Workers_create");
     
-    if(num_workers > ASCEE_MAX_NUM_THREADS) {
+    if(num_workers > LASP_MAX_NUM_THREADS) {
         WARN("Number of workers too high in Workers_create");
         return NULL;
     }

@@ -7,18 +7,18 @@
 // needed.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef LASP_TYPES_H
+#define LASP_TYPES_H
 #include <stddef.h>
 // // Branch prediction performance improvement
 #if !defined(likely)
-#if defined(__GNUC__) && !defined(ASCEE_DEBUG) 
+#if defined(__GNUC__) && !defined(LASP_DEBUG) 
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 #else
 #define likely(x)       (x)
 #define unlikely(x)     (x)
-#endif  // if defined(__GNUC__) && !defined(ASCEE_DEBUG)
+#endif  // if defined(__GNUC__) && !defined(LASP_DEBUG)
 
 #endif  // !defined(likely)
 
@@ -30,14 +30,14 @@ typedef size_t us;		  /* Size type I always use */
 
 // To change the whole code to 32-bit floating points, change this to
 // float.
-#if ASCEE_FLOAT == 32
+#if LASP_FLOAT == 32
 typedef float d;		/* Shortcut for double */			
 typedef float complex c;
-#elif ASCEE_FLOAT == 64
+#elif LASP_FLOAT == 64
 typedef double d;		/* Shortcut for double */			
 typedef double complex c;
 #else
-#error ASCEE_FLOAT should be either 32 or 64
+#error LASP_FLOAT should be either 32 or 64
 #endif
 
 
@@ -49,7 +49,6 @@ typedef double complex c;
 #define FAILURE -2
 
 
-
-#endif // ASCEE_TYPES_H
+#endif // LASP_TYPES_H
 //////////////////////////////////////////////////////////////////////
 

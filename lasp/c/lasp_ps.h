@@ -1,4 +1,4 @@
-// ps.h
+// lasp_ps.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,9 +6,9 @@
 // routines.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef PS_H
-#define PS_H
-#include "window.h"
+#ifndef LASP_PS_H
+#define LASP_PS_H
+#include "lasp_window.h"
 typedef struct PowerSpectra_s PowerSpectra;
 
 
@@ -57,5 +57,5 @@ void PowerSpectra_free(PowerSpectra* ps);
 
 
 
-#endif // PS_H
+#endif // LASP_PS_H
 //////////////////////////////////////////////////////////////////////

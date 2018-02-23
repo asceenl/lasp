@@ -6,8 +6,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "window.h"
-#include "signals.h"
+#include "lasp_window.h"
+#include "lasp_signals.h"
 #include <stdlib.h>
 /** 
  * Compute the Hann window

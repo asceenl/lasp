@@ -5,10 +5,10 @@
 // Description:
 //
 //////////////////////////////////////////////////////////////////////
-#include "worker.h"
-#include "mq.h"
-#include "ascee_tracer.h"
-#include "ascee_assert.h"
+#include "lasp_worker.h"
+#include "lasp_mq.h"
+#include "lasp_tracer.h"
+#include "lasp_assert.h"
 #include <unistd.h>
 static void* walloc(void*);
 static int worker(void*,void*);

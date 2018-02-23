@@ -1,4 +1,4 @@
-// ascee_alloc.h
+// lasp_alloc.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,10 +6,10 @@
 // memory allocation functions.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_ALLOC_H
-#define ASCEE_ALLOC_H
+#ifndef LASP_ALLOC_H
+#define LASP_ALLOC_H
 #include <malloc.h>
-#include "ascee_tracer.h"
+#include "lasp_tracer.h"
 /**
  * Reserved words for memory allocation. Can be changed to something
  * else when required. For example for debugging purposes.
@@ -24,5 +24,5 @@ static inline void* a_malloc(size_t nbytes) {
 #define a_free free
 #define a_realloc realloc
 
-#endif // ASCEE_ALLOC_H
+#endif // LASP_ALLOC_H
 //////////////////////////////////////////////////////////////////////

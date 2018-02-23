@@ -1,4 +1,4 @@
-// filterbank.h
+// lasp_filterbank.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -12,8 +12,8 @@
 #pragma once
 #ifndef FILTERBANK_H
 #define FILTERBANK_H
-#include "types.h"
-#include "ascee_math.h"
+#include "lasp_types.h"
+#include "lasp_math.h"
 typedef struct FilterBank_s FilterBank;
 
 /** 

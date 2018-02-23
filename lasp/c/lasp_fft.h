@@ -1,4 +1,4 @@
-// fft.h
+// lasp_fft.h
 //
 // Author: J.A. de Jong - ASCEE
 //
@@ -6,10 +6,10 @@
 // Interface to the FFT library, multiple channel FFT's
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef FFT_H
-#define FFT_H
-#include "types.h"
-#include "ascee_math.h"
+#ifndef LASP_FFT_H
+#define LASP_FFT_H
+#include "lasp_types.h"
+#include "lasp_math.h"
 
 /**
  * Perform forward FFT's on real time data.
@@ -82,5 +82,5 @@ void Fft_ifft(const Fft* fft,const cmat* freqdata,dmat* timedata);
  */
 void Fft_free(Fft* fft);
 
-#endif // FFT_H
+#endif // LASP_FFT_H
 //////////////////////////////////////////////////////////////////////
