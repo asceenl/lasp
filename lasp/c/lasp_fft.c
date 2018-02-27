@@ -14,14 +14,12 @@
 typedef struct Fft_s {
     us nfft;
     vd fft_work;
-    vd fft_result;              /**< Temporary storage for the FFT
-                                 * result */
 } Fft;
 
 Fft* Fft_create(const us nfft) {
     fsTRACE(15);
     if(nfft == 0) {
-        WARN("nfft > 0");
+        WARN("nfft should be > 0");
         return NULL;
     }
 
@@ -35,7 +33,6 @@ Fft* Fft_create(const us nfft) {
 
     /* Initialize foreign fft lib */
     fft->fft_work = vd_alloc(2*nfft+15);
-    fft->fft_result = vd_alloc(nfft);
 
     npy_rffti(nfft,getvdval(&fft->fft_work,0));
     check_overflow_vx(fft->fft_work);
@@ -49,7 +46,6 @@ void Fft_free(Fft* fft) {
     fsTRACE(15);
     dbgassert(fft,NULLPTRDEREF);
     vd_free(&fft->fft_work);
-    vd_free(&fft->fft_result);
     a_free(fft);
     feTRACE(15);
 }
@@ -66,29 +62,23 @@ void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* result) {
               " result array");
 
 
-    /* Obtain fft_result */
-    vd fft_result = fft->fft_result;
+    d* freqdata_ptr = (d*) getvcval(freqdata,0);
+    d* result_ptr = getvdval(result,0);
 
     /* Copy freqdata, to fft_result. */
-    d* fft_result_ptr = getvdval(&fft_result,0);
-    *fft_result_ptr = c_real(*getvcval(freqdata,0));
+    d_copy(&result_ptr[1],&freqdata_ptr[2],nfft-1);
+    result_ptr[0] = freqdata_ptr[0];
 
-    d_copy(&fft_result_ptr[1],
-           (d*) getvcval(freqdata,1),
-           nfft-1);
-
-    /* Perform backward transform */
+    /* Perform inplace backward transform */
     npy_rfftb(nfft,
-              fft_result_ptr,
+              result_ptr,
               getvdval(&fft->fft_work,0));
 
     /* Scale by dividing by nfft. Checked with numpy implementation
-     * that this indeed needs to be done. */
-    d_scale(fft_result_ptr,1/((d) nfft),nfft);
+     * that this indeed needs to be done for FFTpack. */
+    d_scale(result_ptr,1/((d) nfft),nfft);
     
-    vd_copy(result,
-            &fft_result);
-
+    check_overflow_vx(*result);
     feTRACE(15);
 }
 void Fft_ifft(const Fft* fft,const cmat* freqdata,dmat* timedata) {
@@ -130,36 +120,36 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
     dbgassert(result->size == (nfft/2+1),"Invalid number of rows in"
               " result array");
 
-    /* Obtain fft_result */
-    vd fft_result = fft->fft_result;
-
-    /* Copy timedata, as it will be overwritten in the fft pass. */
-    vd_copy(&fft_result,timedata);
-
-    /* Perform fft */
-    npy_rfftf(nfft,getvdval(&fft_result,0),
-              getvdval(&fft->fft_work,0));
+    d* result_ptr = (d*) getvcval(result,0);
 
     /* Fftpack stores the data a bit strange, the resulting array
      * has the DC value at 0,the first cosine at 1, the first sine
-     * at 2 etc. This needs to be shifted properly in the
+     * at 2 etc. 1
      * resulting matrix, as for the complex data, the imaginary
      * part of the DC component equals zero. */
-    *getvcval(result,0) = *getvdval(&fft_result,0);
+
+    /* Copy timedata, as it will be overwritten in the fft pass. */
+    d_copy(&result_ptr[1],getvdval(timedata,0),nfft);
+
+
+    /* Perform fft */
+    npy_rfftf(nfft,&result_ptr[1],
+              getvdval(&fft->fft_work,0));
+
+    /* Set real part of DC component to first index of the rfft
+     * routine */
+    result_ptr[0] = result_ptr[1];
+
+    result_ptr[1] = 0;        /* Set imaginary part of DC component
+                                 * to zero */
 
     /* For an even fft, the imaginary part of the Nyquist frequency
      * bin equals zero.*/
     if(likely(nfft%2 == 0)) {
-        ((d*) getvcval(result,nfft/2))[1] = 0;
+        result_ptr[nfft+1] = 0;
     }
-    memcpy((void*) getvcval(result,1),
-           (void*) getvdval(&fft_result,1),
-           (nfft-1)*sizeof(d));
 
-    /* Set imaginary part of Nyquist frequency to zero */
-
-
-    check_overflow_vx(fft_result);
+    check_overflow_vx(*result);
     check_overflow_vx(fft->fft_work);
     feTRACE(15);
 
@@ -185,7 +175,7 @@ void Fft_fft(const Fft* fft,const dmat* timedata,cmat* result) {
         vc_free(&result_col);
     }
     check_overflow_xmat(*timedata);
-    check_overflow_xmat(*result);    
+    check_overflow_xmat(*result);
 
     feTRACE(15);
 }
