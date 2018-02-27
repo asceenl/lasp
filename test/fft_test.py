@@ -6,7 +6,7 @@ Created on Mon Jan 15 19:45:33 2018
 @author: anne
 """
 import numpy as np
-from beamforming import Fft
+from lasp import Fft
 
 nfft=9
 print('nfft:',nfft)
