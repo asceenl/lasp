@@ -52,7 +52,6 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
 				
     #else
     size_t i,j;
-    size_t n_rows = A->n_rows;
 
     vc_set(b,0.0);
 
@@ -62,8 +61,8 @@ void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
     for(j=0;j<A->n_cols;j++){
         for(i=0;i<A->n_rows;i++) {
 
-            c* Aij = &A->data[i+j*n_rows];
-            b->data[i] += *Aij * x->data[j];
+            c* Aij = getcmatval(A,i,j);
+            b->_data[i] += *Aij * *getvcval(x,j);
 
         }
 

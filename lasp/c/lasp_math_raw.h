@@ -174,13 +174,17 @@ static inline d d_dot(const d a[],const d b[],const us size){
  * @param from : Array to read from
  * @param size : Size of arrays
  */
-static inline void d_copy(d to[],const d from[],const us size){
+static inline void d_copy(d to[],
+                          const d from[],
+                          const us size,
+                          const us to_inc,
+                          const us from_inc){
     #if LASP_USE_BLAS == 1
-    cblas_dcopy(size,from,1,to,1);
+    cblas_dcopy(size,from,from_inc,to,to_inc);
     #else
     us i;
     for(i=0;i<size;i++)
-        to[i] = from[i];
+        to[i*to_inc] = from[i*from_inc];
     #endif
 }
 

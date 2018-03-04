@@ -73,7 +73,8 @@ set(CYTHON_EXTRA_C_FLAGS "-Wno-sign-compare -Wno-cpp -Wno-implicit-fallthrough\
 
 # General make flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=c11  -Wall -Wextra -Wno-type-limits \
- -Werror=implicit-function-declaration -Werror=incompatible-pointer-types")
+ -Werror=implicit-function-declaration -Werror=incompatible-pointer-types \
+-Werror=return-type")
 
 # Debug make flags
 set(CMAKE_C_FLAGS_DEBUG "-g" )

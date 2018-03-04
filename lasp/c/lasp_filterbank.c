@@ -127,6 +127,7 @@ dmat FilterBank_filter(FilterBank* fb,
         for(us col=0;col<nfilters;col++) {
             vc output_fft_col = cmat_column(&output_fft,col);
             vc filter_col = cmat_column(&fb->filters,col);
+
             vc_hadamard(&output_fft_col,
                         &input_fft_col,
                         &filter_col);
@@ -139,7 +140,7 @@ dmat FilterBank_filter(FilterBank* fb,
         Fft_ifft(fb->fft,&output_fft,&output_block);
 
         dmat valid_samples = dmat_submat(&output_block,
-                                         0,0, /* startrow, startcol */
+                                         fb->P_m_1,0, /* startrow, startcol */
                                          nfft-fb->P_m_1, /* Number of rows */
                                          output_block.n_cols);
         dFifo_push(fb->output_fifo,&valid_samples);

@@ -44,9 +44,9 @@ cut_fac_l = {
 0:0.98,
 -1:0.96,
 -2:.99,
--3:0.98,
+-3:0.96,
 -4:0.96,
--5:0.98,
+-5:0.96,
 -6:0.96
 }
 
@@ -59,9 +59,9 @@ cut_fac_u = {
 0:1.01,
 -1:1.02,
 -2:1.006,
--3:1.01,
+-3:1.02,
 -4:1.02,
--5:1.01,
+-5:1.02,
 -6:1.02
 }
 
@@ -73,11 +73,11 @@ decimation = {
 1:[4],
 0:[4],
 -1:[4],
--2:[4,8],
--3:[4,8],
--4:[4,8],
--5:[4,8,4],
--6:[4,8,4]
+-2:[4,4],
+-3:[4,4],
+-4:[4,4,4],
+-5:[4,4,4],
+-6:[4,4,4,4]
         }
 
 # Generate the header file
@@ -154,6 +154,8 @@ __thread OctaveFIR OctaveFIRs[%i] = {
         # Cut-off frequency of the filter
         f2 = fm*G**(1/(2*b))*cut_fac_u[x]
 
+        fc = fd/2/1.4
+
         fir = bandpass_fir_design(L,fd,f1,f2)        
         
         struct += "{ "
@@ -161,7 +163,7 @@ __thread OctaveFIR OctaveFIRs[%i] = {
             struct += "%0.16e," %i
         struct = struct[:-1] + " }},"
         
-        freq = np.logspace(np.log10(f1/3),np.log10(f2*3),1000)
+        freq = np.logspace(np.log10(f1/3),np.log10(fd),1000)
         H = freqResponse(fir,freq,fd)
         if showfig:        
             ax.semilogx(freq,20*np.log10(np.abs(H)))
@@ -173,8 +175,9 @@ __thread OctaveFIR OctaveFIRs[%i] = {
             ax.set_title('x = %i, fnom = %s' %(x,nominals[x]) )
         
             ax.set_ylim(-10,1)
-            ax.set_xlim(f1/1.1,f2*1.1)
-    
+            ax.set_xlim(f1/1.1,fd)
+            ax.axvline(fd/2)
+            ax.axvline(fc,color='red')
     struct+="\n};"
     cfile.write(struct)    
     

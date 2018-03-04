@@ -6,14 +6,14 @@
 // Some routines to generate numpy arrays from matrices and vectors.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_PYTHON_H
-#define ASCEE_PYTHON_H
+#ifndef LASP_PYTHON_H
+#define LASP_PYTHON_H
 #include <numpy/ndarrayobject.h>
-#ifdef ASCEE_DOUBLE_PRECISION
-#define ASCEE_NUMPY_FLOAT_TYPE NPY_FLOAT64
-#define ASCEE_NUMPY_COMPLEX_TYPE NPY_COMPLEX128
+#ifdef LASP_DOUBLE_PRECISION
+#define LASP_NUMPY_FLOAT_TYPE NPY_FLOAT64
+#define LASP_NUMPY_COMPLEX_TYPE NPY_COMPLEX128
 #else
-#define ASCEE_NUMPY_FLOAT_TYPE NPY_FLOAT32
+#define LASP_NUMPY_FLOAT_TYPE NPY_FLOAT32
 #endif
 
 
@@ -28,7 +28,7 @@ static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
     // more easy than using the PyArray_New syntax.
     npy_intp dims[] = {mat->n_cols,mat->n_rows};
     PyObject* arr_t = PyArray_SimpleNewFromData(2,dims,
-                                              ASCEE_NUMPY_FLOAT_TYPE,
+                                              LASP_NUMPY_FLOAT_TYPE,
                                               mat->_data);
     if(!arr_t) {
         WARN("Array creation failure");
@@ -56,5 +56,5 @@ static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
 }
 
 
-#endif // ASCEE_PYTHON_H
+#endif // LASP_PYTHON_H
 //////////////////////////////////////////////////////////////////////

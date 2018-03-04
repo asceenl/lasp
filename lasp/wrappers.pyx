@@ -226,8 +226,6 @@ cdef class AvPowerSpectra:
             dmat td
             cmat* result_ptr
 
-        if nsamples < self.nfft:
-            raise RuntimeError('Number of samples should be > nfft')
         if nchannels != self.nchannels:
             raise RuntimeError('Invalid number of channels')
 
@@ -261,8 +259,7 @@ cdef class AvPowerSpectra:
         return result
 
 cdef extern from "lasp_filterbank.h":
-    ctypedef struct c_FilterBank "FilterBank":
-        pass
+    ctypedef struct c_FilterBank "FilterBank"
     c_FilterBank* FilterBank_create(const dmat* h,const us nfft) nogil
     dmat FilterBank_filter(c_FilterBank* fb,const vd* x) nogil
     void FilterBank_free(c_FilterBank* fb) nogil
@@ -293,3 +290,38 @@ cdef class FilterBank:
         vd_free(&input_vd)
 
         return result
+
+cdef extern from "lasp_decimation.h":
+    ctypedef struct c_Decimator "Decimator"
+    ctypedef enum DEC_FAC:
+        DEC_FAC_4
+        
+    c_Decimator* Decimator_create(us nchannels,DEC_FAC d) nogil
+    dmat Decimator_decimate(c_Decimator* dec,const dmat* samples) nogil
+    void Decimator_free(c_Decimator* dec) nogil
+    
+cdef class Decimator:
+    cdef:
+        c_Decimator* dec
+        us nchannels
+    def __cinit__(self, us nchannels,us dec_fac):
+        assert dec_fac == 4, 'Invalid decimation factor'
+        self.nchannels = nchannels
+        self.dec = Decimator_create(nchannels,DEC_FAC_4)
+        if not self.dec:
+            raise RuntimeError('Error creating decimator')
+    
+    def decimate(self,d[::1,:] samples):
+        assert samples.shape[1] == self.nchannels,'Invalid number of channels'
+        cdef dmat d_samples = dmat_foreign(samples.shape[0],
+                                           samples.shape[1],
+                                           &samples[0,0])
+        
+        cdef dmat res = Decimator_decimate(self.dec,&d_samples)
+        result = dmat_to_ndarray(&res,True)
+        dmat_free(&res)
+        return result
+        
+    def __dealloc__(self):
+        if self.dec != NULL:
+            Decimator_free(self.dec)

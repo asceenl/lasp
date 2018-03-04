@@ -6,7 +6,7 @@ Created on Mon Jan 15 19:45:33 2018
 @author: anne
 """
 import numpy as np
-from beamforming import FilterBank, cls
+from lasp import FilterBank, cls
 cls()
 
 nfft=50

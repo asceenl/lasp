@@ -10,8 +10,8 @@
 // each filter in the filterbank.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef FILTERBANK_H
-#define FILTERBANK_H
+#ifndef LASP_FILTERBANK_H
+#define LASP_FILTERBANK_H
 #include "lasp_types.h"
 #include "lasp_math.h"
 typedef struct FilterBank_s FilterBank;
@@ -55,5 +55,5 @@ dmat FilterBank_filter(FilterBank* fb,
 void FilterBank_free(FilterBank* f);
 
 
-#endif // FILTERBANK_H
+#endif // LASP_FILTERBANK_H
 //////////////////////////////////////////////////////////////////////

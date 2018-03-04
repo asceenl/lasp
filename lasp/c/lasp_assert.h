@@ -6,8 +6,8 @@
 // Basic tools for debugging using assert statements including text.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef ASCEE_ASSERT_H
-#define ASCEE_ASSERT_H
+#ifndef LASP_ASSERT_H
+#define LASP_ASSERT_H
 
 #define OUTOFBOUNDSMATR "Out of bounds access on matrix row"
 #define OUTOFBOUNDSMATC "Out of bounds access on matrix column"
@@ -16,8 +16,8 @@
 #define ALLOCFAILED "Memory allocation failure in: "
 #define NULLPTRDEREF "Null pointer dereference in: "
 
-#ifdef ASCEE_DEBUG
-#include "types.h"
+#ifdef LASP_DEBUG
+#include "lasp_types.h"
 
 
 void DBG_AssertFailedExtImplementation(const char* file,
@@ -30,13 +30,13 @@ void DBG_AssertFailedExtImplementation(const char* file,
     	DBG_AssertFailedExtImplementation(__FILE__, __LINE__, assert_string );  \
     }
 
-#else // ASCEE_DEBUG not defined
+#else // LASP_DEBUG not defined
 
 #define dbgassert(assertion, assert_string)
 
 #define assertvalidptr(ptr) dbgassert(ptr,NULLPTRDEREF)
 
-#endif  // ASCEE_DEBUG
+#endif  // LASP_DEBUG
 
-#endif // ASCEE_ASSERT_H
+#endif // LASP_ASSERT_H
 //////////////////////////////////////////////////////////////////////

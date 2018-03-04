@@ -66,7 +66,7 @@ void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* result) {
     d* result_ptr = getvdval(result,0);
 
     /* Copy freqdata, to fft_result. */
-    d_copy(&result_ptr[1],&freqdata_ptr[2],nfft-1);
+    d_copy(&result_ptr[1],&freqdata_ptr[2],nfft-1,1,1);
     result_ptr[0] = freqdata_ptr[0];
 
     /* Perform inplace backward transform */
@@ -129,7 +129,7 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
      * part of the DC component equals zero. */
 
     /* Copy timedata, as it will be overwritten in the fft pass. */
-    d_copy(&result_ptr[1],getvdval(timedata,0),nfft);
+    d_copy(&result_ptr[1],getvdval(timedata,0),nfft,1,1);
 
 
     /* Perform fft */

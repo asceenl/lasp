@@ -399,7 +399,7 @@ static inline void dmat_copy_rows(dmat* to,const dmat* from,
     for(col=0;col<ncols;col++) {
         d* to_d = getdmatval(to,startrow_to,col);
         d* from_d = getdmatval(from,startrow_from,col);
-        d_copy(to_d,from_d,nrows);
+        d_copy(to_d,from_d,nrows,1,1);
     }
 }
 /** 
@@ -471,7 +471,7 @@ static inline cmat cmat_submat(cmat* parent,
 static inline void vd_copy(vd* to,const vd* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->size==from->size,SIZEINEQUAL);
-    d_copy(to->_data,from->_data,to->size);
+    d_copy(to->_data,from->_data,to->size,1,1);
 }
 static inline void vd_copy_rows(vd* to,
                                 const vd* from,
@@ -483,7 +483,7 @@ static inline void vd_copy_rows(vd* to,
     dbgassert(startrow_to+nrows <= to->size,OUTOFBOUNDSMATR);
     d_copy(&to->_data[startrow_to],
            &from->_data[startrow_from],
-           nrows);
+           nrows,1,1);
 }
 /** 
  * Copy contents of one vector to another
@@ -509,7 +509,7 @@ static inline void dmat_copy(dmat* to,const dmat* from) {
     for(us col=0;col<to->n_cols;col++) {
         d_copy(getdmatval(to,0,col),
                getdmatval(from,0,col),
-               to->n_rows);
+               to->n_rows,1,1);
     }
 }
 /** 
