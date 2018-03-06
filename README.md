@@ -15,9 +15,14 @@ Current features that are implemented:
 - Compile-time determination of the floating-point accuracy (32/64 bit)
 - Fast convolution FIR filter implementation
 - Decimation of the sample rate by an integer factor of 4.
-- Octave filterbank FIR filters designed to be compliant to IEC 61260
+- Octave filterbank FIR filters designed to comply with IEC 61260
   (1995).
-
+- Averaged power spectra and power spectral density determination
+  using Welch' method. Taper functions of Hann, Hamming, Bartlett and
+  Blackman are provided.
+- A thread-safe job queue including routines to create worker threads.
+- Several linear algebra routines (wrappers around BLAS and LAPACK).
+- A nice debug tracer implementation
 
 Some of the near future features:
 - Third octave filter bank
