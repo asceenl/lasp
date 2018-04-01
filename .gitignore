@@ -18,3 +18,4 @@ test/test_workers
 doc
 LASP.egg-info
 lasp_octave_fir.*
+lasp/aps_ui.py
