@@ -7,16 +7,13 @@
 //////////////////////////////////////////////////////////////////////
 #include "lasp_alg.h"
 
-
-
-
 void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
 
     dbgassert(A->n_rows == b->size,SIZEINEQUAL);
     dbgassert(A->n_cols == x->size,SIZEINEQUAL);
 	
     #if LASP_USE_BLAS == 1
-    dbgassert(false,"Untested function");
+    dbgassert(false,"Untested function. Is not functional for strides");
     /* typedef enum CBLAS_ORDER     {CblasRowMajor=101, CblasColMajor=102} CBLAS_ORDER; */
     /* typedef enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113, CblasConjNoTrans=114} CBLAS_TRANSPOSE; */
     /* 
@@ -121,7 +118,6 @@ lapack_int LAPACKE_zgels( int matrix_layout, char trans, lapack_int m,
 
 /* int lsq_solve(const cmat* A,const vc* b,vc* x){ */
     
-/*     POOL_INIT(lsq_solve_pool); */
 /*     int rv; */
 /*     /\* M: number of rows of matrix *\/ */
 /*     /\* N: Number of columns *\/ */
@@ -180,9 +176,6 @@ lapack_int LAPACKE_zgels( int matrix_layout, char trans, lapack_int m,
 /*         rv = FAILURE; */
 /*     } */
 
-/*     Pool_free(&lsq_solve_pool,A_data); */
-/*     Pool_free(&lsq_solve_pool,work_data); */
-/*     POOL_EXIT(lsq_solve_pool,15);     */
 /*     return rv; */
     
 /* } */

@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
 #include "lasp_math_raw.h"
-#if ASCEE_USE_BLAS
+#if LASP_USE_BLAS
 #include <cblas.h>
 #endif
 
@@ -16,9 +16,9 @@ void d_elem_prod_d(d res[],
                    const d arr2[],
                    const us size) {
 
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
 
-    #if ASCEE_DEBUG
+    #if LASP_DEBUG
 
     if(arr1 == arr2) {
         DBGWARN("d_elem_prod_d: Array 1 and array 2 point to the same"
@@ -30,7 +30,7 @@ void d_elem_prod_d(d res[],
     #endif
 
 
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_DOUBLE_PRECISION
     #define elem_prod_fun cblas_dsbmv
     #else
     #define elem_prod_fun cblas_ssbmv
@@ -87,9 +87,9 @@ void c_hadamard(c res[],
     uVARTRACE(15,size);
     dbgassert(arr1 && arr2 && res,NULLPTRDEREF);
     
-    #if ASCEE_USE_BLAS == 1
+    #if LASP_USE_BLAS == 1
 
-    #if ASCEE_DEBUG
+    #if LASP_DEBUG
 
     if(arr1 == arr2) {
         DBGWARN("c_elem_prod_c: Array 1 and array 2 point to the same"
@@ -98,10 +98,10 @@ void c_hadamard(c res[],
                 " unrealiable.");
     }
 
-    #endif  /* ASCEE_DEBUG */
+    #endif  /* LASP_DEBUG */
 
 
-    #if ASCEE_DOUBLE_PRECISION
+    #if LASP_DOUBLE_PRECISION
     #define elem_prod_fun cblas_zgbmv
     #else
     #define elem_prod_fun cblas_cgbmv

@@ -84,12 +84,13 @@ set(CMAKE_C_FLAGS_RELEASE  "-O2 -mfpmath=sse -march=x86-64 -mtune=native \
 
 # set(CMAKE_C_FLAGS_RELEASE  "-O2 -march=native -mtune=native -fomit-frame-pointer")
 
-
 if(LASP_USE_BLAS)
   add_definitions(-DLASP_USE_BLAS=1)  
 else()
   add_definitions(-DLASP_USE_BLAS=0)  
 endif(LASP_USE_BLAS)
+
+# ############################# End compilation flags
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(win32 true)
@@ -102,10 +103,6 @@ if(DEFINED NUMPY_INCLUDE)
   include_directories(${NUMPY_INCLUDE})
 endif(DEFINED NUMPY_INCLUDE)
 
-
-
-
-# ############################# End compilation flags
 
 add_subdirectory(fftpack)
 include_directories(

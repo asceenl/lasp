@@ -9,16 +9,16 @@ frequency of 48 kHz.
 #from asceefigs.plot import Bode, close, Figure
 
 import numpy as np
-from scipy.signal import freqz, hann
+from scipy.signal import freqz, hann, firwin2
 from matplotlib.pyplot import figure, close
 
-def freqResponse(fir_coefs, freq, fs):
+def freqResponse(fs, freq, fir_coefs_b, fir_coefs_a=1.):
     """!
     Computes the frequency response of the filter defined with filter_coefs
     """
     Omg = 2*np.pi*freq/fs
 
-    w, H = freqz(fir_coefs,worN = Omg)
+    w, H = freqz(fir_coefs_b,fir_coefs_a,worN = Omg)
     return H
 
 def bandpass_fir_design(L,fs,fl,fu, window = hann):
@@ -62,4 +62,9 @@ def lowpass_fir_design(L,fs,fc,window = hann):
     fir_win = fir*win
         
     return fir_win    
-    
+
+def arbitrary_fir_design(fs,L,freq,amps,window='hann'):
+    """
+    Last frequency of freq should be fs/2
+    """
+    return firwin2(L,freq,amps,fs=fs,window=window)

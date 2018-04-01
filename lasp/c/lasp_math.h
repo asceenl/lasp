@@ -115,9 +115,7 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
         dbgassert((vx)._data[(vx).size] == OVERFLOW_MAGIC_NUMBER,       \
                   "Buffer overflow detected on" #vx );          \
     }                                                           \
-    else {                                                      \
-    DBGWARN("Cannot check overflow on foreign buffer");            \
-    }
+
 
 #define check_overflow_xmat(xmat)                               \
     TRACE(15,"Checking overflow " #xmat);                        \
@@ -126,9 +124,6 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
                   == OVERFLOW_MAGIC_NUMBER,                             \
                   "Buffer overflow detected on" #xmat );                \
     }                                                                   \
-    else {                                                      \
-    DBGWARN("Cannot check overflow on foreign buffer");            \
-    }
 
 #else
 #define check_overflow_vx(vx)

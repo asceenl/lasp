@@ -5,7 +5,7 @@
 // Description:
 // Implementation of the dFifo queue
 //////////////////////////////////////////////////////////////////////
-#define TRACERPLUS (-5)
+#define TRACERPLUS (-10)
 #include "lasp_dfifo.h"
 
 typedef struct dFifo_s {
@@ -29,7 +29,7 @@ us dFifo_size(dFifo* fifo) {
  * @param new_size 
  */
 static void dFifo_change_maxsize(dFifo* fifo,const us new_max_size) {
-    fsTRACE(30);
+    fsTRACE(15);
     dmat old_queue = fifo->queue;
     
     dbgassert(new_max_size >= dFifo_size(fifo),"BUG");
@@ -49,7 +49,7 @@ static void dFifo_change_maxsize(dFifo* fifo,const us new_max_size) {
     fifo->end_row -= fifo->start_row;
     fifo->start_row = 0;
 
-   feTRACE(30);                   
+   feTRACE(15);                   
 }
 
 dFifo* dFifo_create(const us nchannels,

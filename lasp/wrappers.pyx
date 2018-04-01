@@ -105,11 +105,12 @@ cdef extern from "lasp_window.h":
         Blackman
 
 # Export these constants to Python
-hann = Hann
-hamming = Hamming
-rectangular = Rectangular
-bartlett = Bartlett
-blackman = Blackman
+class Window:
+    hann = Hann
+    hamming = Hamming
+    rectangular = Rectangular
+    bartlett = Bartlett
+    blackman = Blackman
 
 cdef extern from "lasp_ps.h":
     ctypedef struct c_PowerSpectra "PowerSpectra"
@@ -127,7 +128,7 @@ cdef class PowerSpectra:
     cdef:
         c_PowerSpectra* _ps
 
-    def __cinit__(self, us nfft,us window=rectangular):
+    def __cinit__(self, us nfft,us window=Window.rectangular):
         self._ps = PowerSpectra_alloc(nfft,<WindowType> window)
         if self._ps == NULL:
             raise RuntimeError('PowerSpectra allocation failed')

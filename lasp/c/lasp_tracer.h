@@ -153,6 +153,8 @@ void uvartrace_impl(const char* pos,int line,const char* varname,size_t var);
 			trace_impl(FILEWITHOUTPATH,__LINE__,trace_string );	\
 		}
 
+#define SFSG TRACE(100,"SFSG")
+
 /**
  * Print start of function string
  */

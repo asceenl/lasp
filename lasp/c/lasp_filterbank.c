@@ -5,6 +5,7 @@
 // Description:
 // FilterBank implementation.
 //////////////////////////////////////////////////////////////////////
+#define TRACERPLUS (-5)
 #include "lasp_filterbank.h"
 #include "lasp_fft.h"
 #include "lasp_dfifo.h"
@@ -154,7 +155,7 @@ dmat FilterBank_filter(FilterBank* fb,
     dmat_free(&output_block);
 
     us samples_done = dFifo_size(output_fifo);
-    uVARTRACE(20,samples_done);
+    uVARTRACE(15,samples_done);
     dmat filtered_result = dmat_alloc(samples_done,nfilters);
     if(samples_done) {
         us samples_done2 = dFifo_pop(output_fifo,&filtered_result,0);

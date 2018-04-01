@@ -8,6 +8,7 @@
 #pragma once
 #ifndef LASP_PYTHON_H
 #define LASP_PYTHON_H
+#define TRACERPLUS (-5)
 #include <numpy/ndarrayobject.h>
 #ifdef LASP_DOUBLE_PRECISION
 #define LASP_NUMPY_FLOAT_TYPE NPY_FLOAT64
