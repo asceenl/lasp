@@ -183,7 +183,8 @@ cdef extern from "lasp_aps.h":
     c_AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                            const us nchannels,
                                            d overlap_percentage,
-                                           const WindowType wt)
+                                           const WindowType wt,
+                                           const vd* weighting)
 
     cmat* AvPowerSpectra_addTimeData(const c_AvPowerSpectra* ps,
                                      const dmat * timedata)
@@ -200,11 +201,22 @@ cdef class AvPowerSpectra:
     def __cinit__(self,us nfft,
                   us nchannels,
                   d overlap_percentage,
-                  us window=rectangular):
+                  us window=Window.rectangular,
+                  d[:] weighting = np.array([])):
+
+        
+        cdef vd weighting_vd
+        cdef vd* weighting_ptr = NULL
+        if(weighting.size != 0):
+            weighting_vd = vd_foreign(weighting.size,
+                                      &weighting[0])
+            weighting_ptr = &weighting_vd
+        
         self.aps = AvPowerSpectra_alloc(nfft,
                                         nchannels,
                                         overlap_percentage,
-                                        <WindowType> window)
+                                        <WindowType> window,
+                                        weighting_ptr)
         self.nchannels = nchannels
         self.nfft = nfft
 

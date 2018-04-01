@@ -12,6 +12,12 @@
 #include "lasp_math.h"
 #include "lasp_window.h"
 
+typedef enum {
+    Linear=0,
+    Exponential=1
+} TimeWeighting;
+
+
 typedef struct AvPowerSpectra_s AvPowerSpectra;
 
 /** 
@@ -35,8 +41,9 @@ typedef struct AvPowerSpectra_s AvPowerSpectra;
 AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                      const us nchannels,
                                      const d overlap_percentage,
-                                     const WindowType wt);
-                                 
+                                     const WindowType wt,
+                                     const vd* spectrogram_weighting);
+
 
 /** 
  * Computes the real overlap percentage, from the integer overlap

@@ -31,13 +31,26 @@ typedef struct AvPowerSpectra_s {
 
     dFifo* fifo;          /* Sample fifo storage */
 
-    cmat ps_storage;           /**< Here we store the averaged
-                                * results for each Cross-power
-                                * spectra computed so far. */
-    
+    cmat* ps_storage;           /**< Here we store the averaged
+                                 * results for each Cross-power
+                                 * spectra computed so far. */
+
+    cmat ps_result;
+
     cmat ps_single;             /**< This is the work area for a
                                  * PowerSpectra computation on a
                                  * single block */
+
+    
+    vd weighting;   /**< This array stores the time weighting
+                     * coefficients for a running
+                     * spectrogram. The vector length is
+                     * zero for a full averaged (not
+                     * running spectrogram). */
+    
+    us oldest_block;            /**< Index of oldest block in
+                                 * Spectrogram mode */
+    
 
     PowerSpectra* ps;           /**< Pointer to underlying
                                  * PowerSpectra calculator. */
@@ -50,8 +63,18 @@ void AvPowerSpectra_free(AvPowerSpectra* aps) {
     PowerSpectra_free(aps->ps);
     dFifo_free(aps->fifo);
     dmat_free(&aps->buffer);
-    cmat_free(&aps->ps_storage);
+
+    us nweight = aps->weighting.size;
+    if(nweight > 0) {
+        for(us blockno = 0; blockno < nweight; blockno++) {
+            cmat_free(&aps->ps_storage[blockno]);
+        }
+        a_free(aps->ps_storage);
+        vd_free(&aps->weighting);
+    }
+
     cmat_free(&aps->ps_single);
+    cmat_free(&aps->ps_result);
     a_free(aps);
     
     feTRACE(15);
@@ -60,7 +83,8 @@ void AvPowerSpectra_free(AvPowerSpectra* aps) {
 AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
                                      const us nchannels,
                                      const d overlap_percentage,
-                                     const WindowType wt) {
+                                     const WindowType wt,
+                                     const vd* weighting) {
     
     fsTRACE(15);
     
@@ -99,15 +123,34 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     aps->ps = ps;
     aps->naverages = 0;
     aps->overlap = overlap;
-
     aps->buffer = dmat_alloc(nfft,nchannels);
+    aps->oldest_block = 0;
+    if(weighting) {
+        
+        us nweight = weighting->size;
+        iVARTRACE(15,nweight);
+        /* Allocate vectors and matrices */
+        aps->ps_storage = a_malloc(nweight*sizeof(cmat));
+        for(us blockno = 0; blockno < nweight; blockno++) {
+            aps->ps_storage[blockno] = cmat_alloc(nfft/2+1,nchannels*nchannels);
+            cmat_set(&aps->ps_storage[blockno],0);
+        }
 
-    /* Allocate vectors and matrices */
-    aps->ps_storage = cmat_alloc(nfft/2+1,nchannels*nchannels);
+        /* Allocate space and copy weighting coefficients */
+        aps->weighting = vd_alloc(weighting->size);
+        vd_copy(&aps->weighting,weighting);
+    }
+    else {
+        TRACE(15,"no weighting");
+        aps->weighting.size = 0;
+    }
+
+    aps->ps_result = cmat_alloc(nfft/2+1,nchannels*nchannels);    
     aps->ps_single = cmat_alloc(nfft/2+1,nchannels*nchannels);
+    cmat_set(&aps->ps_result,0);
+
     aps->fifo = dFifo_create(nchannels,FIFO_SIZE_MULT*nfft);
-    
-    cmat_set(&aps->ps_storage,0);
+
     feTRACE(15);
     return aps;
 }
@@ -135,23 +178,69 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
     iVARTRACE(15,nfft);
     
     cmat* ps_single = &aps->ps_single;
-    cmat* ps_storage = &aps->ps_storage;
-    
-    c naverages = (++aps->naverages);
-
-    /* Scale previous result */
-    cmat_scale(ps_storage,
-               (naverages-1)/naverages);
-
+    cmat* ps_storage = aps->ps_storage;
+    cmat* ps_result = &aps->ps_result;
     
     PowerSpectra_compute(aps->ps,
                          block,
                          ps_single);
+    
+    vd weighting = aps->weighting;
+    us nweight = weighting.size;
+    
+    if(nweight == 0) {
+
+        /* Overall mode */
+        c naverages = (++aps->naverages);
+    
+        /* Scale previous result */
+        cmat_scale(ps_result,
+                   (naverages-1)/naverages);
+
+        /* Add new result, scaled properly */
+        cmat_add_cmat(ps_result,
+                      ps_single,1/naverages);
+
+    }
+    else {
+        cmat_set(ps_result,0);
+        
+        us* oldest_block = &aps->oldest_block;
+        /* uVARTRACE(20,*oldest_block); */
+        
+        cmat_copy(&ps_storage[*oldest_block],ps_single);
+        
+        uVARTRACE(16,*oldest_block);
+        if(aps->naverages < nweight) {
+            ++(aps->naverages);
+        }
+        
+        /* Update pointer to oldest block */
+        (*oldest_block)++;
+        *oldest_block %= nweight;
+
+        us block_index_weight = *oldest_block;
+        
+        for(us block = 0; block < aps->naverages; block++) {
+            /* Add new result, scaled properly */
+
+            c weight_fac = *getvdval(&weighting,
+                                     aps->naverages-1-block);
+
+            /* cVARTRACE(20,weight_fac); */
+            cmat_add_cmat(ps_result,
+                          &ps_storage[block_index_weight],
+                          weight_fac);
+
+            block_index_weight++;
+            block_index_weight %= nweight;
 
 
-    /* Add new result, scaled properly */
-    cmat_add_cmat(ps_storage,
-                  ps_single,1/naverages);
+        }
+
+
+
+    }
     
     feTRACE(15);
 }
@@ -193,7 +282,7 @@ cmat* AvPowerSpectra_addTimeData(AvPowerSpectra* aps,
     }
     
     feTRACE(15);
-    return &aps->ps_storage;
+    return &aps->ps_result;
 }
 
 
