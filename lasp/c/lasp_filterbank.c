@@ -100,9 +100,7 @@ dmat FilterBank_filter(FilterBank* fb,
     const us nfilters = fb->filters.n_cols;
 
     /* Push samples to the input fifo */
-    dmat samples = dmat_foreign_vd((vd*) x);
-    dFifo_push(fb->input_fifo,&samples);
-    dmat_free(&samples);
+    dFifo_push(fb->input_fifo,x);
 
     dmat input_block = dmat_alloc(nfft,1);
 

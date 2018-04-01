@@ -8,7 +8,7 @@
 #pragma once
 #ifndef LASP_ALG_H
 #define LASP_ALG_H
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 /** 
  * Compute the dot product of two vectors of floats
@@ -19,8 +19,10 @@
  */
 static inline d vd_dot(const vd * a,const vd* b) {
     dbgassert(a && b,NULLPTRDEREF);
-    dbgassert(a->size == b->size,SIZEINEQUAL);
-    return d_dot(getvdval(a,0),getvdval(b,0),a->size);
+    assert_vx(a);
+    assert_vx(b);
+    dbgassert(a->n_rows == b->n_rows,SIZEINEQUAL);
+    return d_dot(getvdval(a,0),getvdval(b,0),a->n_rows);
 }
 
 /** 
@@ -93,11 +95,10 @@ static inline void cmat_add_cmat(cmat* x,cmat* y,c fac) {
  */
 static inline void vd_elem_prod(vd* result,const vd* a,const vd* b) {
     dbgassert(result  && a && b,NULLPTRDEREF);
-    dbgassert(result->size==a->size,SIZEINEQUAL);
-    dbgassert(b->size==a->size,SIZEINEQUAL);
+    assert_equalsize(a,b);
     d_elem_prod_d(getvdval(result,0),
                   getvdval(a,0),
-                  getvdval(b,0),a->size);
+                  getvdval(b,0),a->n_rows);
 }
 /** 
  * Compute the element-wise (Hadamard) product of a and b, and store
@@ -110,12 +111,13 @@ static inline void vd_elem_prod(vd* result,const vd* a,const vd* b) {
 static inline void vc_hadamard(vc* result,const vc* a,const vc* b) {
     fsTRACE(15);
     dbgassert(result  && a && b,NULLPTRDEREF);
-    dbgassert(result->size==a->size,SIZEINEQUAL);
-    dbgassert(b->size==a->size,SIZEINEQUAL);
+    assert_equalsize(a,b);
+    assert_equalsize(a,result);
+
     c_hadamard(getvcval(result,0),
                getvcval(a,0),
                getvcval(b,0),
-               a->size);
+               a->n_rows);
     
     check_overflow_vx(*result);
     check_overflow_vx(*a);

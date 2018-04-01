@@ -148,7 +148,7 @@ void PowerSpectra_compute(const PowerSpectra* ps,
             vc j_vec = cmat_column(&fft_work,j);
 
             /* Compute the conjugate of spectra j */
-            vc_conj(&j_vec_conj,&j_vec);
+            cmat_conj(&j_vec_conj,&j_vec);
 
             check_overflow_xmat(fft_work);
 

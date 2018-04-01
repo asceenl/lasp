@@ -54,11 +54,11 @@ void Fft_ifft_single(const Fft* fft,const vc* freqdata,vd* result) {
     fsTRACE(15);
     dbgassert(fft && freqdata && result,NULLPTRDEREF);
     const us nfft = fft->nfft;
-    dbgassert(result->size == nfft,
+    dbgassert(result->n_rows == nfft,
               "Invalid size for time data rows."
               " Should be equal to nfft");
 
-    dbgassert(freqdata->size == (nfft/2+1),"Invalid number of rows in"
+    dbgassert(freqdata->n_rows == (nfft/2+1),"Invalid number of rows in"
               " result array");
 
 
@@ -113,11 +113,13 @@ void Fft_fft_single(const Fft* fft,const vd* timedata,vc* result) {
     dbgassert(fft && timedata && result,NULLPTRDEREF);
 
     const us nfft = fft->nfft;
-    dbgassert(timedata->size == nfft,
+    assert_vx(timedata);
+    assert_vx(result);
+    dbgassert(timedata->n_rows == nfft,
               "Invalid size for time data rows."
               " Should be equal to nfft");
 
-    dbgassert(result->size == (nfft/2+1),"Invalid number of rows in"
+    dbgassert(result->n_rows == (nfft/2+1),"Invalid number of rows in"
               " result array");
 
     d* result_ptr = (d*) getvcval(result,0);

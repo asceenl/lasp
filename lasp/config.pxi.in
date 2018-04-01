@@ -29,7 +29,7 @@ cdef extern from "lasp_tracer.h":
     void fsTRACE(int)
     void feTRACE(int)
     void clearScreen()
-cdef extern from "lasp_math.h":
+cdef extern from "lasp_mat.h":
     ctypedef struct dmat:
         us n_cols
         us n_rows
@@ -37,16 +37,17 @@ cdef extern from "lasp_math.h":
         bint _foreign_data
     ctypedef struct cmat:
         pass
-    ctypedef struct vd:
-        pass
-    ctypedef struct vc:
-        pass
-    dmat dmat_foreign(us n_rows,
-                      us n_cols,
-                      d* data)
-    cmat cmat_foreign(us n_rows,
-                      us n_cols,
-                      c* data)
+    ctypedef cmat vc
+    ctypedef dmat vd
+
+    dmat dmat_foreign_data(us n_rows,
+                           us n_cols,
+                           d* data,
+                           bint own_data)
+    cmat cmat_foreign_data(us n_rows,
+                           us n_cols,
+                           c* data,
+                           bint own_data)
 
     cmat cmat_alloc(us n_rows,us n_cols)
     dmat dmat_alloc(us n_rows,us n_cols)

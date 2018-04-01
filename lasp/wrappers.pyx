@@ -50,13 +50,15 @@ cdef class Fft:
 
         # result[:,:] = np.nan+1j*np.nan
         cdef c[::1,:] result_view = result
-        cdef cmat r = cmat_foreign(result.shape[0],
-                                   result.shape[1],
-                                   &result_view[0,0])
+        cdef cmat r = cmat_foreign_data(result.shape[0],
+                                        result.shape[1],
+                                        &result_view[0,0],
+                                        False)
 
-        cdef dmat t = dmat_foreign(timedata.shape[0],
-                                   timedata.shape[1],
-                                   &timedata[0,0])
+        cdef dmat t = dmat_foreign_data(timedata.shape[0],
+                                        timedata.shape[1],
+                                        &timedata[0,0],
+                                        False)
 
         Fft_fft(self._fft,&t,&r)
 
@@ -74,18 +76,20 @@ cdef class Fft:
 
         # result[:,:] = np.nan+1j*np.nan
 
-        cdef cmat f = cmat_foreign(freqdata.shape[0],
-                                   freqdata.shape[1],
-                                   &freqdata[0,0])
+        cdef cmat f = cmat_foreign_data(freqdata.shape[0],
+                                        freqdata.shape[1],
+                                        &freqdata[0,0],
+                                        False)
 
         timedata = np.empty((nfft,nchannels),
                             dtype=NUMPY_FLOAT_TYPE,
                             order='F')
 
         cdef d[::1,:] timedata_view = timedata
-        cdef dmat t = dmat_foreign(timedata.shape[0],
-                                   timedata.shape[1],
-                                   &timedata_view[0,0])
+        cdef dmat t = dmat_foreign_data(timedata.shape[0],
+                                        timedata.shape[1],
+                                        &timedata_view[0,0],
+                                        False)
 
         Fft_ifft(self._fft,&f,&t)
 
@@ -142,9 +146,10 @@ cdef class PowerSpectra:
             cmat result_mat
 
 
-        td = dmat_foreign(nfft,
-                          nchannels,
-                          &timedata[0,0])
+        td = dmat_foreign_data(nfft,
+                               nchannels,
+                               &timedata[0,0],
+                               False)
 
         # The array here is created in such a way that the strides
         # increase with increasing dimension. This is required for
@@ -159,9 +164,10 @@ cdef class PowerSpectra:
 
         cdef c[::1,:,:] result_view = result
 
-        result_mat = cmat_foreign(nfft//2+1,
-                                  nchannels*nchannels,
-                                  &result_view[0,0,0])
+        result_mat = cmat_foreign_data(nfft//2+1,
+                                       nchannels*nchannels,
+                                       &result_view[0,0,0],
+                                       False)
 
 
 
@@ -208,8 +214,8 @@ cdef class AvPowerSpectra:
         cdef vd weighting_vd
         cdef vd* weighting_ptr = NULL
         if(weighting.size != 0):
-            weighting_vd = vd_foreign(weighting.size,
-                                      &weighting[0])
+            weighting_vd = dmat_foreign_data(weighting.n_rows,1,
+                                             &weighting[0],False)
             weighting_ptr = &weighting_vd
         
         self.aps = AvPowerSpectra_alloc(nfft,
@@ -242,9 +248,10 @@ cdef class AvPowerSpectra:
         if nchannels != self.nchannels:
             raise RuntimeError('Invalid number of channels')
 
-        td = dmat_foreign(nsamples,
-                          nchannels,
-                          &timedata[0,0])
+        td = dmat_foreign_data(nsamples,
+                               nchannels,
+                               &timedata[0,0],
+                               False)
 
         result_ptr = AvPowerSpectra_addTimeData(self.aps,
                                                 &td)
@@ -260,9 +267,10 @@ cdef class AvPowerSpectra:
                           dtype = NUMPY_COMPLEX_TYPE,
                           order='F')
         cdef c[::1,:,:] result_view = result
-        cdef cmat res = cmat_foreign(self.nfft//2+1,
-                                     nchannels*nchannels,
-                                     &result_view[0,0,0])
+        cdef cmat res = cmat_foreign_data(self.nfft//2+1,
+                                          nchannels*nchannels,
+                                          &result_view[0,0,0],
+                                          True)
         # Copy result
         cmat_copy(&res,result_ptr)
 
@@ -282,7 +290,11 @@ cdef class FilterBank:
     cdef:
         c_FilterBank* fb
     def __cinit__(self,d[::1,:] h, us nfft):
-        cdef dmat hmat = dmat_foreign(h.shape[0],h.shape[1],&h[0,0])
+        cdef dmat hmat = dmat_foreign_data(h.shape[0],
+                                           h.shape[1],
+                                           &h[0,0],
+                                           True)
+
         self.fb = FilterBank_create(&hmat,nfft)
         dmat_free(&hmat)
         if not self.fb:
@@ -293,7 +305,9 @@ cdef class FilterBank:
             FilterBank_free(self.fb)
 
     def filter_(self,d[:] input_):
-        cdef vd input_vd = vd_foreign(input_.size,&input_[0])
+        cdef dmat input_vd = dmat_foreign_data(input_.shape[0],1,
+                                             &input_[0],False)
+
         cdef dmat output = FilterBank_filter(self.fb,&input_vd)
 
         # Steal the pointer from output
@@ -326,9 +340,10 @@ cdef class Decimator:
     
     def decimate(self,d[::1,:] samples):
         assert samples.shape[1] == self.nchannels,'Invalid number of channels'
-        cdef dmat d_samples = dmat_foreign(samples.shape[0],
-                                           samples.shape[1],
-                                           &samples[0,0])
+        cdef dmat d_samples = dmat_foreign_data(samples.shape[0],
+                                                samples.shape[1],
+                                                &samples[0,0],
+                                                False)
         
         cdef dmat res = Decimator_decimate(self.dec,&d_samples)
         result = dmat_to_ndarray(&res,True)

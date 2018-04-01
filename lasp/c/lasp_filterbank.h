@@ -13,7 +13,7 @@
 #ifndef LASP_FILTERBANK_H
 #define LASP_FILTERBANK_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 typedef struct FilterBank_s FilterBank;
 
 /** 

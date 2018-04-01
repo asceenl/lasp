@@ -9,7 +9,7 @@
 #ifndef LASP_APS_H
 #define LASP_APS_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 #include "lasp_window.h"
 
 typedef enum {

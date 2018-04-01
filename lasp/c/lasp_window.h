@@ -8,7 +8,7 @@
 #pragma once
 #ifndef LASP_WINDOW_H
 #define LASP_WINDOW_H
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 typedef enum {
     Hann = 0,

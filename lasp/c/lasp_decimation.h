@@ -10,7 +10,7 @@
 #ifndef LASP_DECIMATION_H
 #define LASP_DECIMATION_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 typedef struct Decimator_s Decimator;
 
