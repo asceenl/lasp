@@ -62,7 +62,7 @@ Decimator* Decimator_create(us nchannels,DEC_FAC df) {
     dec->nchannels = nchannels;
     dec->dec_fac = filter->dec_fac;
 
-    dmat h = dmat_foreign(filter->ntaps,1,filter->h);
+    dmat h = dmat_foreign_data(filter->ntaps,1,filter->h,false);
 
     for(us channelno=0;channelno<nchannels;channelno++) {
         dec->fbs[channelno] = FilterBank_create(&h,DEC_FFT_LEN);

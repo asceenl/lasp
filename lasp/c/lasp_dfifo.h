@@ -9,7 +9,7 @@
 #ifndef LASP_DFIFO_H
 #define LASPDFIFO_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 typedef struct dFifo_s dFifo;
 

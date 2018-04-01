@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "lasp_fft.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 #include "lasp_tracer.h"
 #include "lasp_alg.h"
 

@@ -9,7 +9,7 @@
 #ifndef LASP_FFT_H
 #define LASP_FFT_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 /**
  * Perform forward FFT's on real time data.

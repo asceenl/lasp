@@ -64,7 +64,7 @@ void AvPowerSpectra_free(AvPowerSpectra* aps) {
     dFifo_free(aps->fifo);
     dmat_free(&aps->buffer);
 
-    us nweight = aps->weighting.size;
+    us nweight = aps->weighting.n_rows;
     if(nweight > 0) {
         for(us blockno = 0; blockno < nweight; blockno++) {
             cmat_free(&aps->ps_storage[blockno]);
@@ -127,7 +127,7 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
     aps->oldest_block = 0;
     if(weighting) {
         
-        us nweight = weighting->size;
+        us nweight = weighting->n_rows;
         iVARTRACE(15,nweight);
         /* Allocate vectors and matrices */
         aps->ps_storage = a_malloc(nweight*sizeof(cmat));
@@ -137,12 +137,12 @@ AvPowerSpectra* AvPowerSpectra_alloc(const us nfft,
         }
 
         /* Allocate space and copy weighting coefficients */
-        aps->weighting = vd_alloc(weighting->size);
+        aps->weighting = vd_alloc(weighting->n_rows);
         vd_copy(&aps->weighting,weighting);
     }
     else {
         TRACE(15,"no weighting");
-        aps->weighting.size = 0;
+        aps->weighting.n_rows = 0;
     }
 
     aps->ps_result = cmat_alloc(nfft/2+1,nchannels*nchannels);    
@@ -186,7 +186,7 @@ static void AvPowerSpectra_addBlock(AvPowerSpectra* aps,
                          ps_single);
     
     vd weighting = aps->weighting;
-    us nweight = weighting.size;
+    us nweight = weighting.n_rows;
     
     if(nweight == 0) {
 

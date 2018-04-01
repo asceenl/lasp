@@ -59,7 +59,10 @@ static d bartlett(us n,us N) {
 }
 int window_create(const WindowType wintype,vd* result,d* win_pow) {
     fsTRACE(15);
-    us nfft = result->size;
+    dbgassert(result && win_pow,NULLPTRDEREF);
+    assert_vx(result);
+
+    us nfft = result->n_rows;
     d (*win_fun)(us,us);
     switch (wintype) {
     case Hann: {

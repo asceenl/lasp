@@ -5,7 +5,7 @@ endif(!LASP_DEBUG)
 
 add_library(lasp_lib
   lasp_fft.c
-  lasp_math.c
+  lasp_mat.c
   lasp_math_raw.c
   lasp_alg.c
   lasp_assert.c

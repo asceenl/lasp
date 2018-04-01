@@ -8,10 +8,12 @@
 #include "lasp_alg.h"
 
 void cmv_dot(const cmat* A,const vc* restrict x,vc* restrict b){
+    dbgassert(A && x && b,NULLPTRDEREF);
+    assert_vx(b);
+    assert_vx(x);
+    dbgassert(A->n_cols == x->n_rows,SIZEINEQUAL);
+    dbgassert(A->n_rows == b->n_rows,SIZEINEQUAL);
 
-    dbgassert(A->n_rows == b->size,SIZEINEQUAL);
-    dbgassert(A->n_cols == x->size,SIZEINEQUAL);
-	
     #if LASP_USE_BLAS == 1
     dbgassert(false,"Untested function. Is not functional for strides");
     /* typedef enum CBLAS_ORDER     {CblasRowMajor=101, CblasColMajor=102} CBLAS_ORDER; */
