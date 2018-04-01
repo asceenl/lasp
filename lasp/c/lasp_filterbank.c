@@ -68,12 +68,6 @@ FilterBank* FilterBank_create(const dmat* h,
 
     dmat_free(&temp);
 
-    /* Push initial output of zeros to the output fifo */
-    dmat initial_output = dmat_alloc(fb->P_m_1,nfilters);
-    dmat_set(&initial_output,0);
-    dFifo_push(fb->output_fifo,&initial_output);
-    dmat_free(&initial_output);
-    
     feTRACE(15);
     return fb;
 }
