@@ -50,7 +50,9 @@ vd SPLowpass_filter(SPLowpass* lp,
 
     fsTRACE(15);
     dbgassert(lp && input,NULLPTRDEREF);
-    us input_size = input->size;
+    assert_vx(input);
+    us input_size = input->n_rows;
+
     if(input_size == 0) {
         return vd_alloc(0);
     }

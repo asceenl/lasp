@@ -207,7 +207,7 @@ cdef class AvPowerSpectra:
     def __cinit__(self,us nfft,
                   us nchannels,
                   d overlap_percentage,
-                  us window=Window.rectangular,
+                  us window=Window.hann,
                   d[:] weighting = np.array([])):
 
         
@@ -266,11 +266,13 @@ cdef class AvPowerSpectra:
         result = np.empty((self.nfft//2+1,nchannels,nchannels),
                           dtype = NUMPY_COMPLEX_TYPE,
                           order='F')
+
         cdef c[::1,:,:] result_view = result
+
         cdef cmat res = cmat_foreign_data(self.nfft//2+1,
                                           nchannels*nchannels,
                                           &result_view[0,0,0],
-                                          True)
+                                          False)
         # Copy result
         cmat_copy(&res,result_ptr)
 
@@ -374,14 +376,15 @@ cdef class SPLowpass:
             SPLowpass_free(self.lp)
 
     def filter_(self,d[:] input_):
-        # cdef vd input_vd = vd_foreign(input_.size,&input_[0])
-        # cdef dmat output = FilterBank_filter(self.fb,&input_vd)
+        cdef vd input_vd = dmat_foreign_data(input_.shape[0],1,
+                                             &input_[0],False)
+        
+        cdef dmat output = SPLowpass_filter(self.lp,&input_vd)
 
         # # Steal the pointer from output
-        # result = dmat_to_ndarray(&output,True)
+        result = dmat_to_ndarray(&output,True)
 
-        # dmat_free(&output)
-        # vd_free(&input_vd)
+        dmat_free(&output)
+        vd_free(&input_vd)
 
-        # return result
-        pass
+        return result

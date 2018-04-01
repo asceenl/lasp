@@ -11,7 +11,7 @@
 #ifndef LASP_SP_LOWPASS_H
 #define LASP_SP_LOWPASS_H
 #include "lasp_types.h"
-#include "lasp_math.h"
+#include "lasp_mat.h"
 
 typedef struct SPLowpass_s SPLowpass;
 
