@@ -19,7 +19,9 @@ add_library(lasp_lib
   lasp_filterbank.c
   lasp_octave_fir.c
   lasp_decimation.c
+  lasp_sp_lowpass.c
   )
+
 
 
 target_link_libraries(lasp_lib fftpack openblas)

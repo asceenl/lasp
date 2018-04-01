@@ -338,3 +338,36 @@ cdef class Decimator:
     def __dealloc__(self):
         if self.dec != NULL:
             Decimator_free(self.dec)
+
+
+cdef extern from "lasp_sp_lowpass.h":
+    ctypedef struct c_SPLowpass "SPLowpass"
+    c_SPLowpass* SPLowpass_create(d fs,d tau)
+    vd SPLowpass_filter(c_SPLowpass* lp,
+                        const vd* _input)
+    void SPLowpass_free(c_SPLowpass* lp)
+
+cdef class SPLowpass:
+    cdef:
+        c_SPLowpass* lp
+    def __cinit__(self,d fs,d tau):
+        self.lp = SPLowpass_create(fs,tau)
+        if not self.lp:
+            raise RuntimeError('Error creating lowpass filter')
+
+    def __dealloc__(self):
+        if self.lp:
+            SPLowpass_free(self.lp)
+
+    def filter_(self,d[:] input_):
+        # cdef vd input_vd = vd_foreign(input_.size,&input_[0])
+        # cdef dmat output = FilterBank_filter(self.fb,&input_vd)
+
+        # # Steal the pointer from output
+        # result = dmat_to_ndarray(&output,True)
+
+        # dmat_free(&output)
+        # vd_free(&input_vd)
+
+        # return result
+        pass
