@@ -16,7 +16,14 @@
 #define LASP_NUMPY_FLOAT_TYPE NPY_FLOAT32
 #endif
 
-
+/** 
+ * Create a numpy array from an existing dmat.
+ *
+ * @param mat 
+ * @param transfer_ownership 
+ *
+ * @return 
+ */
 static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
     fsTRACE(15);
     dbgassert(mat,NULLPTRDEREF);

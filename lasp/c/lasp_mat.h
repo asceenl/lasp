@@ -357,9 +357,11 @@ static inline void dmat_copy_rows(dmat* to,const dmat* from,
                                   us startrow_from,
                                   us nrows) {
     us col,ncols = to->n_cols;
-
+    dbgassert(to && from,NULLPTRDEREF);
+    dbgassert(to->n_cols == from->n_cols,SIZEINEQUAL);
     dbgassert(startrow_from+nrows <= from->n_rows,OUTOFBOUNDSMATR);
     dbgassert(startrow_to+nrows <= to->n_rows,OUTOFBOUNDSMATR);
+
     for(col=0;col<ncols;col++) {
         d* to_d = getdmatval(to,startrow_to,col);
         d* from_d = getdmatval(from,startrow_from,col);

@@ -25,10 +25,10 @@ static inline d vd_dot(const vd * a,const vd* b) {
     return d_dot(getvdval(a,0),getvdval(b,0),a->n_rows);
 }
 
-/** 
+/**
  * y = fac * y
  *
- * @param y 
+ * @param y
  * @param fac scale factor
  */
 static inline void dmat_scale(dmat* y,const c fac){
@@ -38,10 +38,10 @@ static inline void dmat_scale(dmat* y,const c fac){
     }
 
 }
-/** 
+/**
  * y = fac * y
  *
- * @param y 
+ * @param y
  * @param fac scale factor
  */
 static inline void cmat_scale(cmat* y,const c fac){

@@ -98,8 +98,6 @@ cdef class Fft:
 
         return timedata
 
-
-
 cdef extern from "lasp_window.h":
     ctypedef enum WindowType:
         Hann
@@ -214,7 +212,7 @@ cdef class AvPowerSpectra:
         cdef vd weighting_vd
         cdef vd* weighting_ptr = NULL
         if(weighting.size != 0):
-            weighting_vd = dmat_foreign_data(weighting.n_rows,1,
+            weighting_vd = dmat_foreign_data(weighting.size,1,
                                              &weighting[0],False)
             weighting_ptr = &weighting_vd
         
@@ -295,7 +293,7 @@ cdef class FilterBank:
         cdef dmat hmat = dmat_foreign_data(h.shape[0],
                                            h.shape[1],
                                            &h[0,0],
-                                           True)
+                                           False)
 
         self.fb = FilterBank_create(&hmat,nfft)
         dmat_free(&hmat)
@@ -376,6 +374,9 @@ cdef class SPLowpass:
             SPLowpass_free(self.lp)
 
     def filter_(self,d[:] input_):
+        if input_.shape[0] == 0:
+            return np.array([],dtype=NUMPY_FLOAT_TYPE)
+        
         cdef vd input_vd = dmat_foreign_data(input_.shape[0],1,
                                              &input_[0],False)
         

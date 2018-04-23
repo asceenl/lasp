@@ -98,11 +98,13 @@ dmat FilterBank_filter(FilterBank* fb,
 
     dmat input_block = dmat_alloc(nfft,1);
 
-    /* Output is ready to be multiplied with FFt'th filter */
+    /* FFT'th filter coefficients */
     cmat input_fft = cmat_alloc(nfft/2+1,1);
 
-    /* Output is ready to be multiplied with FFt'th filter */
+    /* Output of the fast convolution */
     cmat output_fft = cmat_alloc(nfft/2+1,nfilters);
+
+    /* Inverse FFT'th output */
     dmat output_block = dmat_alloc(nfft,nfilters);
 
     while (dFifo_size(input_fifo) >= nfft) {
@@ -111,6 +113,7 @@ dmat FilterBank_filter(FilterBank* fb,
                                 &input_block,
                                 fb->P_m_1 /* save P-1 samples */
             );
+        
         dbgassert(nsamples == nfft,"BUG in dFifo");
 
         Fft_fft(fb->fft,&input_block,&input_fft);
@@ -127,7 +130,9 @@ dmat FilterBank_filter(FilterBank* fb,
                         
             vc_free(&output_fft_col);
             vc_free(&filter_col);
+            
         }
+        
         vc_free(&input_fft_col);
 
         Fft_ifft(fb->fft,&output_fft,&output_block);
@@ -136,6 +141,8 @@ dmat FilterBank_filter(FilterBank* fb,
                                          fb->P_m_1,0, /* startrow, startcol */
                                          nfft-fb->P_m_1, /* Number of rows */
                                          output_block.n_cols);
+
+        /* Push the valid samples to the output FIFO */
         dFifo_push(fb->output_fifo,&valid_samples);
         dmat_free(&valid_samples);
 
