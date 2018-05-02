@@ -10,6 +10,7 @@ __pycache__
 cython_debug
 lasp/config.pxi
 lasp/wrappers.c
+lasp/resources_rc.py
 *.so
 test/test_bf
 test/test_fft
@@ -19,3 +20,4 @@ doc
 LASP.egg-info
 lasp_octave_fir.*
 lasp/ui_*
+resources_rc.py

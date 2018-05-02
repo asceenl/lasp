@@ -17,7 +17,7 @@ add_library(lasp_lib
   lasp_worker.c
   lasp_dfifo.c
   lasp_filterbank.c
-  lasp_octave_fir.c
+  # lasp_octave_fir.c
   lasp_decimation.c
   lasp_sp_lowpass.c
   )

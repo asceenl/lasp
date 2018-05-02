@@ -18,17 +18,27 @@ include_directories(
 #   COMMAND MakeTable ${CMAKE_CURRENT_BINARY_DIR}/Table.h
 #   DEPENDS MakeTable
 #   )
- 
+
+set(ui_files ui_apsrt ui_mainwindow ui_figure ui_about ui_apswidget ui_revtime ui_slmwidget)
+foreach(fn ${ui_files})
+  add_custom_command(
+    OUTPUT "${fn}.py"
+    COMMAND pyside-uic ${CMAKE_CURRENT_SOURCE_DIR}/ui/${fn}.ui -o ${CMAKE_CURRENT_SOURCE_DIR}/${fn}.py
+    DEPENDS "ui/${fn}.ui"
+    )
+    add_custom_target(${fn} ALL DEPENDS "${fn}.py")
+endforeach(fn)
+
 add_custom_command(
-  OUTPUT "aps_ui.py"
-  COMMAND pyside-uic ${CMAKE_CURRENT_SOURCE_DIR}/ui/aps_ui.ui -o ${CMAKE_CURRENT_SOURCE_DIR}/aps_ui.py
-  DEPENDS "ui/aps_ui.ui"
-  )
-add_custom_target(ui ALL DEPENDS "aps_ui.py")
+    OUTPUT "${PROJECT_SOURCE_DIR}/resources_rc.py"
+    COMMAND pyside-rcc -py3 ui/resources.qrc -o ${PROJECT_SOURCE_DIR}/resources_rc.py
+    DEPENDS "ui/resources.qrc"
+)
+add_custom_target(resources_rc ALL DEPENDS "${PROJECT_SOURCE_DIR}/resources_rc.py")
 
 
-set_source_files_properties(wrappers.c PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} ${CYTHON_EXTRA_C_FLAGS}")  
+
+
+set_source_files_properties(wrappers.c PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} ${CYTHON_EXTRA_C_FLAGS}")
 cython_add_module(wrappers wrappers.pyx)
 target_link_libraries(wrappers lasp_lib )
-
-
