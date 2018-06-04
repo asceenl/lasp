@@ -13,6 +13,7 @@ class ReverbTime:
     """
     Tool to estimate the reverberation time
     """
+
     def __init__(self, fs, level):
         """
         Initialize Reverberation time computer.

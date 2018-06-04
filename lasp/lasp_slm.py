@@ -12,7 +12,7 @@ from .lasp_common import (FreqWeighting, sens, calfile,
                           TimeWeighting, getTime, P_REF)
 from .lasp_weighcal import WeighCal
 from .lasp_gui_tools import wait_cursor
-from .lasp_figure import FigureDialog, PlotOptions
+from .lasp_figure import PlotOptions, Plotable
 from .ui_slmwidget import Ui_SlmWidget
 
 __all__ = ['SLM', 'SlmWidget']
@@ -96,15 +96,24 @@ class SLM:
 
 
 class SlmWidget(ComputeWidget, Ui_SlmWidget):
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Initialize the SlmWidget.
         """
-        super().__init__()
+        super().__init__(parent)
         self.setupUi(self)
-        FreqWeighting.fillComboBox(self.freqweighting)
 
+        FreqWeighting.fillComboBox(self.tfreqweighting)
+        FreqWeighting.fillComboBox(self.eqfreqweighting)
         self.setMeas(None)
+
+    def init(self, fm):
+        """
+        Register combobox of the figure dialog to plot to in the FigureManager
+        """
+        super().init(fm)
+        fm.registerCombo(self.tfigure)
+        fm.registerCombo(self.eqfigure)
 
     def setMeas(self, meas):
         """
@@ -119,27 +128,64 @@ class SlmWidget(ComputeWidget, Ui_SlmWidget):
         else:
             self.setEnabled(True)
             rt = meas.recTime
-            self.starttime.setRange(0, rt, 0)
-            self.stoptime.setRange(0, rt, rt)
+            self.tstarttime.setRange(0, rt, 0)
+            self.tstoptime.setRange(0, rt, rt)
 
-            self.channel.clear()
+            self.eqstarttime.setRange(0, rt, 0)
+            self.eqstoptime.setRange(0, rt, rt)
+
+            self.tchannel.clear()
+            self.eqchannel.clear()
             for i in range(meas.nchannels):
-                self.channel.addItem(str(i))
-            self.channel.setCurrentIndex(0)
+                self.tchannel.addItem(str(i))
+                self.eqchannel.addItem(str(i))
+            self.tchannel.setCurrentIndex(0)
+            self.eqchannel.setCurrentIndex(0)
 
-    def compute(self):
+    def computeEq(self):
         """
-        Compute Sound Level using settings. This method is
-        called whenever the Compute button is pushed in the SLM tab
+        Compute equivalent levels for a piece of time
         """
         meas = self.meas
         fs = meas.samplerate
-        channel = self.channel.currentIndex()
-        tw = TimeWeighting.getCurrent(self.timeweighting)
-        fw = FreqWeighting.getCurrent(self.freqweighting)
+        channel = self.eqchannel.currentIndex()
+        fw = FreqWeighting.getCurrent(self.eqfreqweighting)
+
+        startpos = self.eqstarttime.value
+        stoppos = self.eqstoptime.value
+        N = meas.N
+        istart = int(startpos*fs)
+        if istart >= N:
+            raise ValueError("Invalid start position")
+        istop = int(stoppos*fs)
+        if istart > N:
+            raise ValueError("Invalid stop position")
+
+
+        with wait_cursor():
+            # This one exctracts the calfile and sensitivity from global
+            # variables defined at the top. # TODO: Change this to a more
+            # robust variant.
+            weighcal = WeighCal(fw, nchannels=1,
+                                fs=fs, calfile=calfile,
+                                sens=sens)
+            praw = meas.praw()[istart:istop, [channel]]
+            pto = PlotOptions()
+            fig, new = self.getFigure(self.eqfigure, pto, 'bar')
+            fig.show()
+
+    def computeT(self):
+        """
+        Compute sound levels as a function of time.
+        """
+        meas = self.meas
+        fs = meas.samplerate
+        channel = self.tchannel.currentIndex()
+        tw = TimeWeighting.getCurrent(self.ttimeweighting)
+        fw = FreqWeighting.getCurrent(self.tfreqweighting)
 
         # Downsampling factor of result
-        dsf = self.downsampling.value()
+        dsf = self.tdownsampling.value()
         # gb = self.slmFre
 
         with wait_cursor():
@@ -162,8 +208,11 @@ class SlmWidget(ComputeWidget, Ui_SlmWidget):
             pto = PlotOptions()
             pto.ylabel = f'L{fw[0]} [dB({fw[0]})]'
             pto.xlim = (time[0], time[-1])
-            fig, new = self.getFigure(pto)
-            fig.fig.plot(time, filtered)
+
+            pta = Plotable(time, filtered)
+
+            fig, new = self.getFigure(self.tfigure, pto, 'line')
+            fig.fig.add(pta)
             fig.show()
 
         stats = f"""Statistical results:
@@ -175,3 +224,13 @@ Maximum level (L{fw[0]} max): {Lmax:4.4} [dB({fw[0]})]
 
         """
         self.results.setPlainText(stats)
+
+    def compute(self):
+        """
+        Compute Sound Level using settings. This method is
+        called whenever the Compute button is pushed in the SLM tab
+        """
+        if self.ttab.isVisible():
+            self.computeT()
+        elif self.eqtab.isVisible():
+            self.computeEq()
