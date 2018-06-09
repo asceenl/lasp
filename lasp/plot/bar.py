@@ -10,22 +10,25 @@ Class for plotting bars on a QGraphicsScene.
 """
 from ..lasp_gui_tools import ASCEEColors
 from PySide.QtGui import (
-    QGraphicsScene, QGraphicsView, QPen, QBrush, QGraphicsRectItem,
-    QGraphicsTextItem, QPainter, QImage
+    QGraphicsScene, QPen, QBrush, QGraphicsRectItem,
+    QGraphicsTextItem, QPainter, QImage, QPrinter
     )
 
 # from PySide.QtOpenGL import
-from PySide.QtCore import Qt, QRectF, QLineF, QSize, QRect, QPointF
+from PySide.QtCore import Qt, QRectF, QLineF, QSize, QRect, QPointF, QSizeF
 import numpy as np
 import os
 
 
-leftoffset = .1  # Left offset of the figure
-rightoffset = 0
-topoffset = .05
-bottomoffset = .1
-nyticks = 6
-ticklength = .01
+leftoffset = 120  # Left offset of the figure
+rightoffset = 60
+topoffset = 30
+bottomoffset = 80
+xticklabeloffset = 55
+xlabelbottomoffset = 30
+ylabelleftoffset = 30
+nyticks = 11
+ticklength = 10
 
 # Distance between two bar groups in units of bar thicknesses
 dxbars = 2
@@ -43,7 +46,7 @@ class BarScene(QGraphicsScene):
                  xlabel=None,
                  ylabel=None,
                  title=None,
-                 colors=DEFAULT_COLORS, size=(800, 600),
+                 colors=DEFAULT_COLORS, size=(1200, 600),
                  legend=None):
         """
         Initialize a bar scene
@@ -65,19 +68,23 @@ class BarScene(QGraphicsScene):
         self.bgs = []
 
         self.size = size
+        xsize = size[0]
+        ysize = size[1]
+
+        self.xsize = xsize
+        self.ysize = ysize
+
         self.colors = colors
 
         # Size of the frame
-        Lx = 1 - rightoffset - leftoffset
-        Ly = 1 - topoffset - bottomoffset
+        Lx = xsize - rightoffset - leftoffset
+        Ly = ysize - topoffset - bottomoffset
 
         # The main frame where the bars are in.
         mainframe = self.createRect(leftoffset,
                                     bottomoffset,
                                     Lx,
                                     Ly)
-        self.addItem(mainframe)
-
         # Set the y ticks and ticklabels
         self.yticks = []
         txtmaxwidth = 0
@@ -91,21 +98,24 @@ class BarScene(QGraphicsScene):
             if grid:
                 ygrid = self.addLine(leftoffset,
                                      y,
-                                     1-rightoffset,
-                                     y,pen=QPen(Qt.gray))
+                                     xsize-rightoffset,
+                                     y, pen=QPen(Qt.gray))
 
             range_ = ylim[1]-ylim[0]
             ytickval = i/(nyticks-1)*range_ + ylim[0]
-            yticklabel = f'{ytickval:2}'
+            yticklabel = f'{ytickval:3.3}'
             txt = QGraphicsTextItem(yticklabel)
             txtwidth = txt.boundingRect().width()
             txtmaxwidth = max(txtmaxwidth, txtwidth)
-            txt.setPos((leftoffset-.03)*self.xscale-txtwidth,
-                        (1-y-.022)*self.yscale)
+            txt.setPos(leftoffset-10-txtwidth,
+                       ysize - y-.022*self.ysize)
             self.addItem(txt)
             self.yticks.append(ytick)
 
-        # Create the bars
+        # Main frame added after grid lines, to get the color right
+        self.addItem(mainframe)
+
+        # # Create the bars
         for g in range(G):
             bg = []
             for n in range(N):
@@ -118,66 +128,67 @@ class BarScene(QGraphicsScene):
             self.bgs.append(bg)
 
         # Add x ticks and ticklabels
+        xticklabels = []
         for n in range(N):
             xticklabel = f'{xvals[n]}'
             txt = QGraphicsTextItem(xticklabel)
-            txtxpos = self.getBarGroupMidPos(n)-0.01*self.xscale
+            txtxpos = self.getBarGroupMidPos(n)-12
             txt.setPos(txtxpos,
-                       self.yscale*(1-bottomoffset+.1))
+                       self.ysize-bottomoffset+xticklabeloffset)
             txt.rotate(-90)
             self.addItem(txt)
+            xticklabels.append(txt)
 
         # Set xlabel
         if xlabel is not None:
             xlabel = QGraphicsTextItem(xlabel)
             width = xlabel.boundingRect().width()
-            txtxpos = self.xscale/2-width/2
-            txtypos = .998*self.yscale
+            txtxpos = xsize/2-width/2
+            txtypos = ysize - xlabelbottomoffset
             xlabel.setPos(txtxpos, txtypos)
             self.addItem(xlabel)
 
-        # Set ylabel
+        # # Set ylabel
         if ylabel is not None:
             ylabel = QGraphicsTextItem(ylabel)
-            ylabel.setPos((leftoffset-.01)*self.xscale-txtmaxwidth,
-                          ((1-topoffset-bottomoffset)/2+topoffset)*self.yscale)
+            ylabel.setPos(ylabelleftoffset,
+                          (ysize-topoffset-bottomoffset)/2+topoffset)
             ylabel.rotate(-90)
             self.addItem(ylabel)
-
 
         # Set title
         if title is not None:
             title = QGraphicsTextItem(title)
             width = xlabel.boundingRect().width()
-            txtxpos = self.xscale/2-width/2
-            txtypos = (1-.998)*self.yscale
+            txtxpos = self.xsize/2-width/2
+            txtypos = (1-.998)*self.ysize
             title.setPos(txtxpos, txtypos)
             self.addItem(title)
 
-        legpos = (1-rightoffset-.3, 1-topoffset-.05)
-
-        dyleg = 0.03
-        dylegtxt = dyleg
-        Lyleg = .02
-        Lxleg = .05
-        legrectmarginpix = 5
-        boxtopleft = QPointF(legpos[0]*self.xscale-legrectmarginpix,
-                             (1-legpos[1]-Lyleg)*self.yscale-legrectmarginpix)
-
-
         if legend is not None:
-            nlegs = len(legend)
             maxlegtxtwidth = 0
-            for i,leg in enumerate(legend):
+            legpos = (xsize-rightoffset-300,
+                      ysize-topoffset-30)
+
+            dyleg = 15
+            dylegtxt = dyleg
+            Lylegrect = 10
+            Lxlegrect = 20
+            legrectmargin = 5
+            boxtopleft = QPointF(legpos[0]-legrectmargin,
+                                 ysize-legpos[1]-Lylegrect-legrectmargin)
+
+            legbox = self.addRect(QRectF(0, 0, 0, 0),
+                                  pen=QPen(), brush=QBrush(Qt.white))
+
+            for i, leg in enumerate(legend):
                 leglabel = legend[i]
 
-                # The position of the legend, in our coordinates
+                # The position of the legend, in screen coordinates
                 pos = (legpos[0], legpos[1] - i*dyleg)
                 color = self.colors[i]
 
-                legrect = self.createRect(*pos,Lxleg,Lyleg)
-
-                legrectwidth = legrect.boundingRect().width()
+                legrect = self.createRect(*pos, Lxlegrect, Lylegrect)
 
                 legrect.setBrush(QBrush(color))
                 legtxt = QGraphicsTextItem(leglabel)
@@ -187,80 +198,108 @@ class BarScene(QGraphicsScene):
                 self.addItem(legrect)
                 self.addItem(legtxt)
 
-                legtxt.setPos(legpos[0]*self.xscale+legrectwidth,
-                              (1-pos[1]-dylegtxt)*self.yscale)
+                legtxt.setPos(legpos[0]+Lxlegrect,
+                              ysize-pos[1]-dylegtxt-3)
 
-                boxbottomright = legtxt.boundingRect().topRight()
+            legboxsize = QSize(maxlegtxtwidth+Lxlegrect+2*legrectmargin,
+                               (i+1)*dyleg+legrectmargin)
+            legboxrect = QRectF(boxtopleft, legboxsize)
+            legbox.setRect(legboxrect)
 
-            legboxsize = QSize(maxlegtxtwidth+legrectwidth+2*legrectmarginpix,
-                               (i+1)*dyleg*self.yscale+legrectmarginpix)
-
-            legboxrect = QRectF(boxtopleft,legboxsize)
-            legbox = self.addRect(legboxrect)
-
-
-    def saveAsPng(self, fn, force=False):
+    def saveAsBitmap(self, fn):
         """
-        Save bar image as a jpg file.
+        Save bar image as a jpg file. Overwrites a file already existing in
+        filesystem.
 
         https://stackoverflow.com/questions/7451183/how-to-create-image-file\
         -from-qgraphicsscene-qgraphicsview#11642517
 
+        Args:
+            fn: Filename
+        Returns:
+            True on success
         """
-        if os.path.exists(fn) and not force:
-            raise RuntimeError(f"File {fn} already exists in filesystem.")
-
-        # self.clearSelection()
         image = QImage(*self.size,
                        QImage.Format_ARGB32_Premultiplied)
-        # image = QImage()
+
         painter = QPainter(image)
         # painter.begin()
+        # painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(Qt.white)
+        painter.setPen(Qt.white)
+        painter.drawRect(QRect(0, 0, *self.size))
+
+        targetrect = QRectF(0, 0, *self.size)
+        sourcerect = QRectF(0, 0, *self.size)
+        self.render(painter, targetrect, sourcerect)
+        painter.end()
+
+        return image.save(fn)
+
+    def saveAsPdf(self, fn, force=False):
+        """
+        Save bar image as a eps file.
+
+        Args:
+            fn: Filename
+            force: if True, overwrites an existing file. If false, raises a
+            RuntimeError if file already exists.
+        """
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setOutputFormat(QPrinter.PdfFormat)
+        printer.setOutputFileName(fn)
+        printer.setFullPage(True)
+        printer.setPageSize(QPrinter.Custom)
+        printer.setPaperSize(QSizeF(*self.size), QPrinter.Millimeter)
+        printer.setPageMargins(0, 0, 0, 0, QPrinter.Millimeter)
+
+        painter = QPainter(printer)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(Qt.white)
         painter.setPen(Qt.white)
-        painter.drawRect(QRect(0,0,*self.size))
+        painter.drawRect(QRect(0, 0, *self.size))
 
-        targetrect = QRectF(0,0,*self.size)
-        sourcerect = QRectF(0,0,*self.size)
-        self.render(painter,targetrect,sourcerect)
+        targetrect = QRectF(0, 0, printer.width(), printer.height())
+        sourcerect = QRectF(0, 0, *self.size)
+        self.render(painter, targetrect, sourcerect)
         painter.end()
-        # print('saving image')
-        image.save(fn)
+        return True
 
-    def getBarGroupMidPos(self,n):
+    def getBarGroupMidPos(self, n):
         """
         Returns the mid x position below each bar group
         """
-        Lx = 1-rightoffset-leftoffset
-        Ly = 1 - topoffset - bottomoffset
+        Lx = self.xsize-rightoffset-leftoffset
+        # Ly = self.ysize - topoffset - bottomoffset
 
-        start = .05
+        start = 10
         S = Lx - 2*start
         L = S/(self.N*self.G+dxbars*(self.N-1))
         xL = leftoffset+start
-        return (n*(self.G*L+dxbars*L) + xL + self.G*L/2)*self.xscale
+        return (n*(self.G*L+dxbars*L) + xL + self.G*L/2)
 
     def getBarRect(self, n, g, yval):
-        Lx = 1-rightoffset-leftoffset
-        Ly = 1 - topoffset - bottomoffset
+        Lx = self.xsize-rightoffset-leftoffset
+        Ly = self.ysize-topoffset - bottomoffset
 
-        start = .05
+        start = 10
         S = Lx - 2*start
+        assert S > 0, "Size of bar field is too small."
+        # Width of a single bar
         L = S/(self.N*self.G+dxbars*(self.N-1))
         xL = leftoffset+start
         x = g*L + n*(self.G*L+dxbars*L) + xL
 
-        return QRectF(x*self.xscale,
-                      (1-bottomoffset-yval*Ly)*self.yscale,
-                      L*self.xscale,
-                      yval*Ly*self.yscale)
+        return QRectF(x,
+                      self.ysize-bottomoffset-yval*Ly,
+                      L,
+                      yval*Ly)
 
     def addLine(self, x1, y1, x2, y2, pen=QPen(), brush=QBrush()):
-        line = QLineF(x1*self.xscale,
-                      (1-y1)*self.yscale,
-                      (x2)*self.xscale,
-                      (1-y2)*self.yscale)
+        line = QLineF(x1,
+                      self.ysize - y1,
+                      x2,
+                      self.ysize - y2)
         return super().addLine(line, pen=pen, brush=brush)
 
     def createRect(self, x, y, Lx, Ly, pen=QPen(), brush=QBrush()):
@@ -272,21 +311,13 @@ class BarScene(QGraphicsScene):
 
         # Y-position from the top, these are the coordinates used to create a
         # rect item.
-        y1 = 1-y-Ly
-        return QGraphicsRectItem(x1*self.xscale,
-                                 y1*self.yscale,
-                                 Lx*self.xscale,
-                                 Ly*self.yscale,
+        y1 = self.ysize-y-Ly
+        return QGraphicsRectItem(x1,
+                                 y1,
+                                 Lx,
+                                 Ly,
                                  pen=pen,
                                  brush=brush)
-
-    @property
-    def xscale(self):
-        return self.size[0]
-
-    @property
-    def yscale(self):
-        return self.size[1]
 
     def set_ydata(self, newydata):
         G = len(self.bgs)
