@@ -56,6 +56,12 @@ FilterBank* FilterBank_create(const dmat* h,
     fb->output_fifo = dFifo_create(nfilters,FIFO_SIZE_MULT*nfft);
     fb->input_fifo = dFifo_create(1,FIFO_SIZE_MULT*nfft);
 
+    // Initialize the input fifo with zeros.
+    // dmat init_zero = dmat_alloc(nfft - P, 1);
+    // dmat_set(&init_zero,0);
+    // dFifo_push(fb->input_fifo, &init_zero);
+    // dmat_free(&init_zero);
+
     /* Create a temporary buffer which is going to be FFT'th to
      * contain the filter transfer functions.
      */

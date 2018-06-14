@@ -304,9 +304,10 @@ cdef class FilterBank:
         if self.fb:
             FilterBank_free(self.fb)
 
-    def filter_(self,d[:] input_):
+    def filter_(self,d[::1, :] input_):
+        assert input_.shape[1] == 1
         cdef dmat input_vd = dmat_foreign_data(input_.shape[0],1,
-                                             &input_[0],False)
+                                             &input_[0, 0],False)
 
         cdef dmat output = FilterBank_filter(self.fb,&input_vd)
 
@@ -337,19 +338,22 @@ cdef class Decimator:
         self.dec = Decimator_create(nchannels,DEC_FAC_4)
         if not self.dec:
             raise RuntimeError('Error creating decimator')
-    
+
     def decimate(self,d[::1,:] samples):
         assert samples.shape[1] == self.nchannels,'Invalid number of channels'
+        if samples.shape[0] == 0:
+            return np.zeros((0, self.nchannels))
+
         cdef dmat d_samples = dmat_foreign_data(samples.shape[0],
                                                 samples.shape[1],
                                                 &samples[0,0],
                                                 False)
-        
+
         cdef dmat res = Decimator_decimate(self.dec,&d_samples)
         result = dmat_to_ndarray(&res,True)
         dmat_free(&res)
         return result
-        
+
     def __dealloc__(self):
         if self.dec != NULL:
             Decimator_free(self.dec)

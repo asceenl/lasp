@@ -14,21 +14,21 @@
 #include "lasp_assert.h"
 
 /// Dense matrix of floating point values
-typedef struct { 
-    us n_rows; 
+typedef struct {
+    us n_rows;
     us n_cols;
     bool _foreign_data;
     us stride;
     d* _data;
-} dmat; 
+} dmat;
 /// Dense matrix of complex floating point values
-typedef struct { 
-    us n_rows; 
+typedef struct {
+    us n_rows;
     us n_cols;
     bool _foreign_data;
     us stride;
-    c* _data; 
-} cmat; 
+    c* _data;
+} cmat;
 
 typedef dmat vd;
 typedef cmat vc;
@@ -44,19 +44,19 @@ typedef cmat vc;
     assert_vx(vec);                                           \
     dbgassert((((us) index) < (vec)->n_rows),OUTOFBOUNDSVEC);  \
     (vec)->_data[index] = val;
-    
+
 #define setmatval(mat,row,col,val)                              \
     dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
     dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
     (mat)->data[(col)*(mat)->stride+(row)] = val;
 
-/** 
+/**
  * Return pointer to a value from a vector
  *
  * @param mat The vector
  * @param row The row
  */
-/** 
+/**
  * Return a value from a matrix of floating points
  *
  * @param mat The matrix
@@ -69,7 +69,7 @@ static inline d* getdmatval(const dmat* mat,us row,us col){
     dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
     return &mat->_data[col*mat->stride+row];
 }
-/** 
+/**
  * Return a value from a matrix of complex floating points
  *
  * @param mat The matrix
@@ -85,11 +85,11 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
 
 static inline d* getvdval(const vd* vec,us row){
     dbgassert(vec,NULLPTRDEREF);
-    assert_vx(vec); 
+    assert_vx(vec);
     return getdmatval(vec,row,0);
 }
 
-/** 
+/**
  * Return pointer to a value from a complex vector
  *
  * @param mat The vector
@@ -121,15 +121,15 @@ static inline c* getvcval(const vc* vec,us row){
 #define check_overflow_xmat(xmat)
 #endif
 
-/** 
+/**
  * Sets all values in a matrix to the value
  *
  * @param mat The matrix to set
- * @param value 
+ * @param value
  */
 static inline void dmat_set(dmat* mat,const d value){
     dbgassert(mat,NULLPTRDEREF);
-    if(likely(mat->n_cols && mat->n_rows)) {
+    if(likely(mat->n_cols * mat->n_rows > 0)) {
         for(us col=0;col<mat->n_cols;col++) {
             d_set(getdmatval(mat,0,col),value,mat->n_rows);
         }
@@ -137,15 +137,15 @@ static inline void dmat_set(dmat* mat,const d value){
 }
 #define vd_set dmat_set
 
-/** 
+/**
  * Sets all values in a matrix to the value
  *
  * @param mat The matrix to set
- * @param value 
+ * @param value
  */
 static inline void cmat_set(cmat* mat,const c value){
     dbgassert(mat,NULLPTRDEREF);
-    if(likely(mat->n_cols && mat->n_rows)) {
+    if(likely(mat->n_cols * mat->n_rows > 0)) {
         for(us col=0;col<mat->n_cols;col++) {
             c_set(getcmatval(mat,0,col),value,mat->n_rows);
         }
@@ -153,7 +153,7 @@ static inline void cmat_set(cmat* mat,const c value){
 }
 #define vc_set cmat_set
 
-/** 
+/**
  * Allocate data for a matrix of floating points
  *
  * @param n_rows Number of rows
@@ -165,12 +165,12 @@ static inline void cmat_set(cmat* mat,const c value){
 static inline dmat dmat_alloc(us n_rows,
                               us n_cols) {
     dmat result = { n_rows, n_cols, false, n_rows, NULL};
-    
+
     #ifdef LASP_DEBUG
     result._data = (d*) a_malloc((n_rows*n_cols+1)*sizeof(d));
     result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
-    result._data = (d*) a_malloc((n_rows*n_cols)*sizeof(d));    
+    result._data = (d*) a_malloc((n_rows*n_cols)*sizeof(d));
     #endif //  LASP_DEBUG
 
     #ifdef LASP_DEBUG
@@ -180,7 +180,7 @@ static inline dmat dmat_alloc(us n_rows,
     return result;
 }
 
-/** 
+/**
  * Allocate a matrix of complex floating points
  *
  * @param n_rows Number of rows
@@ -197,7 +197,7 @@ static inline cmat cmat_alloc(const us n_rows,
     result._data = (c*) a_malloc((n_rows*n_cols+1)*sizeof(c));
     result._data[n_rows*n_cols] = OVERFLOW_MAGIC_NUMBER;
     #else
-    result._data = (c*) a_malloc((n_rows*n_cols)*sizeof(c));    
+    result._data = (c*) a_malloc((n_rows*n_cols)*sizeof(c));
     #endif //  LASP_DEBUG
 
     #ifdef LASP_DEBUG
@@ -206,7 +206,7 @@ static inline cmat cmat_alloc(const us n_rows,
     return result;
 }
 
-/** 
+/**
  * Allocate data for a float vector.
  *
  * @param size Size of the vector
@@ -217,7 +217,7 @@ static inline vd vd_alloc(us size) {
     return dmat_alloc(size,1);
 }
 
-/** 
+/**
  * Allocate data for a complex vector.
  *
  * @param size Size of the vector
@@ -229,7 +229,7 @@ static inline vc vc_alloc(us size) {
 }
 
 
-/** 
+/**
  * Creates a dmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
@@ -237,9 +237,9 @@ static inline vc vc_alloc(us size) {
  *
  * @param n_rows Number of rows
  * @param n_cols Number of columns
- * @param data 
+ * @param data
  *
- * @return 
+ * @return
  */
 static inline dmat dmat_foreign(dmat* other) {
     dbgassert(other,NULLPTRDEREF);
@@ -250,7 +250,7 @@ static inline dmat dmat_foreign(dmat* other) {
                    other->_data};
     return result;
 }
-/** 
+/**
  * Create a dmat from foreign data. Assumes the stride of the data is
  * n_rows.
  *
@@ -258,7 +258,7 @@ static inline dmat dmat_foreign(dmat* other) {
  * @param n_cols Number of columns
  * @param data Pointer to data storage
  *
- * @return dmat 
+ * @return dmat
  */
 static inline dmat dmat_foreign_data(us n_rows,
                                      us n_cols,
@@ -273,7 +273,7 @@ static inline dmat dmat_foreign_data(us n_rows,
                    data};
     return result;
 }
-/** 
+/**
  * Create a cmat from foreign data. Assumes the stride of the data is
  * n_rows.
  *
@@ -281,7 +281,7 @@ static inline dmat dmat_foreign_data(us n_rows,
  * @param n_cols Number of columns
  * @param data Pointer to data storage
  *
- * @return dmat 
+ * @return dmat
  */
 static inline cmat cmat_foreign_data(us n_rows,
                                      us n_cols,
@@ -296,18 +296,18 @@ static inline cmat cmat_foreign_data(us n_rows,
                    data};
     return result;
 }
-                     
-/** 
+
+/**
  * Creates a cmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
  * destroyed. Assumes the column stride equals to n_rows.
  *
- * @param n_rows 
- * @param n_cols 
- * @param data 
+ * @param n_rows
+ * @param n_cols
+ * @param data
  *
- * @return 
+ * @return
  */
 static inline cmat cmat_foreign(cmat* other) {
     dbgassert(other,NULLPTRDEREF);
@@ -321,7 +321,7 @@ static inline cmat cmat_foreign(cmat* other) {
 
 
 
-/** 
+/**
  * Free's data of dmat. Safe to run on sub-matrices as well.
  *
  * @param m Matrix to free
@@ -332,7 +332,7 @@ static inline void dmat_free(dmat* m) {
 }
 #define vd_free dmat_free
 
-/** 
+/**
  * Free's data of dmat. Safe to run on sub-matrices as well.
  *
  * @param m Matrix to free
@@ -343,7 +343,7 @@ static inline void cmat_free(cmat* m) {
 }
 #define vc_free cmat_free
 
-/** 
+/**
  * Copy some rows from one matrix to another
  *
  * @param to Matrix to copy to
@@ -368,7 +368,7 @@ static inline void dmat_copy_rows(dmat* to,const dmat* from,
         d_copy(to_d,from_d,nrows,1,1);
     }
 }
-/** 
+/**
  * Allocate a sub-matrix view of the parent
  *
  * @param parent Parent matrix
@@ -397,7 +397,7 @@ static inline dmat dmat_submat(const dmat* parent,
 
     return result;
 }
-/** 
+/**
  * Allocate a sub-matrix view of the parent
  *
  * @param parent Parent matrix
@@ -428,32 +428,32 @@ static inline cmat cmat_submat(cmat* parent,
     return result;
 }
 
-/** 
+/**
  * Copy contents of one matrix to another. Sizes should be equal
  *
- * @param to 
- * @param from 
+ * @param to
+ * @param from
  */
 static inline void dmat_copy(dmat* to,const dmat* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
-    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
+    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);
     for(us col=0;col<to->n_cols;col++) {
         d_copy(getdmatval(to,0,col),
                getdmatval(from,0,col),
                to->n_rows,1,1);
     }
 }
-/** 
+/**
  * Copy contents of one matrix to another. Sizes should be equal
  *
- * @param to 
- * @param from 
+ * @param to
+ * @param from
  */
 static inline void cmat_copy(cmat* to,const cmat* from) {
     dbgassert(to && from,NULLPTRDEREF);
     dbgassert(to->n_rows==from->n_rows,SIZEINEQUAL);
-    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);    
+    dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);
     for(us col=0;col<to->n_cols;col++) {
         c_copy(getcmatval(to,0,col),
                getcmatval(from,0,col),
@@ -461,7 +461,7 @@ static inline void cmat_copy(cmat* to,const cmat* from) {
     }
 }
 
-/** 
+/**
  * Copy contents of one vector to another
  *
  * @param to : Vector to write to
@@ -470,10 +470,10 @@ static inline void cmat_copy(cmat* to,const cmat* from) {
 static inline void vd_copy(vd* to,const vd* from) {
     dbgassert(to && from,NULLPTRDEREF);
     assert_vx(to);
-    assert_vx(from);    
+    assert_vx(from);
     dmat_copy(to,from);
 }
-/** 
+/**
  * Copy contents of one vector to another
  *
  * @param to : Vector to write to
@@ -482,12 +482,12 @@ static inline void vd_copy(vd* to,const vd* from) {
 static inline void vc_copy(vc* to,const vc* from) {
     dbgassert(to && from,NULLPTRDEREF);
     assert_vx(to);
-    assert_vx(from);    
+    assert_vx(from);
     cmat_copy(to,from);
 }
 
 
-/** 
+/**
  * Get a reference to a column of a matrix as a vector
  *
  * @param x Matrix
@@ -500,7 +500,7 @@ static inline vd dmat_column(dmat* x,us col) {
     return res;
 }
 
-/** 
+/**
  * Get a reference to a column of a matrix as a vector
  *
  * @param x Matrix
@@ -513,11 +513,11 @@ static inline vc cmat_column(cmat* x,us col) {
     return res;
 }
 
-/** 
+/**
  * Compute the complex conjugate of b and store result in a
  *
- * @param a 
- * @param b 
+ * @param a
+ * @param b
  */
 static inline void cmat_conj(cmat* a,const cmat* b) {
     fsTRACE(15);
@@ -530,10 +530,10 @@ static inline void cmat_conj(cmat* a,const cmat* b) {
     feTRACE(15);
 }
 
-/** 
+/**
  * Take the complex conjugate of x, in place
  *
- * @param x 
+ * @param x
  */
 static inline void cmat_conj_inplace(cmat* x) {
     dbgassert(x,NULLPTRDEREF);

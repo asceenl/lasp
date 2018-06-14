@@ -15,10 +15,10 @@
 typedef struct Decimator_s Decimator;
 
 typedef enum DEC_FAC_e {
-    DEC_FAC_4 = 0,              // Decimate by a factor of 4
+  DEC_FAC_4 = 0, // Decimate by a factor of 4
 } DEC_FAC;
 
-/** 
+/**
  * Create a decimation filter for a given number of channels and
  * decimation factor
  *

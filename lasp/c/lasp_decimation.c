@@ -11,7 +11,10 @@
 #include "lasp_alloc.h"
 #include "lasp_dfifo.h"
 
+// The Maximum number of taps in a decimation filter
 #define DEC_FILTER_MAX_TAPS (128)
+
+// The FFT length
 #define DEC_FFT_LEN (1024)
 
 typedef struct {
@@ -23,7 +26,7 @@ typedef struct {
 
 static __thread DecFilter DecFilters[] = {
     {DEC_FAC_4,4,128,
-#include "dec_filter.c"     
+#include "dec_filter_4.c"
     }
 };
 
@@ -112,13 +115,14 @@ dmat Decimator_decimate(Decimator* dec,const dmat* samples) {
     const us dec_fac = dec->dec_fac;
     dbgassert(samples->n_cols == nchannels,"Invalid number of "
               "channels in samples");
-    
+    dbgassert(samples->n_rows > 0,"Number of rows should be >0")
 
     /* Not downsampled, but filtered result */
     dmat filtered;
 
     /* Filter each channel and store result in filtered. In first
      * iteration the right size for filtered is allocated. */
+
     for(us chan=0;chan<nchannels;chan++) {
         vd samples_channel = dmat_column((dmat*)samples,
                                          chan);
@@ -131,35 +135,38 @@ dmat Decimator_decimate(Decimator* dec,const dmat* samples) {
 
         vd_free(&samples_channel);
 
-        if(chan==0) {
-            /* Allocate space for result */
-            filtered = dmat_alloc(filtered_res.n_rows,
-                                  nchannels);
-            
+        if(filtered_res.n_rows > 0) {
+            if(chan==0) {
+                /* Allocate space for result */
+                filtered = dmat_alloc(filtered_res.n_rows,
+                                      nchannels);
+
+            }
+            dmat filtered_col = dmat_submat(&filtered,
+                                            0,chan,
+                                            filtered_res.n_rows,
+                                            1);
+
+            dbgassert(filtered_res.n_rows == filtered_col.n_rows,
+                      "Not all FilterBank's have same output number"
+                      " of rows!");
+
+            dmat_copy_rows(&filtered_col,
+                           &filtered_res,
+                           0,0,filtered_res.n_rows);
+
+            dmat_free(&filtered_res);
+            dmat_free(&filtered_col);
         }
-        dmat filtered_col = dmat_submat(&filtered,
-                                        0,chan,
-                                        filtered_res.n_rows,
-                                        1);
-        
-        dbgassert(filtered_res.n_rows == filtered_col.n_rows,
-                  "Not all FilterBank's have same output number"
-                  " of rows!");
-        
-        dmat_copy_rows(&filtered_col,
-                       &filtered_res,
-                       0,0,filtered_res.n_rows);
-                                   
-        dmat_free(&filtered_res);
-        dmat_free(&filtered_col);
-        vd_free(&samples_channel);
-
+        else {
+            filtered = dmat_alloc(0, nchannels);
+        }
     }
-    
-    /* Push filtered result into output fifo */
-    dFifo_push(dec->output_fifo,
-               &filtered);
-
+    if(filtered.n_rows > 0) {
+        /* Push filtered result into output fifo */
+        dFifo_push(dec->output_fifo,
+                   &filtered);
+    }
     dmat_free(&filtered);
 
 
@@ -168,7 +175,7 @@ dmat Decimator_decimate(Decimator* dec,const dmat* samples) {
     uVARTRACE(15,dec_fac);
     us fifo_size = dFifo_size(dec->output_fifo);
     if((fifo_size / dec_fac) > 0) {
-        
+
         filtered = dmat_alloc((fifo_size/dec_fac)*dec_fac,
                               nchannels);
 
