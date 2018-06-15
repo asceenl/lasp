@@ -279,6 +279,18 @@ class BarScene(QGraphicsScene):
         return (n*(self.G*L+dxbars*L) + xL + self.G*L/2)
 
     def getBarRect(self, n, g, yval):
+        """
+        Returns a bar QRectF.
+
+        Args:
+            n: Bar index (i.e. corresponding to a certain frequency band)
+            g: Bar group (i.e. corresponding to a certain quantity)
+            yval: Height of bar, 1 for full lenght, 0 for no length
+
+        Returns:
+            QRectF corresponding to the bar at the right place in the scene
+        """
+        assert yval >= 0 and yval <= 1, "Invalid yval"
         Lx = self.xsize-rightoffset-leftoffset
         Ly = self.ysize-topoffset - bottomoffset
 
@@ -326,9 +338,12 @@ class BarScene(QGraphicsScene):
         assert newydata.shape[0] == N
         assert newydata.shape[1] == G
 
-        # Crop values to be between 0 and 1
+        # Y-values of the bars should be between 0 and 1.
         scalefac = self.ylim[1]-self.ylim[0]
-        yvals = np.clip(newydata, self.ylim[0], self.ylim[1])/scalefac
+        yvals = (newydata - self.ylim[0])/scalefac
+
+        # Clip values to be between 0 and 1
+        yvals = np.clip(yvals, 0, 1)
 
         for g in range(G):
             color = self.colors[g]
