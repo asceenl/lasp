@@ -377,13 +377,14 @@ cdef class SPLowpass:
         if self.lp:
             SPLowpass_free(self.lp)
 
-    def filter_(self,d[:] input_):
+    def filter_(self,d[::1,:] input_):
+        assert input_.shape[1] == 1
         if input_.shape[0] == 0:
             return np.array([],dtype=NUMPY_FLOAT_TYPE)
-        
+
         cdef vd input_vd = dmat_foreign_data(input_.shape[0],1,
-                                             &input_[0],False)
-        
+                                             &input_[0,0],False)
+
         cdef dmat output = SPLowpass_filter(self.lp,&input_vd)
 
         # # Steal the pointer from output

@@ -175,6 +175,8 @@ class ThirdOctaveBankDesigner(FilterBankDesigner):
                             '6.3k', '8k', '10k',
                             '12.5k', '16k', '20k']
 
+        assert len(self.xs) == len(self.nominal_txt)
+
     @property
     def b(self):
         # Band division factor, 3 for one-third octave bands

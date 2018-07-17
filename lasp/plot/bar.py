@@ -55,10 +55,15 @@ class BarScene(QGraphicsScene):
             xvals: labels and x positions of the bars
             G: Number of bars per x value
             ylim: y limits of the figure
-
-
+            xlabel: label below x-axis
+            ylabel: label on left side of the y-axis
+            title: figure title
+            colors: color cycler
+            size: size of the plot in pixels
+            legend: list of legend strings to show.
         """
         super().__init__(parent=parent)
+        self.setSceneRect(QRect(0,0,*size))
 
         # self.setBackgroundBrush(ASCEEColors.bgBrush(0, size[0]))
         self.ylim = ylim
@@ -68,8 +73,7 @@ class BarScene(QGraphicsScene):
         self.bgs = []
 
         self.size = size
-        xsize = size[0]
-        ysize = size[1]
+        xsize, ysize = size
 
         self.xsize = xsize
         self.ysize = ysize

@@ -30,7 +30,7 @@ endif(LASP_FLOAT STREQUAL "double")
 
 
 if(NOT DEFINED LASP_DEBUG)
-  message(SEND_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE or -DLASP_DEBUG=FALSE")
+  message(FATAL_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE or -DLASP_DEBUG=FALSE")
 endif(NOT DEFINED LASP_DEBUG)
 
 # ##################### END Cmake variables converted to a macro
@@ -98,12 +98,6 @@ else()
   set(win32 false)
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
-# If numpy cannot be found in the standard include path of the Python 
-if(DEFINED NUMPY_INCLUDE)
-  include_directories(${NUMPY_INCLUDE})
-endif(DEFINED NUMPY_INCLUDE)
-
-
 add_subdirectory(fftpack)
 include_directories(
   fftpack
@@ -111,8 +105,6 @@ include_directories(
   )
 add_subdirectory(lasp)
 add_subdirectory(test)
-
-find_program(PYTHON "python")
 
 if (PYTHON)
     # set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
@@ -134,4 +126,3 @@ endif()
 
 
 ############################## End compiler settings
-

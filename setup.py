@@ -16,9 +16,8 @@ setup(
       author_email="j.a.dejong@ascee.nl",
       # Project uses reStructuredText, so ensure that the docutils get
       # installed or upgraded on the target machine
-      install_requires=['matplotlib>=1.0', 'scipy>=0.17', 'numpy>=1.0'],
+      install_requires=['matplotlib>=1.0', 'scipy>=1.0', 'numpy>=1.0'],
       license='MIT',
-
       description=descr,
       keywords="",
       url="http://www.ascee.nl/lasp/",   # project home page, if any

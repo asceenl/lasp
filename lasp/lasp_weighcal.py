@@ -4,10 +4,10 @@
 Weighting and calibration filter in one
 @author: J.A. de Jong - ASCEE
 """
-from .filter_design.freqweighting_fir import A,C
+from .filter.freqweighting_fir import A, C
 from .lasp_common import FreqWeighting
-from .filter_design.fir_design import (arbitrary_fir_design,
-                                       freqResponse as frp)
+from .filter.fir_design import (arbitrary_fir_design,
+                                freqResponse as frp)
 from lasp.lasp_config import ones, empty
 from .wrappers import FilterBank
 import numpy as np
@@ -17,7 +17,7 @@ __all__ = ['WeighCal']
 
 class WeighCal:
     """
-    Time weighting and calibration FIR filter
+    Frequency weighting and calibration FIR filter
     """
     def __init__(self, fw=FreqWeighting.default,
                  nchannels=1,
@@ -48,15 +48,17 @@ class WeighCal:
         # Objective function for the frequency response
         frp_obj = self.frpObj(freq_design)
 
-        self._firs = []
+        P = 2048 # Filter length (number of taps)
+
+        self._firs = np.empty((P, self.nchannels))
         self._fbs = []
         for chan in range(self.nchannels):
-            fir = arbitrary_fir_design(fs, 2048, freq_design,
+            fir = arbitrary_fir_design(fs, P, freq_design,
                                        frp_obj[:, chan],
                                        window='rectangular')
-            self._firs.append(fir)
+            self._firs[:, chan] = fir
 
-            self._fbs.append(FilterBank(fir[:, np.newaxis], 4096))
+            self._fbs.append(FilterBank(fir[:, np.newaxis], 2*P))
 
         self._freq_design = freq_design
 
@@ -66,22 +68,21 @@ class WeighCal:
 
         Args:
             data: (Weighted) raw time data that needs to be filtered, should
-            have the same number of columns as the number of channels, or should
-            have dimension 1 in case of a single channel.
+            have the same number of columns as the number of channels. First
+            axis is assumed to be the time axis
 
         Retuns:
             Filtered data for each channel
 
         """
         nchan = self.nchannels
-        if data.ndim == 1:
-            data = data[:, np.newaxis]
+        assert data.ndim == 2
         assert data.shape[1] == nchan
         assert data.shape[0] > 0
 
         filtered = []
         for chan in range(nchan):
-            filtered.append(self._fbs[chan].filter_(data[:, chan])[:, 0])
+            filtered.append(self._fbs[chan].filter_(data[:, [chan]])[:, 0])
         filtered = np.asarray(filtered).transpose()/self.sens
         if filtered.ndim == 1:
             filtered = filtered[:, np.newaxis]
@@ -133,7 +134,7 @@ class WeighCal:
         """
         # Objective function for the frequency response
         frp_objective = self.frpCalObj(freq_design) * \
-                            self.frpWeightingObj(freq_design)[:, np.newaxis]
+            self.frpWeightingObj(freq_design)[:, np.newaxis]
         frp_objective[-1] = 0.
 
         return frp_objective

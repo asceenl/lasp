@@ -17,21 +17,19 @@ class FilterBank:
     Single channel octave filter bank implementation
     """
 
-    def __init__(self, fs, designer):
+    def __init__(self, fs):
         """
         Initialize a OctaveFilterBank object.
 
         Args:
             fs: Sampling frequency of base signal
-            designer: FIR Filter designer for filterbank
 
         """
         assert np.isclose(fs, 48000), "Only sampling frequency" \
             " available is 48 kHz"
 
-        self.fs = fs
 
-        maxdecimation = designer.decimation(designer.xs[0])
+        maxdecimation = self.decimation(self.xs[0])
         self.decimators = []
         for dec in maxdecimation:
             self.decimators.append(Decimator(1, dec))
@@ -44,8 +42,8 @@ class FilterBank:
 
         self.filterbanks = []
         # Sort the x values in categories according to the required decimation
-        for x in designer.xs:
-            dec = designer.decimation(x)
+        for x in self.xs:
+            dec = self.decimation(x)
             if len(dec) == 1 and dec[0] == 1:
                 xs_d1.append(x)
             elif len(dec) == 1 and dec[0] == 4:
@@ -62,12 +60,12 @@ class FilterBank:
         xs_all = [xs_d1, xs_d4, xs_d16, xs_d64, xs_d256]
         for xs in xs_all:
             nominals = []
-            firs = np.empty((designer.L, len(xs)), order='F')
+            firs = np.empty((self.L, len(xs)), order='F')
             for i, x in enumerate(xs):
                 #  These are the filters that do not require lasp_decimation
                 #  prior to filtering
-                nominals.append(designer.nominal(x))
-                firs[:, i] = designer.createFilter(fs, x)
+                nominals.append(self.nominal(x))
+                firs[:, i] = self.createFilter(fs, x)
             filterbank = {'fb': pyxFilterBank(firs, 1024),
                           'xs': xs,
                           'nominals': nominals}
@@ -78,16 +76,10 @@ class FilterBank:
 
         # Filter output counters
         self.dec = [1, 4, 16, 64, 256]
-        Pdec = 128
-        Pfil = 256
 
-        # Initial filtered number
-        self.Nf = [-Pfil, -(Pdec/4 + Pfil),
-                   -(Pfil + Pdec/4 + Pdec/16),
-                   -(Pfil + Pdec/64 + Pdec/4 + Pdec/16),
-                   -(Pfil + Pdec/256 + Pdec/64 + Pdec/4 + Pdec/16)]
-
-        self.delay_set = [False, False, False, False, False]
+        # These intial delays are found experimentally using a toneburst
+        # response.
+        self.Nf = [915, 806, 780, 582, 338]
 
     def filterd(self, dec_stage, data):
         """
@@ -110,10 +102,12 @@ class FilterBank:
             oldNf = self.Nf[dec_stage]
             tstart = oldNf/fd
             tend = tstart + Nf/fd
+
             t = np.linspace(tstart, tend, Nf, endpoint=False)
             self.Nf[dec_stage] += Nf
             for i, nom in enumerate(self.filterbanks[dec_stage]['nominals']):
-                output[nom] = {'t': t, 'data': filtered[:, i]}
+                output[nom] = {'t': t, 'data': filtered[:, [i]]}
+
         return output
 
     def filter_(self, data):
@@ -142,13 +136,13 @@ class FilterBank:
         return output
 
 
-class OctaveFilterBank(FilterBank):
+class OctaveFilterBank(FilterBank, OctaveBankDesigner):
     def __init__(self, fs):
-        designer = OctaveBankDesigner()
-        super().__init__(fs, designer)
+        OctaveBankDesigner.__init__(self)
+        FilterBank.__init__(self, fs)
 
 
-class ThirdOctaveFilterBank(FilterBank):
+class ThirdOctaveFilterBank(FilterBank, ThirdOctaveBankDesigner):
     def __init__(self, fs):
-        designer = ThirdOctaveBankDesigner()
-        super().__init__(fs, designer)
+        ThirdOctaveBankDesigner.__init__(self)
+        FilterBank.__init__(self, fs)

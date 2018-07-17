@@ -35,6 +35,8 @@ The video dataset can possibly be not present in the data.
 
 
 """
+__all__ = ['Measurement']
+from contextlib import contextmanager
 import h5py as h5
 import numpy as np
 from .lasp_config import LASP_NUMPY_FLOAT_TYPE
@@ -47,7 +49,7 @@ class BlockIter:
     Iterate over the blocks in the audio data of a h5 file
     """
 
-    def __init__(self, faudio):
+    def __init__(self, f):
         """
         Initialize a BlockIter object
 
@@ -55,8 +57,8 @@ class BlockIter:
             faudio: Audio dataset in the h5 file, accessed as f['audio']
         """
         self.i = 0
-        self.nblocks = faudio.shape[0]
-        self.fa = faudio
+        self.nblocks = f['audio'].shape[0]
+        self.fa = f['audio']
 
     def __iter__(self):
         return self
@@ -121,35 +123,55 @@ class Measurement:
 
         # Full filepath
         self.fn = fn
+
         # Base filename
         self.fn_base = os.path.split(fn)[1]
 
         # Open the h5 file in read-plus mode, to allow for changing the
         # measurement comment.
-        f = h5.File(fn, 'r+')
-        self.f = f
+        with h5.File(fn, 'r+') as f:
+            # Check for video data
+            try:
+                f['video']
+                self.has_video = True
+            except KeyError:
+                self.has_video = False
 
-        # Check for video data
-        try:
-            f['video']
-            self.has_video = True
-        except KeyError:
-            self.has_video = False
+            self.nblocks, self.blocksize, self.nchannels = f['audio'].shape
+            dtype = f['audio'].dtype
+            self.sampwidth = getSampWidth(dtype)
 
-        self.nblocks, self.blocksize, self.nchannels = f['audio'].shape
-        dtype = f['audio'].dtype
-        self.sampwidth = getSampWidth(dtype)
+            self.samplerate = f.attrs['samplerate']
+            self.N = (self.nblocks*self.blocksize)
+            self.T = self.N/self.samplerate
 
-        self.samplerate = f.attrs['samplerate']
-        self.N = (self.nblocks*self.blocksize)
-        self.T = self.N/self.samplerate
+            # comment = read-write thing
+            try:
+                self._comment = f.attrs['comment']
+            except KeyError:
+                f.attrs['comment'] = ''
+                self._comment = ''
 
-        # comment = read-write thing
-        try:
-            self._comment = self.f.attrs['comment']
-        except KeyError:
-            self.f.attrs['comment'] = ''
-            self._comment = ''
+            # Sensitivity
+            try:
+                self._sens = f.attrs['sensitivity']
+            except KeyError:
+                self._sens = np.ones(self.nchannels)
+
+            self._time = f.attrs['time']
+
+    @contextmanager
+    def file(self, mode='r'):
+        """
+        Contextmanager which opens the storage file and yields the file.
+
+        Args:
+            mode: Opening mode for the file. Should either be 'r', or 'r+'
+        """
+        if mode not in ('r','r+'):
+            raise ValueError('Invalid file opening mode.')
+        with h5.File(self.fn, mode) as f:
+            yield f
 
     @property
     def comment(self):
@@ -157,19 +179,23 @@ class Measurement:
 
     @comment.setter
     def comment(self, cmt):
-        self.f.attrs['comment'] = cmt
-        self._comment = cmt
+        with self.file('r+') as f:
+            f.attrs['comment'] = cmt
+            self._comment = cmt
 
     @property
     def recTime(self):
-        return (self.blocksize*self.nblocks)/self.samplerate
+        """
+        Returns the total recording time of the measurement, in float seconds.
+        """
+        return self.blocksize*self.nblocks/self.samplerate
 
     @property
     def time(self):
         """
         Returns the measurement time in seconds since the epoch.
         """
-        return self.f.attrs['time']
+        return self._time
 
     @property
     def prms(self):
@@ -186,7 +212,7 @@ class Measurement:
         except AttributeError:
             pass
 
-        sens = self.sensitivity
+        sens = self._sens
         pms = 0.
         for block in self.iterBlocks():
             pms += np.sum(block/sens[np.newaxis, :], axis=0)**2/self.N
@@ -198,13 +224,14 @@ class Measurement:
         Returns the raw uncalibrated data, converted to floating point format.
         """
         if block is not None:
-            blocks = self.f['audio'][block]
+            with self.file() as f:
+                blocks = f['audio'][block]
         else:
             blocks = []
-            for block in self.iterBlocks():
-                blocks.append(block)
+            with self.file() as f:
+                for block in self.iterBlocks(f):
+                    blocks.append(block)
             blocks = np.asarray(blocks)
-
             blocks = blocks.reshape(self.nblocks*self.blocksize,
                                     self.nchannels)
 
@@ -220,13 +247,19 @@ class Measurement:
         else:
             raise RuntimeError(
                 f'Unimplemented data type from recording: {blocks.dtype}.')
-        sens = self.sensitivity
+        sens = self._sens
         blocks = blocks.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
 
         return blocks
 
-    def iterBlocks(self):
-        return BlockIter(self.f['audio'])
+    def iterBlocks(self, opened_file):
+        """
+        Iterate over all the audio blocks in the opened file
+
+        Args:
+            opened_file: The h5File with the data
+        """
+        return BlockIter(opened_file)
 
     @property
     def sensitivity(self):
@@ -235,10 +268,7 @@ class Measurement:
         between -1.0 and 1.0 to Pascal. If the sensitivity is not stored in
         the measurement file, this function returns 1.0
         """
-        try:
-            return self.f.attrs['sensitivity']
-        except KeyError:
-            return np.ones(self.nchannels)
+        return self._sens
 
     @sensitivity.setter
     def sensitivity(self, sens):
@@ -257,8 +287,8 @@ class Measurement:
         valid &= isinstance(sens.dtype, float)
         if not valid:
             raise ValueError('Invalid sensitivity value(s) given')
-
-        self.f.attrs['sensitivity'] = sens
+        with self.file('r+') as f:
+            f.attrs['sensitivity'] = sens
 
     def exportAsWave(self, fn=None, force=False, sampwidth=None):
         """
@@ -286,8 +316,8 @@ class Measurement:
 
         if os.path.exists(fn) and not force:
             raise RuntimeError(f'File already exists: {fn}')
-
-        audio = self.f['audio']
+        with self.file() as f:
+            audio = self.f['audio'][:]
 
         if isinstance(audio.dtype, float):
             if sampwidth is None:
@@ -373,8 +403,5 @@ class Measurement:
             ad[0] = dat
         return Measurement(mfn)
 
-    def __del__(self):
-        try:
-            self.f.close()
-        except AttributeError:
-            pass
+    # def __del__(self):
+    #     self.f.close()

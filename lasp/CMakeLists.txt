@@ -1,16 +1,15 @@
 add_subdirectory(c)
-
 configure_file(config.pxi.in config.pxi)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-find_package( PythonLibs REQUIRED )
+find_package(PythonLibs REQUIRED )
 include(UseCython)
-
+find_package(Numpy REQUIRED )
 
 include_directories(
-  .
-  c
-  )
+   ${PYTHON_NUMPY_INCLUDE_DIR}
+   .
+   c
+ )
 
 # add the command to generate the source code
 # add_custom_command (
