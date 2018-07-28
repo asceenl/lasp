@@ -1,4 +1,4 @@
-add_subdirectory(c)
+
 configure_file(config.pxi.in config.pxi)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(PythonLibs REQUIRED )
@@ -10,6 +10,8 @@ include_directories(
    .
    c
  )
+ add_subdirectory(c)
+ add_subdirectory(device)
 
 # add the command to generate the source code
 # add_custom_command (
@@ -18,7 +20,7 @@ include_directories(
 #   DEPENDS MakeTable
 #   )
 
-set(ui_files ui_apsrt ui_mainwindow ui_figure ui_about ui_apswidget ui_revtime ui_slmwidget)
+set(ui_files ui_apsrt ui_mainwindow ui_figure ui_about ui_apswidget ui_revtime ui_slmwidget ui_daq)
 foreach(fn ${ui_files})
   add_custom_command(
     OUTPUT "${fn}.py"

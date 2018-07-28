@@ -8,7 +8,7 @@ Read data from stream and record sound and video at the same time
 import numpy as np
 from .lasp_atomic import Atomic
 from threading import Condition
-from .lasp_avstream import AvType
+from .lasp_avstream import AvType, AvStream
 import h5py
 import time
 
@@ -122,6 +122,6 @@ class Recording:
 
 
 if __name__ == '__main__':
-
-    rec = Recording('test', 5)
+    stream = AvStream()
+    rec = Recording('test', stream, 5)
     rec.start()

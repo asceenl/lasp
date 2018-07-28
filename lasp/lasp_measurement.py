@@ -197,6 +197,22 @@ class Measurement:
         """
         return self._time
 
+    def scaleBlock(self, block):
+        # When the data is stored as integers, we assume dB full-scale scaling.
+        # Hence, when we convert the data to floats, we divide by the maximum
+        # possible value.
+        if block.dtype == np.int32:
+            fac = 2**31
+        elif block.dtype == np.int16:
+            fac = 2**15
+        elif block.dtype == np.float64:
+            fac = 1.0
+        else:
+            raise RuntimeError(
+                f'Unimplemented data type from recording: {block.dtype}.')
+        sens = self._sens
+        return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
+
     @property
     def prms(self):
         """
@@ -212,10 +228,12 @@ class Measurement:
         except AttributeError:
             pass
 
-        sens = self._sens
         pms = 0.
-        for block in self.iterBlocks():
-            pms += np.sum(block/sens[np.newaxis, :], axis=0)**2/self.N
+
+        with self.file() as f:
+            for block in self.iterBlocks(f):
+                block = self.scaleBlock(block)
+                pms += np.sum(block**2, axis=0)/self.N
         self._prms = np.sqrt(pms)
         return self._prms
 
@@ -235,21 +253,7 @@ class Measurement:
             blocks = blocks.reshape(self.nblocks*self.blocksize,
                                     self.nchannels)
 
-        # When the data is stored as integers, we assume dB full-scale scaling.
-        # Hence, when we convert the data to floats, we divide by the maximum
-        # possible value.
-        if blocks.dtype == np.int32:
-            fac = 2**31
-        elif blocks.dtype == np.int16:
-            fac = 2**15
-        elif blocks.dtype == np.float64:
-            fac = 1.0
-        else:
-            raise RuntimeError(
-                f'Unimplemented data type from recording: {blocks.dtype}.')
-        sens = self._sens
-        blocks = blocks.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
-
+        blocks = self.scaleBlock(blocks)
         return blocks
 
     def iterBlocks(self, opened_file):
@@ -284,7 +288,7 @@ class Measurement:
 
         valid = sens.ndim == 1
         valid &= sens.shape[0] == self.nchannels
-        valid &= isinstance(sens.dtype, float)
+        valid &= sens.dtype == float
         if not valid:
             raise ValueError('Invalid sensitivity value(s) given')
         with self.file('r+') as f:

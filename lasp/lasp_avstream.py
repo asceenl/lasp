@@ -6,48 +6,41 @@ Created on Sat Mar 10 08:28:03 2018
 @author: Read data from image stream and record sound at the same time
 """
 import cv2 as cv
-import sounddevice as sd
 from .lasp_atomic import Atomic
 from threading import Thread, Condition, Lock
 import time
-__all__ = ['AvType','AvStream']
+from .device import DAQDevice, roga_plugndaq
+__all__ = ['AvType', 'AvStream']
 
-# %%
-blocksize = 2048
-video_x,video_y = 640,480
-dtype, sampwidth = 'int32',4
+video_x, video_y = 640, 480
+dtype, sampwidth = 'int16', 2
+
 
 class AvType:
-    video=0
-    audio=1
+    video = 0
+    audio = 1
+
 
 class AvStream:
-    def __init__(self, audiodeviceno=None, video=None, nchannels = None, samplerate = None):
-        
-        audiodevice,audiodeviceno = self._findDevice(audiodeviceno)
-        if nchannels is None:
-            self.nchannels = audiodevice['max_input_channels']
-            if self.nchannels == 0:
-                raise RuntimeError('Device has no input channels')
-        else:
-            self.nchannels = nchannels
-        
-        self.audiodeviceno = audiodeviceno
-        if samplerate is None:
-            self.samplerate = audiodevice['default_samplerate']
-        else:
-            self.samplerate = samplerate
-            
-        self.blocksize = blocksize
-        
-        self.video_x, self.video_y = video_x,video_y
+    def __init__(self, daqconfig=roga_plugndaq, video=None):
+
+        self.daqconfig = daqconfig
+        try:
+            daq = DAQDevice(daqconfig)
+            self.nchannels = len(daq.channels_enabled)
+            self.samplerate = daq.input_rate
+            self.blocksize = daq.blocksize
+        except Exception as e:
+            raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
+
+        self.video_x, self.video_y = video_x, video_y
         self.dtype, self.sampwidth = dtype, sampwidth
-        
+
         self._aframectr = Atomic(0)
         self._vframectr = Atomic(0)
-        
+
         self._callbacklock = Lock()
-        
+
         self._running = Atomic(False)
         self._running_cond = Condition()
 
@@ -59,51 +52,29 @@ class AvStream:
 
     def addCallback(self, cb):
         """
-        
+        Add as stream callback to the list of callbacks
         """
         with self._callbacklock:
-            if not cb in self._callbacks:
+            if cb not in self._callbacks:
                 self._callbacks.append(cb)
-                
+
     def removeCallback(self, cb):
         with self._callbacklock:
             if cb in self._callbacks:
                 self._callbacks.remove(cb)
 
-    def _findDevice(self, deviceno):
-        
-        if deviceno is None:
-            deviceno = 0
-            devices = sd.query_devices()
-            found = []
-            for device in devices:
-                name = device['name']
-                if 'Umik' in name:
-                    found.append((device,deviceno))
-                elif 'nanoSHARC' in name:
-                    found.append((device,deviceno))
-                deviceno+=1
-                
-            if len(found) == 0:
-                print('Please choose one of the following:')
-                print(sd.query_devices())
-                raise RuntimeError('Could not find a proper device')
-
-            return found[0]
-        else:
-            return (sd.query_devices(deviceno,kind='input'),deviceno)
-    
     def start(self):
         """
-        
+        Start the stream, which means the callbacks are called with stream
+        data (audio/video)
         """
-        
+
         if self._running:
             raise RuntimeError('Stream already started')
-        
-        assert self._audiothread == None
-        assert self._videothread == None
-        
+
+        assert self._audiothread is None
+        assert self._videothread is None
+
         self._running <<= True
         self._audiothread = Thread(target=self._audioThread)
         if self._video is not None:
@@ -115,19 +86,16 @@ class AvStream:
 
     def _audioThread(self):
         # Raw stream to allow for in24 packed data type
-        stream = sd.InputStream(
-            device=self.audiodeviceno,
-            dtype=self.dtype,
-            blocksize=blocksize,
-            channels=self.nchannels,
-            samplerate=self.samplerate,
-            callback=self._audioCallback)
-        
-        with stream:
-            with self._running_cond:
-                while self._running:
-                    self._running_cond.wait()
-        print('stopped audiothread')
+        try:
+            daq = DAQDevice(self.daqconfig)
+            # Get a single block first and do not process it. This one often
+            # contains quite some rubbish.
+            data = daq.read()
+            while self._running:
+                data = daq.read()
+                self._audioCallback(data)
+        except RuntimeError as e:
+            print(f'Runtime error occured during audio capture: {str(e)}')
 
     def _videoThread(self):
         cap = cv.VideoCapture(self._video)
@@ -138,32 +106,32 @@ class AvStream:
         while self._running:
             ret, frame = cap.read()
             # print(frame.shape)
-            if ret==True:
+            if ret is True:
                 if vframectr == 0:
                     self._video_started <<= True
                 with self._callbacklock:
                     for cb in self._callbacks:
-                        cb(AvType.video,frame,self._aframectr(),vframectr)
+                        cb(AvType.video, frame, self._aframectr(), vframectr)
                 vframectr += 1
                 self._vframectr += 1
             else:
-                
+
                 if loopctr == 10:
                     print('Error: no video capture!')
             time.sleep(0.2)
-            loopctr +=1
+            loopctr += 1
 
         cap.release()
         print('stopped videothread')
 
-    def _audioCallback(self, indata, nframes, time, status):
+    def _audioCallback(self, indata):
         """This is called (from a separate thread) for each audio block."""
         if not self._video_started:
             return
-        
+
         with self._callbacklock:
             for cb in self._callbacks:
-                cb(AvType.audio,indata,self._aframectr(),self._vframectr())
+                cb(AvType.audio, indata, self._aframectr(), self._vframectr())
         self._aframectr += 1
 
     def stop(self):
@@ -181,6 +149,6 @@ class AvStream:
 
     def isStarted(self):
         return self._running()
-    
+
     def hasVideo(self):
         return True if self._video is not None else False
