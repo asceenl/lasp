@@ -8,7 +8,7 @@ from .wrappers import SPLowpass
 from .lasp_computewidget import ComputeWidget
 import numpy as np
 from .lasp_config import zeros
-from .lasp_common import (FreqWeighting, sens, calfile,
+from .lasp_common import (FreqWeighting, calfile,
                           TimeWeighting, getTime, P_REF)
 from .lasp_weighcal import WeighCal
 from .lasp_gui_tools import wait_cursor
@@ -197,8 +197,7 @@ class SlmWidget(ComputeWidget, Ui_SlmWidget):
             # variables defined at the top. # TODO: Change this to a more
             # robust variant.
             weighcal = WeighCal(fw, nchannels=1,
-                                fs=fs, calfile=calfile,
-                                sens=sens)
+                                fs=fs, calfile=calfile)
             praw = meas.praw()[istart:istop, [channel]]
 
             weighted = weighcal.filter_(praw)
@@ -260,8 +259,7 @@ class SlmWidget(ComputeWidget, Ui_SlmWidget):
             praw = meas.praw()[istart:istop, [channel]]
 
             weighcal = WeighCal(fw, nchannels=1,
-                                fs=fs, calfile=calfile,
-                                sens=sens)
+                                fs=fs, calfile=calfile)
 
             weighted = weighcal.filter_(praw)
 

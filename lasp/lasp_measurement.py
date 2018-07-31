@@ -94,7 +94,7 @@ def getSampWidth(dtype):
 
 
 def exportAsWave(fn, fs, data, force=False):
-    if not '.wav' in fn[-4:]:
+    if '.wav' not in fn[-4:]:
         fn += '.wav'
 
     nchannels = data.shape[1]
@@ -239,7 +239,8 @@ class Measurement:
 
     def praw(self, block=None):
         """
-        Returns the raw uncalibrated data, converted to floating point format.
+        Returns the uncalibrated acoustic pressure signal, converted to floating
+        point acoustic pressure values [Pa].
         """
         if block is not None:
             with self.file() as f:
@@ -293,6 +294,7 @@ class Measurement:
             raise ValueError('Invalid sensitivity value(s) given')
         with self.file('r+') as f:
             f.attrs['sensitivity'] = sens
+        self._sens = sens
 
     def exportAsWave(self, fn=None, force=False, sampwidth=None):
         """

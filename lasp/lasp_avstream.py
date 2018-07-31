@@ -27,7 +27,7 @@ class AvStream:
         self.daqconfig = daqconfig
         try:
             daq = DAQDevice(daqconfig)
-            self.nchannels = len(daq.channels_enabled)
+            self.nchannels = len(daq.channels_en)
             self.samplerate = daq.input_rate
             self.blocksize = daq.blocksize
         except Exception as e:

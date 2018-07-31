@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import numpy as np
 from .wrappers import Window as wWindow
 """
@@ -7,14 +7,14 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
-           'sens']
+           ]
 
 # Reference sound pressure level
 P_REF = 2e-5
 
 # Todo: fix This
-calfile = '/home/anne/wip/UMIK-1/cal/7027430_90deg.txt'
-sens = 0.053690387255872614
+# calfile = '/home/anne/wip/UMIK-1/cal/7027430_90deg.txt'
+calfile = None
 
 
 class Window:

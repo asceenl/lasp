@@ -19,11 +19,11 @@ class WeighCal:
     """
     Frequency weighting and calibration FIR filter
     """
+    
     def __init__(self, fw=FreqWeighting.default,
                  nchannels=1,
                  fs=48000.,
-                 calfile=None,
-                 sens=1.0):
+                 calfile=None):
         """
         Initialize the frequency weighting and calibration FIR filters.
 
@@ -32,13 +32,12 @@ class WeighCal:
             nchannels: Number of channels for the input data
             fs: Sampling frequency [Hz]
             calfile: Calibration file to load.
-            sens: Sensitivity in units [\f$ Pa^{-1} \f$]
         """
 
         self.nchannels = nchannels
         self.fs = fs
         self.fw = fw
-        self.sens = sens
+
         self.calfile = calfile
 
         # Frequencies used for the filter design
@@ -83,7 +82,7 @@ class WeighCal:
         filtered = []
         for chan in range(nchan):
             filtered.append(self._fbs[chan].filter_(data[:, [chan]])[:, 0])
-        filtered = np.asarray(filtered).transpose()/self.sens
+        filtered = np.asarray(filtered).transpose()
         if filtered.ndim == 1:
             filtered = filtered[:, np.newaxis]
         return filtered
