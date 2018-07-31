@@ -17,6 +17,10 @@ class Recording:
     def __init__(self, fn, stream, rectime=None):
         """
 
+        Args:
+            fn: Filename to record to. extension is added
+            stream: AvStream instance to record from
+            rectime: Recording time, None for infinite
         """
         ext = '.h5'
         if ext not in fn:
@@ -58,6 +62,7 @@ class Recording:
             f.attrs['samplerate'] = stream.samplerate
             f.attrs['nchannels'] = stream.nchannels
             f.attrs['blocksize'] = stream.blocksize
+            f.attrs['sensitivity'] = stream.sensitivity
             f.attrs['time'] = time.time()
             self._running <<= True
             # Videothread is going to start

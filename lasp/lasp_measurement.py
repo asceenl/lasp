@@ -254,6 +254,7 @@ class Measurement:
             blocks = blocks.reshape(self.nblocks*self.blocksize,
                                     self.nchannels)
 
+        # Apply scaling (sensitivity, integer -> float)
         blocks = self.scaleBlock(blocks)
         return blocks
 
@@ -323,7 +324,7 @@ class Measurement:
         if os.path.exists(fn) and not force:
             raise RuntimeError(f'File already exists: {fn}')
         with self.file() as f:
-            audio = self.f['audio'][:]
+            audio = f['audio'][:]
 
         if isinstance(audio.dtype, float):
             if sampwidth is None:
