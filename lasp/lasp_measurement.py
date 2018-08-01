@@ -35,7 +35,7 @@ The video dataset can possibly be not present in the data.
 
 
 """
-__all__ = ['Measurement']
+__all__ = ['Measurement', 'scaleBlockSens']
 from contextlib import contextmanager
 import h5py as h5
 import numpy as np
@@ -91,6 +91,24 @@ def getSampWidth(dtype):
         return 8
     else:
         raise ValueError('Invalid data type: %s' % dtype)
+
+
+def scaleBlockSens(block, sens):
+    """
+    Scale a block of raw data to return raw acoustic
+    pressure data.
+
+    Args:
+        block: block of raw data with integer data type
+        sensitivity: array of sensitivity coeficients for
+        each channel
+
+    """
+    assert sens.ndim == 1
+    assert sens.size == block.shape[1]
+    sw = getSampWidth(block.dtype)
+    fac = 2**(8*sw - 1) - 1
+    return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
 
 
 def exportAsWave(fn, fs, data, force=False):
@@ -154,7 +172,8 @@ class Measurement:
 
             # Sensitivity
             try:
-                self._sens = f.attrs['sensitivity']
+                sens = f.attrs['sensitivity']
+                self._sens = sens*np.ones(self.nchannels) if isinstance(sens, float) else sens
             except KeyError:
                 self._sens = np.ones(self.nchannels)
 
@@ -201,17 +220,7 @@ class Measurement:
         # When the data is stored as integers, we assume dB full-scale scaling.
         # Hence, when we convert the data to floats, we divide by the maximum
         # possible value.
-        if block.dtype == np.int32:
-            fac = 2**31
-        elif block.dtype == np.int16:
-            fac = 2**15
-        elif block.dtype == np.float64:
-            fac = 1.0
-        else:
-            raise RuntimeError(
-                f'Unimplemented data type from recording: {block.dtype}.')
-        sens = self._sens
-        return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
+        return scaleBlockSens(block, self.sensitivity)
 
     @property
     def prms(self):

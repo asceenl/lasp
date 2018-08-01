@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+import sys
+from lasp.lasp_rtapsdialog import RealTimeAPSDialog
+from lasp.lasp_avstream import AvStream
+from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq
+from lasp.lasp_gui_tools import Branding, ASCEEColors, warningdialog
+from PySide import QtGui
+
+
+def main():
+    app = QtGui.QApplication(sys.argv)  # A new instance of QApplication
+    app.setFont(Branding.font())
+
+    stream = AvStream(default_soundcard)
+    # stream = AvStream(roga_plugndaq)
+    mw = RealTimeAPSDialog(None, stream)
+
+    mw.show()                         # Show the form
+
+    # Install exception hook to catch exceptions
+    def excepthook(cls, exception, traceback):
+        """
+        This exception hook is installed as the global exception hook. Shows a
+        simple QMessageBox in case of an exception that is not caught.
+        """
+        if __debug__:
+            import traceback as tb
+            tbtxt = ''.join(tb.format_tb(sys.last_traceback))
+            warningdialog(mw, str(exception), tbtxt)
+        else:
+            warningdialog(mw, str(exception))
+
+    # Set custom exception hook that catches all exceptions
+    sys.excepthook = excepthook
+    stream.start()
+    app.exec_()                         # and execute the app
+    stream.stop()
+
+
+if __name__ == '__main__':
+    main()                    # run the main function

@@ -66,7 +66,7 @@ cdef extern from "alsa/asoundlib.h":
     int snd_pcm_info_get_card(snd_pcm_info_t*)
 
     int snd_pcm_drain(snd_pcm_t*)
-    int snd_pcm_readi(snd_pcm_t*,void* buf,snd_pcm_uframes_t nframes)
+    int snd_pcm_readi(snd_pcm_t*,void* buf,snd_pcm_uframes_t nframes) nogil
     int snd_pcm_hw_params(snd_pcm_t*,snd_pcm_hw_params_t*)
     int snd_pcm_hw_params_test_rate(snd_pcm_t*, snd_pcm_hw_params_t*,
                                     unsigned int val,int dir)
@@ -444,7 +444,8 @@ cdef class DAQDevice:
         buf = self._getEmptyBuffer()
         # buf2 = self._getEmptyBuffer()
         cdef cnp.int16_t[:, ::1] bufv = buf
-        rval = snd_pcm_readi(self.pcm,<void*> &bufv[0, 0], self.blocksize)
+        with nogil:
+            rval = snd_pcm_readi(self.pcm,<void*> &bufv[0, 0], self.blocksize)
         # rval = 2048
         if rval > 0:
             # print('Samples obtained:' , rval)

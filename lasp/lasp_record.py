@@ -104,7 +104,6 @@ class Recording:
             self._vCallback(data)
 
     def _aCallback(self, frames, aframe):
-        #        print(self._aframeno())
         print('.', end='')
         curT = self._aframeno()*self.blocksize/self.samplerate
         if self.rectime is not None and curT > self.rectime:

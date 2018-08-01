@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 10 08:28:03 2018
-
-@author: Read data from image stream and record sound at the same time
+Description: Read data from image stream and record sound at the same time
 """
 import cv2 as cv
 from .lasp_atomic import Atomic
 from threading import Thread, Condition, Lock
 import time
 from .device import DAQDevice, roga_plugndaq
+import numpy as np
 __all__ = ['AvType', 'AvStream']
 
 video_x, video_y = 640, 480
@@ -30,6 +29,7 @@ class AvStream:
             self.nchannels = len(daq.channels_en)
             self.samplerate = daq.input_rate
             self.blocksize = daq.blocksize
+            self.sensitivity = np.asarray(daqconfig.input_sensitivity)[daq.channels_en]
         except Exception as e:
             raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 
@@ -92,6 +92,7 @@ class AvStream:
             # contains quite some rubbish.
             data = daq.read()
             while self._running:
+                # print('read data...')
                 data = daq.read()
                 self._audioCallback(data)
         except RuntimeError as e:
