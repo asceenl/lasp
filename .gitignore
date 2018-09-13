@@ -22,4 +22,3 @@ lasp_octave_fir.*
 lasp/ui_*
 resources_rc.py
 lasp/device/lasp_daqdevice.c
-lasp/lasp_daqwidget.py
