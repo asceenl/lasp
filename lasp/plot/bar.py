@@ -33,7 +33,7 @@ ticklength = 10
 # Distance between two bar groups in units of bar thicknesses
 dxbars = 2
 
-DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red]
+DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red, Qt.yellow]
 
 
 class BarScene(QGraphicsScene):
@@ -121,7 +121,7 @@ class BarScene(QGraphicsScene):
         # Main frame added after grid lines, to get the color right
         self.addItem(mainframe)
 
-        # # Create the bars
+        # Create the bars
         for g in range(G):
             bg = []
             for n in range(N):
@@ -130,7 +130,6 @@ class BarScene(QGraphicsScene):
 
                 self.addItem(baritem)
                 bg.append(baritem)
-
             self.bgs.append(bg)
 
         # Add x ticks and ticklabels
@@ -195,7 +194,7 @@ class BarScene(QGraphicsScene):
 
                 # The position of the legend, in screen coordinates
                 pos = (legpos[0], legpos[1] - i*dyleg)
-                color = self.colors[i]
+                color = self.colors[i%len(self.colors)]
 
                 legrect = self.createRect(*pos, Lxlegrect, Lylegrect)
 
@@ -355,7 +354,7 @@ class BarScene(QGraphicsScene):
         yvals = np.clip(yvals, 0, 1)
 
         for g in range(G):
-            color = self.colors[g]
+            color = self.colors[g%len(self.colors)]
             for n in range(N):
                 bar = self.bgs[g][n]
                 bar.setRect(self.getBarRect(n, g, yvals[n, g]))

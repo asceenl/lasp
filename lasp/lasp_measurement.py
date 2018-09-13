@@ -179,6 +179,13 @@ class Measurement:
 
             self._time = f.attrs['time']
 
+    @property
+    def name(self):
+        """
+        Returns filename base without extension
+        """
+        return os.path.splitext(self.fn_base)[0]
+
     @contextmanager
     def file(self, mode='r'):
         """
