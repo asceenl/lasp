@@ -50,6 +50,12 @@ class AvStream:
         self._audiothread = None
         self._videothread = None
 
+    def nCallbacks(self):
+        """
+        Returns the current number of installed callbacks
+        """
+        return len(self._callbacks)
+
     def addCallback(self, cb):
         """
         Add as stream callback to the list of callbacks
