@@ -129,8 +129,13 @@ class DeviceInfo:
     Will later be replaced by a dataclass. Storage container for a lot of
     device parameters.
     """
+
     def __repr__(self):
         rep = f"""Device name: {self.device_name}
+Card name: {self.cardname}
+Available sample formats: {self.available_formats}
+Max input channels: {self.max_input_channels}
+
         """
         return rep
 

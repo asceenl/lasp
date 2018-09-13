@@ -7,11 +7,11 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
-           ]
+           'W_REF']
 
 # Reference sound pressure level
 P_REF = 2e-5
-
+W_REF = 1e-12 # 1 picoWatt
 # Todo: fix This
 # calfile = '/home/anne/wip/UMIK-1/cal/7027430_90deg.txt'
 calfile = None

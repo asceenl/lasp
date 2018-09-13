@@ -20,7 +20,8 @@ include_directories(
 #   DEPENDS MakeTable
 #   )
 
-set(ui_files ui_apsrtsettings ui_mainwindow ui_figure ui_about ui_apswidget ui_revtime ui_slmwidget ui_daq ui_apssettings)
+set(ui_files ui_apsrtsettings ui_mainwindow ui_figure ui_about
+ui_apswidget ui_revtimewidget ui_slmwidget ui_daqwidget ui_apssettings)
 foreach(fn ${ui_files})
   add_custom_command(
     OUTPUT "${fn}.py"

@@ -8,76 +8,53 @@ Description:
 Data Acquistiion (DAQ) device descriptors, and the DAQ devices themselves
 
 """
-__all__ = ['DAQConfiguration', 'roga_plugndaq', 'default_soundcard']
+from dataclasses import dataclass, field
+from .lasp_daqdevice import query_devices, DeviceInfo
+__all__ = ['DAQConfiguration', 'roga_plugndaq', 'umik',
+           'default_soundcard', 'configs',
+           'findDAQDevice']
 
 
+@dataclass
 class DAQConfiguration:
-    def __init__(self, name,
-                 cardname,
-                 cardlongnamematch,
-                 device_name,
-                 en_format,
-                 en_input_rate,
-                 en_input_channels,
+    """
+    Initialize a device descriptor
 
-                 input_sensitivity,
-                 input_gain_settings,
-                 en_input_gain_setting,
-
-                 en_output_rate,
-                 en_output_channels):
-        """
-        Initialize a device descriptor
-
-        Args:
-            name: Name of the device to appear to the user
-            cardname: ALSA name identifier
-            cardlongnamematch: Long name according to ALSA
-            device_name: ASCII name with which to open the device when connected
-            en_format: index in the list of sample formats
-            en_input_rate: index of enabled input sampling frequency [Hz]
-                                in the list of frequencies.
-            en_input_channels: list of channel indices which are used to
-                                    acquire data from.
-            input_sensitivity: List of sensitivity values, in units of [Pa^-1]
-            input_gain_setting: If a DAQ supports it, list of indices which
-                                corresponds to a position in the possible input
-                                gains for each channel. Should only be not equal
-                                to None when the hardware supports changing the
-                                input gain.
-            en_output_rate: index in the list of possible output sampling
-                                 frequencies.
-            en_output_channels: list of enabled output channels
+    Args:
+        name: Name of the device to appear to the user
+        cardname: ALSA name identifier
+        cardlongnamematch: Long name according to ALSA
+        device_name: ASCII name with which to open the device when connected
+        en_format: index in the list of sample formats
+        en_input_rate: index of enabled input sampling frequency [Hz]
+                            in the list of frequencies.
+        en_input_channels: list of channel indices which are used to
+                                acquire data from.
+        input_sensitivity: List of sensitivity values, in units of [Pa^-1]
+        input_gain_settings: If a DAQ supports it, list of indices which
+                            corresponds to a position in the possible input
+                            gains for each channel. Should only be not equal
+                            to None when the hardware supports changing the
+                            input gain.
+        en_output_rate: index in the list of possible output sampling
+                             frequencies.
+        en_output_channels: list of enabled output channels
 
 
-        """
-        self.name = name
-        self.cardlongnamematch = cardlongnamematch
-        self.cardname = cardname
-        self.device_name = device_name
-        self.en_format = en_format
+    """
 
-        self.en_input_rate = en_input_rate
-        self.en_input_channels = en_input_channels
-
-        self.input_sensitivity = input_sensitivity
-        self.input_gain_settings = input_gain_settings
-
-        self.en_output_rate = en_output_rate
-        self.en_output_channels = en_output_channels
-
-    def __repr__(self):
-        """
-        String representation of configuration
-        """
-        rep = f"""Name: {self.name}
-        Enabled input channels: {self.en_input_channels}
-        Enabled input sampling frequency: {self.en_input_rate}
-        Input gain settings: {self.input_gain_settings}
-        Sensitivity: {self.input_sensitivity}
-        """
-        return rep
-
+    name: str
+    cardname: str
+    cardlongnamematch: str
+    device_name: str
+    en_format: int
+    en_input_rate: int
+    en_input_channels: list
+    input_sensitivity: list
+    input_gain_settings: list
+    en_input_gain_settings: list = field(default_factory=list)
+    en_output_rate: int = -1
+    en_output_channels: list = field(default_factory=list)
 
     def match(self, device):
         """
@@ -117,10 +94,23 @@ roga_plugndaq = DAQConfiguration(name='Roga-instruments Plug.n.DAQ USB',
                                  en_input_channels=[0],
                                  input_sensitivity=[46.92e-3, 46.92e-3],
                                  input_gain_settings=[-20, 0, 20],
-                                 en_input_gain_setting=[1, 1],
+                                 en_input_gain_settings=[1, 1],
                                  en_output_rate=1,
                                  en_output_channels=[False, False]
                                  )
+umik = DAQConfiguration(name='UMIK-1',
+                        cardname='Umik-1  Gain: 18dB',
+                        cardlongnamematch='miniDSP Umik-1  Gain: 18dB',
+                        device_name='iec958:CARD=U18dB,DEV=0',
+                        en_format=0,
+                        en_input_rate=0,
+                        en_input_channels=[0],
+                        input_sensitivity=[1., 1.],
+                        input_gain_settings=[0., 0.],
+                        en_input_gain_settings=[0, 0],
+                        en_output_rate=0,
+                        en_output_channels=[True, True]
+                        )
 
 default_soundcard = DAQConfiguration(name="Default device",
                                      cardname=None,
@@ -131,8 +121,23 @@ default_soundcard = DAQConfiguration(name="Default device",
                                      en_input_channels=[0],
                                      input_sensitivity=[1.0, 1.0],
                                      input_gain_settings=[0],
-                                     en_input_gain_setting=[0, 0],
+                                     en_input_gain_settings=[0, 0],
                                      en_output_rate=1,
                                      en_output_channels=[]
                                      )
 configs = (roga_plugndaq, default_soundcard)
+
+
+def findDAQDevice(config: DAQConfiguration) -> DeviceInfo:
+    """
+    Search for a DaQ device for the given configuration.
+
+    Args:
+        config: configuration to search a device for
+    """
+    devices = query_devices()
+
+    for device in devices:
+        if config.match(device):
+            return device
+    return None

@@ -2,7 +2,7 @@
 import argparse
 from lasp.lasp_record import Recording
 from lasp.lasp_avstream import AvStream
-
+from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq, umik
 parser = argparse.ArgumentParser(
     description='Acquire data and store a measurement file'
 )
@@ -13,9 +13,22 @@ parser.add_argument('--duration', '-d', type=float,
                     help='The recording duration in [s]')
 parser.add_argument('--comment', '-c', type=str,
                     help='Add a measurement comment, optionally')
+
+device_help = 'DAQ Device to record from'
+parser.add_argument('--input-daq','-i', help=device_help, type=str,
+                    choices=['roga', 'umik', 'default'], default='roga')
+
 args = parser.parse_args()
 
-stream = AvStream()
+device_str = args.input_daq
+if 'roga' == device_str:
+    device = roga_plugndaq
+elif 'default' == device_str:
+    device = default_soundcard
+elif 'umik' == device_str:
+    device = umik
+
+stream = AvStream(device)
 rec = Recording(args.filename, stream, args.duration)
 rec.start()
 stream.stop()

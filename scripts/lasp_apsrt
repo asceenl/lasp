@@ -1,21 +1,36 @@
 #!/usr/bin/env python
 import sys
+import argparse
 from lasp.lasp_rtapsdialog import RealTimeAPSDialog
 from lasp.lasp_avstream import AvStream
-from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq
-from lasp.lasp_gui_tools import Branding, ASCEEColors, warningdialog
+from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq, umik
+from lasp.lasp_gui_tools import Branding, warningdialog
 from PySide import QtGui
 
 
 def main():
+
+    parser = argparse.ArgumentParser(
+        description='Run real time power spectra monitor')
+    device_help = 'Device to record from'
+    parser.add_argument('-d', '--device', help=device_help, type=str,
+                        choices=['roga', 'umik', 'default'], default='roga')
+
+    args = parser.parse_args()
+    device_str = args.device
+    if 'roga' == device_str:
+        device = roga_plugndaq
+    elif 'default' == device_str:
+        device = default_soundcard
+    elif 'umik' == device_str:
+        device = umik
+
     app = QtGui.QApplication(sys.argv)  # A new instance of QApplication
     app.setFont(Branding.font())
 
-    stream = AvStream(default_soundcard)
-    # stream = AvStream(roga_plugndaq)
+    # stream = AvStream(default_soundcard)
+    stream = AvStream(device)
     mw = RealTimeAPSDialog(None, stream)
-
-    mw.show()                         # Show the form
 
     # Install exception hook to catch exceptions
     def excepthook(cls, exception, traceback):
@@ -33,7 +48,8 @@ def main():
     # Set custom exception hook that catches all exceptions
     sys.excepthook = excepthook
     stream.start()
-    app.exec_()                         # and execute the app
+    mw.show()  # Show the window
+    app.exec_()  # and start the event loop
     stream.stop()
 
 

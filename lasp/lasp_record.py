@@ -67,7 +67,7 @@ class Recording:
             self._running <<= True
             # Videothread is going to start
 
-            if not stream.isStarted():
+            if not stream.isRunning():
                 stream.start()
 
             stream.addCallback(self._callback)
@@ -93,7 +93,7 @@ class Recording:
             self._running_cond.notify()
 
     def _callback(self, _type, data, aframe, vframe):
-        if not self._stream.isStarted():
+        if not self._stream.isRunning():
             self._running <<= False
             with self._running_cond:
                 self._running_cond.notify()

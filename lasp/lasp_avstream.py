@@ -148,7 +148,7 @@ class AvStream:
         self._vframectr <<= 0
         self._video_started <<= False
 
-    def isStarted(self):
+    def isRunning(self):
         return self._running()
 
     def hasVideo(self):

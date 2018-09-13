@@ -47,7 +47,8 @@ class BarScene(QGraphicsScene):
                  ylabel=None,
                  title=None,
                  colors=DEFAULT_COLORS, size=(1200, 600),
-                 legend=None):
+                 legend=None,
+                 legendpos=None):
         """
         Initialize a bar scene
 
@@ -61,6 +62,7 @@ class BarScene(QGraphicsScene):
             colors: color cycler
             size: size of the plot in pixels
             legend: list of legend strings to show.
+            legendpos: position of legend w.r.t. default position, in pixels
         """
         super().__init__(parent=parent)
         self.setSceneRect(QRect(0,0,*size))
@@ -171,8 +173,11 @@ class BarScene(QGraphicsScene):
 
         if legend is not None:
             maxlegtxtwidth = 0
-            legpos = (xsize-rightoffset-300,
-                      ysize-topoffset-30)
+            legposx = 0 if legendpos is None else legendpos[0]
+            legposy = 0 if legendpos is None else legendpos[1]
+
+            legpos = (xsize-rightoffset-300+legposx,
+                      ysize-topoffset-30+legposy)
 
             dyleg = 15
             dylegtxt = dyleg
