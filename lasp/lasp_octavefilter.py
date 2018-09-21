@@ -59,16 +59,16 @@ class FilterBank:
 
         xs_all = [xs_d1, xs_d4, xs_d16, xs_d64, xs_d256]
         for xs in xs_all:
-            nominals = []
+            nominals_txt = []
             firs = np.empty((self.L, len(xs)), order='F')
             for i, x in enumerate(xs):
                 #  These are the filters that do not require lasp_decimation
                 #  prior to filtering
-                nominals.append(self.nominal(x))
+                nominals_txt.append(self.nominal_txt(x))
                 firs[:, i] = self.createFilter(fs, x)
             filterbank = {'fb': pyxFilterBank(firs, 1024),
                           'xs': xs,
-                          'nominals': nominals}
+                          'nominals': nominals_txt}
             self.filterbanks.append(filterbank)
 
         # Sample input counter.

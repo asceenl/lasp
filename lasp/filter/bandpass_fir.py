@@ -101,7 +101,7 @@ class OctaveBankDesigner(FilterBankDesigner):
     def xs(self):
         return list(range(-6, 5))
 
-    def nominal(self, x):
+    def nominal_txt(self, x):
         # Text corresponding to the nominal frequency
         nominals = {4: '16k',
                     3: '8k',
@@ -164,7 +164,7 @@ class ThirdOctaveBankDesigner(FilterBankDesigner):
     def __init__(self):
         self.xs = list(range(-16, 14))
         # Text corresponding to the nominal frequency
-        self.nominal_txt = ['25', '31.5', '40',
+        self._nominal_txt = ['25', '31.5', '40',
                             '50', '63', '80',
                             '100', '125', '160',
                             '200', '250', '315',
@@ -175,18 +175,18 @@ class ThirdOctaveBankDesigner(FilterBankDesigner):
                             '6.3k', '8k', '10k',
                             '12.5k', '16k', '20k']
 
-        assert len(self.xs) == len(self.nominal_txt)
+        assert len(self.xs) == len(self._nominal_txt)
 
     @property
     def b(self):
         # Band division factor, 3 for one-third octave bands
         return 3
 
-    def nominal(self, x):
+    def nominal_txt(self, x):
         # Put the nominal frequencies in a dictionary for easy access with
         # x as the key.
         index = x - self.xs[0]
-        return self.nominal_txt[index]
+        return self._nominal_txt[index]
 
     @staticmethod
     def decimation(x):

@@ -44,7 +44,7 @@ for x in bands.xs:
 
     ax.semilogx(freq, llim)
     ax.semilogx(freq, ulim)
-    ax.set_title(f'x = {x}, fnom = {bands.nominal(x)}')
+    ax.set_title(f'x = {x}, fnom = {bands.nominal_txt(x)}')
 
     if zoom:
         ax.set_xlim(bands.fl(x)/1.1, bands.fu(x)*1.1)
