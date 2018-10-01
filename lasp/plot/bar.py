@@ -8,7 +8,7 @@ Description:
 Class for plotting bars on a QGraphicsScene.
 
 """
-from ..lasp_gui_tools import ASCEEColors
+from ..lasp_gui_tools import ASCEEColors, Branding
 from PySide.QtGui import (
     QGraphicsScene, QPen, QBrush, QGraphicsRectItem,
     QGraphicsTextItem, QPainter, QImage, QPrinter
@@ -33,7 +33,9 @@ ticklength = 10
 # Distance between two bar groups in units of bar thicknesses
 dxbars = 2
 
-DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red, Qt.yellow]
+DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red, Qt.cyan,
+                  Qt.darkYellow,
+                  Qt.darkMagenta]
 
 
 class BarScene(QGraphicsScene):
@@ -109,7 +111,7 @@ class BarScene(QGraphicsScene):
 
             range_ = ylim[1]-ylim[0]
             ytickval = i/(nyticks-1)*range_ + ylim[0]
-            yticklabel = f'{ytickval:3.3}'
+            yticklabel = f'{ytickval:.0f}'
             txt = QGraphicsTextItem(yticklabel)
             txtwidth = txt.boundingRect().width()
             txtmaxwidth = max(txtmaxwidth, txtwidth)
@@ -172,8 +174,7 @@ class BarScene(QGraphicsScene):
 
         if legend is not None:
             maxlegtxtwidth = 0
-            legposx = 0 if legendpos is None else legendpos[0]
-            legposy = 0 if legendpos is None else legendpos[1]
+            legposx, legposy = (0,0) if legendpos is None else legendpos
 
             legpos = (xsize-rightoffset-300+legposx,
                       ysize-topoffset-30+legposy)

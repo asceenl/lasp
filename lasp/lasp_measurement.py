@@ -42,6 +42,7 @@ import numpy as np
 from .lasp_config import LASP_NUMPY_FLOAT_TYPE
 import wave
 import os
+import numbers
 
 
 class BlockIter:
@@ -106,8 +107,11 @@ def scaleBlockSens(block, sens):
     """
     assert sens.ndim == 1
     assert sens.size == block.shape[1]
-    sw = getSampWidth(block.dtype)
-    fac = 2**(8*sw - 1) - 1
+    if isinstance(block.dtype, numbers.Integral):
+        sw = getSampWidth(block.dtype)
+        fac = 2**(8*sw - 1) - 1
+    else:
+        fac = 1,
     return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
 
 

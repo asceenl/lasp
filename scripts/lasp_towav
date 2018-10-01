@@ -1,0 +1,13 @@
+#!/usr/bin/python
+from lasp.lasp_measurement import Measurement
+import argparse, os
+
+parser = argparse.ArgumentParser(
+    description='Playback recorded measurement'
+)
+parser.add_argument('filename', help='Filename of measurement', type=str)
+args = parser.parse_args()
+
+meas = Measurement(args.filename)
+fnwav = os.path.splitext(args.filename)[0]
+meas.exportAsWave(fnwav, force=True)
