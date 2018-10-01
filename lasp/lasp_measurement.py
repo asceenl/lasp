@@ -107,11 +107,11 @@ def scaleBlockSens(block, sens):
     """
     assert sens.ndim == 1
     assert sens.size == block.shape[1]
-    if isinstance(block.dtype, numbers.Integral):
+    if np.issubdtype(block.dtype.type, np.integer):
         sw = getSampWidth(block.dtype)
         fac = 2**(8*sw - 1) - 1
     else:
-        fac = 1,
+        fac = 1.
     return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
 
 
