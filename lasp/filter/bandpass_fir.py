@@ -84,6 +84,14 @@ class FilterBankDesigner:
 
         return frsp(fd, freq, fir)
 
+    def nominal_txt_tox(self, nom_txt):
+        """
+        Returns the x-value corresponding to a certain nominal txt: '1k' -> 0
+        """
+        for x in self.xs:
+            if self.nominal_txt(x) == nom_txt:
+                return x
+        raise ValueError(f'Could not find an x-value corresponding to {nom_txt}.')
 
 class OctaveBankDesigner(FilterBankDesigner):
     """
