@@ -36,10 +36,12 @@ DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red, Qt.cyan,
                   Qt.darkYellow,
                   Qt.darkMagenta]
 
+
 def graphicsTextItem(label):
     item = QGraphicsTextItem(label)
     item.setFont(Branding.figureFont())
     return item
+
 
 class BarScene(QGraphicsScene):
     """
@@ -70,7 +72,7 @@ class BarScene(QGraphicsScene):
             legendpos: position of legend w.r.t. default position, in pixels
         """
         super().__init__(parent=parent)
-        self.setSceneRect(QRect(0,0,*size))
+        self.setSceneRect(QRect(0, 0, *size))
 
         # self.setBackgroundBrush(ASCEEColors.bgBrush(0, size[0]))
         self.ylim = ylim
@@ -115,7 +117,7 @@ class BarScene(QGraphicsScene):
             range_ = ylim[1]-ylim[0]
             ytickval = i/(nyticks-1)*range_ + ylim[0]
             yticklabel = f'{ytickval:.0f}'
-            txt =graphicsTextItem(yticklabel)
+            txt = graphicsTextItem(yticklabel)
             txtwidth = txt.boundingRect().width()
             txtmaxwidth = max(txtmaxwidth, txtwidth)
             txt.setPos(leftoffset-10-txtwidth,
@@ -177,7 +179,7 @@ class BarScene(QGraphicsScene):
 
         if legend is not None:
             maxlegtxtwidth = 0
-            legposx, legposy = (0,0) if legendpos is None else legendpos
+            legposx, legposy = (0, 0) if legendpos is None else legendpos
 
             legpos = (xsize-rightoffset-300+legposx,
                       ysize-topoffset-30+legposy)
@@ -198,7 +200,7 @@ class BarScene(QGraphicsScene):
 
                 # The position of the legend, in screen coordinates
                 pos = (legpos[0], legpos[1] - i*dyleg)
-                color = self.colors[i%len(self.colors)]
+                color = self.colors[i % len(self.colors)]
 
                 legrect = self.createRect(*pos, Lxlegrect, Lylegrect)
 
@@ -231,18 +233,22 @@ class BarScene(QGraphicsScene):
         Returns:
             True on success
         """
-        image = QImage(*self.size,
+        size = self.size
+        pixelsx = max(1200, size[0])
+        pixelsy = int(pixelsx*size[1]/size[0])
+        imagesize = (pixelsx, pixelsy)
+        image = QImage(pixelsx,
+                       pixelsy,
                        QImage.Format_ARGB32_Premultiplied)
 
         painter = QPainter(image)
-        # painter.begin()
-        # painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(Qt.white)
         painter.setPen(Qt.white)
-        painter.drawRect(QRect(0, 0, *self.size))
+        painter.drawRect(QRect(0, 0, *imagesize))
 
-        targetrect = QRectF(0, 0, *self.size)
-        sourcerect = QRectF(0, 0, *self.size)
+        targetrect = QRectF(0, 0, *imagesize)
+        sourcerect = QRectF(0, 0, *size)
         self.render(painter, targetrect, sourcerect)
         painter.end()
 
@@ -358,7 +364,7 @@ class BarScene(QGraphicsScene):
         yvals = np.clip(yvals, 0, 1)
 
         for g in range(G):
-            color = self.colors[g%len(self.colors)]
+            color = self.colors[g % len(self.colors)]
             for n in range(N):
                 bar = self.bgs[g][n]
                 bar.setRect(self.getBarRect(n, g, yvals[n, g]))
