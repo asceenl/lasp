@@ -19,7 +19,6 @@ import numpy as np
 import sys
 
 
-
 def close():
     import matplotlib.pyplot as plt
     plt.close('all')

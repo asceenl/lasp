@@ -14,7 +14,6 @@ from PySide.QtGui import (
     QGraphicsTextItem, QPainter, QImage, QPrinter
     )
 
-# from PySide.QtOpenGL import
 from PySide.QtCore import Qt, QRectF, QLineF, QSize, QRect, QPointF, QSizeF
 import numpy as np
 import os
@@ -37,6 +36,10 @@ DEFAULT_COLORS = [ASCEEColors.blue, ASCEEColors.green, Qt.red, Qt.cyan,
                   Qt.darkYellow,
                   Qt.darkMagenta]
 
+def graphicsTextItem(label):
+    item = QGraphicsTextItem(label)
+    item.setFont(Branding.figureFont())
+    return item
 
 class BarScene(QGraphicsScene):
     """
@@ -112,7 +115,7 @@ class BarScene(QGraphicsScene):
             range_ = ylim[1]-ylim[0]
             ytickval = i/(nyticks-1)*range_ + ylim[0]
             yticklabel = f'{ytickval:.0f}'
-            txt = QGraphicsTextItem(yticklabel)
+            txt =graphicsTextItem(yticklabel)
             txtwidth = txt.boundingRect().width()
             txtmaxwidth = max(txtmaxwidth, txtwidth)
             txt.setPos(leftoffset-10-txtwidth,
@@ -138,7 +141,7 @@ class BarScene(QGraphicsScene):
         xticklabels = []
         for n in range(N):
             xticklabel = f'{xvals[n]}'
-            txt = QGraphicsTextItem(xticklabel)
+            txt = graphicsTextItem(xticklabel)
             txtxpos = self.getBarGroupMidPos(n)-12
             txt.setPos(txtxpos,
                        self.ysize-bottomoffset+xticklabeloffset)
@@ -148,7 +151,7 @@ class BarScene(QGraphicsScene):
 
         # Set xlabel
         if xlabel is not None:
-            xlabel = QGraphicsTextItem(xlabel)
+            xlabel = graphicsTextItem(xlabel)
             width = xlabel.boundingRect().width()
             txtxpos = xsize/2-width/2
             txtypos = ysize - xlabelbottomoffset
@@ -157,7 +160,7 @@ class BarScene(QGraphicsScene):
 
         # # Set ylabel
         if ylabel is not None:
-            ylabel = QGraphicsTextItem(ylabel)
+            ylabel = graphicsTextItem(ylabel)
             ylabel.setPos(ylabelleftoffset,
                           (ysize-topoffset-bottomoffset)/2+topoffset)
             ylabel.rotate(-90)
@@ -165,7 +168,7 @@ class BarScene(QGraphicsScene):
 
         # Set title
         if title is not None:
-            title = QGraphicsTextItem(title)
+            title = graphicsTextItem(title)
             width = xlabel.boundingRect().width()
             txtxpos = self.xsize/2-width/2
             txtypos = (1-.998)*self.ysize
@@ -200,7 +203,7 @@ class BarScene(QGraphicsScene):
                 legrect = self.createRect(*pos, Lxlegrect, Lylegrect)
 
                 legrect.setBrush(QBrush(color))
-                legtxt = QGraphicsTextItem(leglabel)
+                legtxt = graphicsTextItem(leglabel)
                 maxlegtxtwidth = max(maxlegtxtwidth,
                                      legtxt.boundingRect().width())
 
