@@ -15,9 +15,6 @@ from lasp.lasp_common import (PLOT_COLORS_LIST, PLOT_NOCOLORS_LIST,
                               DEFAULT_FIGSIZE_H, DEFAULT_FIGSIZE_W)
 
 
-def close():
-    plt.close('all')
-
 
 class Figure:
     def __init__(self, **kwargs):
@@ -43,7 +40,8 @@ class Figure:
 
         linewidths = cycler(linewidth=[1, 2, 1, 2, 2, 3, 2, 1])
 
-        linestyles = cycler(linestyle=['-', '-', '--', ':', '-', '--', ':', '-.', ])
+        linestyles = cycler(
+            linestyle=['-', '-', '--', ':', '-', '--', ':', '-.', ])
 
         self._ax = []
         self._legend = {}
@@ -75,8 +73,7 @@ class Figure:
         for ax in self._ax:
             ax.grid(True, 'both')
         self._zorder -= 1
-        if not getReportQuality():
-            self._f.show()
+        self.fig.show()
 
     def vline(self, x):
         self._ax[0].axvline(x)
@@ -121,7 +118,7 @@ class Figure:
         self._cur_ax.legend(self._legend[self._cur_col][self._cur_col])
 
     def savefig(self, *args, **kwargs):
-        self._f.savefig(*args, **kwargs)
+        self.fig.savefig(*args, **kwargs)
 
     def xlim(self, *args, **kwargs):
         all_ax = kwargs.pop('all_ax', False)
