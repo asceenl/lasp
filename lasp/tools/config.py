@@ -11,13 +11,11 @@ _report_quality = False
 _init = False
 
 
-def init_backend(report_quality=False):
+def init_matplotlib(report_quality=False):
     global _init
     if not _init:
-        print('Initializing matplotlib...')
         _init = True
-        import matplotlib
-        matplotlib.use('Qt5Agg')
+        print('Initializing matplotlib...')
         preamble = [
               r'\usepackage{libertine-type1}'
               r'\usepackage[libertine]{newtxmath}'
@@ -32,9 +30,19 @@ def init_backend(report_quality=False):
             'pgf.texsystem': 'pdflatex',
             'pgf.preamble': preamble,
         }
+        import matplotlib
         matplotlib.rcParams.update(params)
         global _report_quality
         _report_quality = report_quality
+
+
+def init_backend(report_quality=False):
+    global _init
+    if not _init:
+        _init = True
+        import matplotlib
+        matplotlib.use('Qt5Agg')
+        init_matplotlib(report_quality)
         import matplotlib.pyplot as plt
         plt.ion()
 
