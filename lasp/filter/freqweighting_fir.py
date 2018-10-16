@@ -28,25 +28,36 @@ f1 = np.sqrt((-b-np.sqrt(b**2-4*c))/2)
 f4 = np.sqrt((-b+np.sqrt(b**2-4*c))/2)
 f4sq = f4**2
 
+
 def A_uncor(f):
     """
     Computes the uncorrected frequency response of the A-filter
     """
     fsq = f**2
-    num  = f4sq*fsq**2
+    num = f4sq*fsq**2
     denom1 = (fsq+f1**2)
     denom2 = np.sqrt((fsq+f2**2)*(fsq+f3**2))*(fsq+f4sq)
-    
+
     return (num/(denom1*denom2))
+
 
 def A(f):
     """
-    Computes the linear A-weighting freqency response
+    Computes the linear A-weighting freqency response. Hence, to obtain
+    A-weighted values, the *amplitude* need to be multiplied with this value.
+    Hence, to correct dB levels, the value of 20*log(A) needs to be added to
+    the level
+
+    Args:
+        f: Frequency array to compute values for
+    Returns:
+        A(f) for each frequency
     """
     Auncor = A_uncor(f)
     A1000 = A_uncor(1000.)
     return Auncor/A1000
-        
+
+
 def C_uncor(f):
     """
     Computes the uncorrected frequency response of the C-filter
@@ -56,6 +67,7 @@ def C_uncor(f):
     denom1 = (fsq+f1**2)
     denom2 = (fsq+f4**2)
     return num/(denom1*denom2)
+
 
 def C(f):
     """
