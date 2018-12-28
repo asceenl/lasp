@@ -20,7 +20,13 @@ DEFAULT_FIGSIZE_H = DEFAULT_FIGSIZE_W/GOLDEN
 
 # Reference sound pressure level
 P_REF = 2e-5
+
 W_REF = 1e-12 # 1 picoWatt
+I_REF = 1e-12 # 1 picoWatt/ m^2
+
+# Reference velocity for sound velocity level
+U_REF = 5e-8
+
 # Todo: fix This
 # calfile = '/home/anne/wip/UMIK-1/cal/7027430_90deg.txt'
 calfile = None
