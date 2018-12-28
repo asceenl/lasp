@@ -91,12 +91,15 @@ class FilterBankDesigner:
         for x in self.xs:
             if self.nominal_txt(x) == nom_txt:
                 return x
-        raise ValueError(f'Could not find an x-value corresponding to {nom_txt}.')
+        raise ValueError(
+            f'Could not find an x-value corresponding to {nom_txt}.')
+
 
 class OctaveBankDesigner(FilterBankDesigner):
     """
     Octave band filter designer
     """
+
     def __init__(self):
         pass
 
