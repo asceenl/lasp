@@ -20,17 +20,18 @@ gain_default = 0.
 parser = argparse.ArgumentParser('Calibrate device using'
                                  ' calibration measurement')
 
-parser.add_argument('--gain-setting','-g',
-                    help='DAQ Input gain setting during calibration in [dB]' +
-                    f' default = {gain_default} dB.',
+parser.add_argument('--gain-setting', '-g',
+                    help='DAQ Input gain setting during calibration in [dB]'
+                    + f' default = {gain_default} dB.',
                     type=float, default=gain_default)
 
-parser.add_argument('fn',help='File name of calibration measurement', type=str)
+parser.add_argument(
+    'fn', help='File name of calibration measurement', type=str)
 
-parser.add_argument('--channel',help='Channel of the device to calibrate, default = 0',
+parser.add_argument('--channel', help='Channel of the device to calibrate, default = 0',
                     type=int, default=0)
 
-parser.add_argument('--spl','-s',help='Applied sound pressure level to the'
+parser.add_argument('--spl', '-s', help='Applied sound pressure level to the'
                     f' microphone in dB, default = {spl_default}',
                     default=spl_default)
 args = parser.parse_args()
@@ -53,6 +54,6 @@ print('Searching for files in directory to apply sensitivity value to...')
 dir_ = os.path.dirname(args.fn)
 for f in os.listdir(dir_):
     yn = input(f'Apply sensitivity to {f}? [Y/n]')
-    if yn in ['','Y','y']:
-        meas = Measurement(os.path.join(dir_,f))
+    if yn in ['', 'Y', 'y']:
+        meas = Measurement(os.path.join(dir_, f))
         meas.sensitivity = sens
