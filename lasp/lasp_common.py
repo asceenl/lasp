@@ -7,7 +7,7 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
-           'W_REF', 'DEFAULT_FIGSIZE_H', 'DEFAULT_FIGSIZE_W',
+           'W_REF', 'U_REF', 'I_REF', 'DEFAULT_FIGSIZE_H', 'DEFAULT_FIGSIZE_W',
            'GOLDEN', 'PLOT_COLORS_LIST', 'PLOT_NOCOLORS_LIST']
 
 PLOT_COLORS_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'k', '#BE6500']

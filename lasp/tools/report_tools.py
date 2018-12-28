@@ -8,11 +8,11 @@ Description: backend tools for easy postprocessing of measurements
 from .plot import Figure
 from lasp.wrappers import AvPowerSpectra
 from lasp.lasp_measurement import Measurement
-from lasp.lasp_common import FreqWeighting, TimeWeighting, getFreq, getTime
+from lasp.lasp_common import (FreqWeighting, TimeWeighting,
+                              getFreq, getTime, Window, P_REF)
 from lasp.lasp_weighcal import WeighCal
 from lasp.lasp_octavefilter import OctaveFilterBank, ThirdOctaveFilterBank
-from lasp.lasp_barfigure import BarFigure
-from lasp.lasp_figure import Plotable
+from lasp.lasp_figuredialog import FigureDialog
 from lasp.lasp_figure import Plotable, PlotOptions
 from lasp.lasp_slm import SLM
 import numpy as np
@@ -81,6 +81,31 @@ def PSPlot(fn_list, **kwargs):
     return f
 
 
+def PowerSpectra(fn_list, **kwargs):
+    nfft = kwargs.pop('nfft', 2048)
+    window = kwargs.pop('window', Window.hann)
+    fw = kwargs.pop('fw', FreqWeighting.A)
+    overlap = kwargs.pop('overlap', 50.)
+    ptas = []
+    for fn in fn_list:
+        meas = Measurement(fn)
+        fs = meas.samplerate
+        weighcal = WeighCal(fw, nchannels=1,
+                            fs=fs, calfile=None)
+        praw = meas.praw()
+        weighted = weighcal.filter_(praw)
+        aps = AvPowerSpectra(nfft, 1, overlap, window[0])
+        result = aps.addTimeData(weighted)[:, 0, 0].real
+        pwr = 10*np.log10(result/P_REF**2)
+
+        freq = getFreq(fs, nfft)
+        ptas.append(Plotable(freq, pwr))
+
+        pto = PlotOptions.forPower()
+        pto.ylabel = f'L{fw[0]} [dB({fw[0]})]'
+    return ptas
+
+
 def Levels(fn_list, **kwargs):
 
     bank = kwargs.pop('bank', 'third')
@@ -131,14 +156,26 @@ def Levels(fn_list, **kwargs):
     return levels
 
 
-def LevelBars(levels, show=True, **kwargs):
+def LevelDifference(levels):
+    assert len(levels) == 2
+    return Plotable(name='Difference', x=levels[0].x,
+                    y=levels[1].y-levels[0].y)
+
+
+def LevelFigure(levels, show=True, **kwargs):
+    figtype = kwargs.pop('figtype', 'bar')
     from PySide.QtGui import QApplication, QFont
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
     app.setFont(QFont('Linux Libertine'))
     size = kwargs.pop('size', (1200, 600))
-    opts = PlotOptions.forLevelBars()
+    if figtype == 'bar':
+        opts = PlotOptions.forLevelBars()
+    elif figtype == 'line':
+        opts = PlotOptions.forPower()
+    else:
+        raise RuntimeError('figtype should be either line or bar')
     opts.ylim = kwargs.pop('ylim', (0, 100))
     opts.ylabel = kwargs.pop('ylabel', 'LAeq [dB(A)]')
     opts.xlabel = kwargs.pop('xlabel', None)
@@ -146,14 +183,13 @@ def LevelBars(levels, show=True, **kwargs):
     opts.legendpos = kwargs.pop('legendpos', None)
     opts.title = kwargs.pop('title', None)
 
-    def BarPlotter(ptas, pto):
-        fig = BarFigure(None, pto)
-        fig.resize(1200, 300)
+    def Plotter(ptas, pto):
+        fig = FigureDialog(None, None, pto, figtype)
         for pta in ptas:
-            fig.add(pta)
+            fig.fig.add(pta)
         return fig
 
-    fig = BarPlotter(levels, opts)
+    fig = Plotter(levels, opts)
     if show:
         fig.show()
     fig.resize(*size)
