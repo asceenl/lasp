@@ -30,7 +30,8 @@ endif(LASP_FLOAT STREQUAL "double")
 
 
 if(NOT DEFINED LASP_DEBUG)
-  message(FATAL_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE or -DLASP_DEBUG=FALSE")
+  message(FATAL_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE
+   or -DLASP_DEBUG=FALSE")
 endif(NOT DEFINED LASP_DEBUG)
 
 # ##################### END Cmake variables converted to a macro
@@ -46,14 +47,14 @@ if(LASP_DEBUG)
   add_definitions(-DTRACERNAME=${TRACERNAME})
   add_definitions(-DDEBUG)
   add_definitions(-DTRACER=1)
-  
+
   set(CYTHON_VARIABLES "#cython: boundscheck=True")
   # This will produce html files
   set(CYTHON_ANNOTATE ON)
   # Add the __FILENAME__ macro
   # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
 else()
-  message("Building release code")
+  message("Building LASP for release")
   set(CMAKE_BUILD_TYPE Release)
   set(CYTHON_ANNOTATE OFF)
   set(CYTHON_NO_DOCSTRINGS ON)
@@ -61,7 +62,7 @@ else()
   # Strip unnecessary symbols
   # set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--gc-sections")
   # set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--gc-sections")
-  
+
   add_definitions(-DTRACER=0 -DNDEBUG)
 endif(LASP_DEBUG)
 
@@ -85,9 +86,9 @@ set(CMAKE_C_FLAGS_RELEASE  "-O2 -mfpmath=sse -march=x86-64 -mtune=native \
 # set(CMAKE_C_FLAGS_RELEASE  "-O2 -march=native -mtune=native -fomit-frame-pointer")
 
 if(LASP_USE_BLAS)
-  add_definitions(-DLASP_USE_BLAS=1)  
+  add_definitions(-DLASP_USE_BLAS=1)
 else()
-  add_definitions(-DLASP_USE_BLAS=0)  
+  add_definitions(-DLASP_USE_BLAS=0)
 endif(LASP_USE_BLAS)
 
 # ############################# End compilation flags

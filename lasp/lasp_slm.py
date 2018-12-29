@@ -22,7 +22,7 @@ class Dummy:
 
 class SLM:
     """
-    Multi-channel sound Level Meter. Input data: time data with a certain
+    Multi-channel Sound Level Meter. Input data: time data with a certain
     sampling frequency. Output: time-weighted (fast/slow) sound pressure
     levels in dB(A/C/Z).
 
@@ -39,6 +39,8 @@ class SLM:
         """
 
         if tw[0] is not TimeWeighting.none[0]:
+            # Initialize the single-pole low-pass filter for given time-
+            # weighting value.
             self._lp = SPLowpass(fs, tw[0])
         else:
             self._lp = Dummy()
@@ -69,6 +71,8 @@ class SLM:
 
         Args:
             data:
+        returns:
+            level values as a function of time
         """
         assert data.ndim == 2
         assert data.shape[1] == 1

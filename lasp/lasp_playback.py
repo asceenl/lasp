@@ -23,10 +23,17 @@ class Playback:
 
     def __init__(self, fn1, channel=0, video=True, verbose=True):
         """
+        Initialize  a Playback class for playing back audio
 
+        Args:
+            fn1: Filename of the measurement file
+            channel: channel index to play back
+            video: if True and video is available in the measurement file,
+            video will also be shown
+            verbose: print out status messages to stdout
         """
         ext = '.h5'
-        if not ext in fn1:
+        if fn1[-3:] != ext:
             fn = fn1 + ext
         else:
             fn = fn1

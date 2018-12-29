@@ -12,7 +12,7 @@ The ASCEE hdf5 measurement file format contains the following fields:
 'samplerate': The audio data sample rate in Hz.
 'nchannels': The number of audio channels in the file
 'sensitivity': (Optionally) the stored sensitivity of the record channels.
-               This can be a single value, or an array of sensitivities for
+               This can be a single value, or a list of sensitivities for
                each channel. Both representations are allowed.
 
 - Datasets:
@@ -32,9 +32,8 @@ that can be stored for the integer bit depth to get a number between -1.0 and
 
 The video dataset can possibly be not present in the data.
 
-
-
 """
+
 __all__ = ['Measurement', 'scaleBlockSens']
 from contextlib import contextmanager
 import h5py as h5
@@ -42,7 +41,6 @@ import numpy as np
 from .lasp_config import LASP_NUMPY_FLOAT_TYPE
 import wave
 import os
-import numbers
 
 
 class BlockIter:
@@ -177,7 +175,9 @@ class Measurement:
             # Sensitivity
             try:
                 sens = f.attrs['sensitivity']
-                self._sens = sens*np.ones(self.nchannels) if isinstance(sens, float) else sens
+                self._sens = sens * \
+                    np.ones(self.nchannels) if isinstance(
+                        sens, float) else sens
             except KeyError:
                 self._sens = np.ones(self.nchannels)
 
@@ -198,7 +198,7 @@ class Measurement:
         Args:
             mode: Opening mode for the file. Should either be 'r', or 'r+'
         """
-        if mode not in ('r','r+'):
+        if mode not in ('r', 'r+'):
             raise ValueError('Invalid file opening mode.')
         with h5.File(self.fn, mode) as f:
             yield f

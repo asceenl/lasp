@@ -15,7 +15,6 @@ from lasp.lasp_common import (PLOT_COLORS_LIST, PLOT_NOCOLORS_LIST,
                               DEFAULT_FIGSIZE_H, DEFAULT_FIGSIZE_W)
 
 
-
 class Figure:
     def __init__(self, **kwargs):
         ncols = kwargs.pop('ncols', 1)

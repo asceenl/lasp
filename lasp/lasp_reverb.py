@@ -25,7 +25,7 @@ class ReverbTime:
 
         """
         assert level.ndim == 2, 'Invalid number of dimensions in level'
-        assert level.shape[1] == 1,'Invalid number of channels, should be 1'
+        assert level.shape[1] == 1, 'Invalid number of channels, should be 1'
         self._level = level
         # Number of time samples
         self._N = self._level.shape[0]

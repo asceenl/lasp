@@ -7,28 +7,18 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
-           'W_REF', 'U_REF', 'I_REF', 'DEFAULT_FIGSIZE_H', 'DEFAULT_FIGSIZE_W',
-           'GOLDEN', 'PLOT_COLORS_LIST', 'PLOT_NOCOLORS_LIST']
-
-PLOT_COLORS_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'k', '#BE6500']
-PLOT_NOCOLORS_LIST = ['k', '0.5', 'k', '0.5', '0.5', '0.5', '0.5', 'k']
-
-DEFAULT_FIGSIZE_W = 8
-GOLDEN = (np.sqrt(5.)+1)/2
-DEFAULT_FIGSIZE_H = DEFAULT_FIGSIZE_W/GOLDEN
-
+           'W_REF', 'U_REF', 'I_REF']
 
 # Reference sound pressure level
 P_REF = 2e-5
 
-W_REF = 1e-12 # 1 picoWatt
-I_REF = 1e-12 # 1 picoWatt/ m^2
+W_REF = 1e-12  # 1 picoWatt
+I_REF = 1e-12  # 1 picoWatt/ m^2
 
 # Reference velocity for sound velocity level
 U_REF = 5e-8
 
 # Todo: fix This
-# calfile = '/home/anne/wip/UMIK-1/cal/7027430_90deg.txt'
 calfile = None
 
 

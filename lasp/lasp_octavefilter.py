@@ -6,7 +6,8 @@ Author: J.A. de Jong - ASCEE
 Provides the FIR implementation of the octave filter bank
 
 """
-__all__ = ['OctaveFilterBank']
+__all__ = ['OctaveFilterBank', 'ThirdOctaveFilterBank']
+
 from .filter.bandpass_fir import OctaveBankDesigner, ThirdOctaveBankDesigner
 from .wrappers import Decimator, FilterBank as pyxFilterBank
 import numpy as np
@@ -27,7 +28,6 @@ class FilterBank:
         """
         assert np.isclose(fs, 48000), "Only sampling frequency" \
             " available is 48 kHz"
-
 
         maxdecimation = self.decimation(self.xs[0])
         self.decimators = []

@@ -19,7 +19,7 @@ class WeighCal:
     """
     Frequency weighting and calibration FIR filter
     """
-    
+
     def __init__(self, fw=FreqWeighting.default,
                  nchannels=1,
                  fs=48000.,

@@ -29,7 +29,8 @@ class AvStream:
             self.nchannels = len(daq.channels_en)
             self.samplerate = daq.input_rate
             self.blocksize = daq.blocksize
-            self.sensitivity = np.asarray(daqconfig.input_sensitivity)[daq.channels_en]
+            self.sensitivity = np.asarray(daqconfig.input_sensitivity)[
+                                          daq.channels_en]
         except Exception as e:
             raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 

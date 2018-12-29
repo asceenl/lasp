@@ -1,3 +1,6 @@
+"""
+This file contains the Cython wrapper functions to 
+"""
 include "config.pxi"
 
 setTracerLevel(15)
@@ -208,14 +211,14 @@ cdef class AvPowerSpectra:
                   us window=Window.hann,
                   d[:] weighting = np.array([])):
 
-        
+
         cdef vd weighting_vd
         cdef vd* weighting_ptr = NULL
         if(weighting.size != 0):
             weighting_vd = dmat_foreign_data(weighting.size,1,
                                              &weighting[0],False)
             weighting_ptr = &weighting_vd
-        
+
         self.aps = AvPowerSpectra_alloc(nfft,
                                         nchannels,
                                         overlap_percentage,
@@ -323,11 +326,11 @@ cdef extern from "lasp_decimation.h":
     ctypedef struct c_Decimator "Decimator"
     ctypedef enum DEC_FAC:
         DEC_FAC_4
-        
+
     c_Decimator* Decimator_create(us nchannels,DEC_FAC d) nogil
     dmat Decimator_decimate(c_Decimator* dec,const dmat* samples) nogil
     void Decimator_free(c_Decimator* dec) nogil
-    
+
 cdef class Decimator:
     cdef:
         c_Decimator* dec
