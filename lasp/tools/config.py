@@ -40,7 +40,7 @@ def init_backend(report_quality=False):
     global _init
     if not _init:
         import matplotlib
-        matplotlib.use('Qt5Agg')
+        matplotlib.use('Qt5Agg', warn=False, force=True)
         init_matplotlib(report_quality)
         _init = True
         import matplotlib.pyplot as plt

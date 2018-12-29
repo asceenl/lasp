@@ -5,8 +5,8 @@
 """
 from setuptools import setup
 
-descr = "Python wrappers around several C++ optimized beamforming codes"
-
+descr = """Library for Acoustic Signal Processing. This Python module contains
+tools and code for common operations on acoustic signals."""
 
 setup(
       name="LASP",
@@ -14,12 +14,10 @@ setup(
       packages=['lasp'],
       author='J.A. de Jong - ASCEE',
       author_email="j.a.dejong@ascee.nl",
-      # Project uses reStructuredText, so ensure that the docutils get
-      # installed or upgraded on the target machine
       install_requires=['matplotlib>=1.0', 'scipy>=1.0', 'numpy>=1.0'],
       license='MIT',
       description=descr,
       keywords="",
-      url="http://www.ascee.nl/lasp/",   # project home page, if any
+      url="https://www.ascee.nl/lasp/",   # project home page, if any
 
 )
