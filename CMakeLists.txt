@@ -99,31 +99,29 @@ else()
   set(win32 false)
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
+find_package(PythonLibs REQUIRED )
+find_package(PythonInterp REQUIRED)
+
 add_subdirectory(fftpack)
 include_directories(
   fftpack
   lasp/c
   )
+
 add_subdirectory(lasp)
 add_subdirectory(test)
 
-if (PYTHON)
-    # set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-    set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-    set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py")
-    set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+# set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py")
+set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
-    # configure_file(${SETUP_PY_IN} ${SETUP_PY})
+# configure_file(${SETUP_PY_IN} ${SETUP_PY})
+add_custom_command(OUTPUT ${OUTPUT}
+                   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build
+                   COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
+                   DEPENDS ${DEPS})
 
-    add_custom_command(OUTPUT ${OUTPUT}
-                       COMMAND ${PYTHON} ${SETUP_PY} build
-                       COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-                       DEPENDS ${DEPS})
+add_custom_target(target ALL DEPENDS ${OUTPUT})
 
-    add_custom_target(target ALL DEPENDS ${OUTPUT})
-
-    install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install)")
-endif()
-
-
-############################## End compiler settings
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
