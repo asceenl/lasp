@@ -28,7 +28,6 @@ else()
   add_definitions(-DLASP_FLOAT=32)
 endif(LASP_FLOAT STREQUAL "double")
 
-
 if(NOT DEFINED LASP_DEBUG)
   message(FATAL_ERROR "LASP_DEBUG flag not defined. Please set -DLASP_DEBUG=TRUE
    or -DLASP_DEBUG=FALSE")
@@ -124,4 +123,11 @@ add_custom_command(OUTPUT ${OUTPUT}
 
 add_custom_target(target ALL DEPENDS ${OUTPUT})
 
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
+if(DEFINED INSTALL_DEBUG)
+    set(EXTRA_SETUP_ARG --user -e)
+else()
+    set(EXTRA_SETUP_ARG "")
+ endif()
+
+
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install ${EXTRA_SETUP_ARG} .)")
