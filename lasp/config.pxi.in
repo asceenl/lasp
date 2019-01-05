@@ -1,4 +1,3 @@
-
 import numpy as np
 cimport numpy as np
 from libcpp cimport bool
@@ -29,6 +28,8 @@ cdef extern from "lasp_tracer.h":
     void fsTRACE(int)
     void feTRACE(int)
     void clearScreen()
+
+
 cdef extern from "lasp_mat.h":
     ctypedef struct dmat:
         us n_cols
@@ -58,9 +59,10 @@ cdef extern from "lasp_mat.h":
     void cmat_free(cmat*)
     void cmat_copy(cmat* to,cmat* from_)
 
+
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
+
 cdef extern from "lasp_python.h":
     object dmat_to_ndarray(dmat*,bint transfer_ownership)
-

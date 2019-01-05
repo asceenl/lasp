@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 10 08:28:03 2018
 
-@author: Read data from image stream and record sound at the same time
 """
 import cv2 as cv
-import numpy as np
 import queue
 import sounddevice as sd
 import time
-from matplotlib.pyplot import plot, show
 from .lasp_atomic import Atomic
 from threading import Thread, Condition
 import h5py
@@ -57,22 +53,30 @@ class Playback:
             if verbose:
                 print('Sample rate: ', self.samplerate)
                 print('Number of audio frames: ', self.nblocks*self.blocksize)
-                print('Recording time: ', self.nblocks *
-                      self.blocksize/self.samplerate)
+                print('Recording time: ', self.nblocks
+                      * self.blocksize/self.samplerate)
 
             if video:
                 try:
                     f['video']
                     self._video_frame_positions = f['video_frame_positions'][:]
-                except:
-                    print('No video available in measurement file. Disabling video')
+                except AttributeError:
+                    print('No video available in measurement file.'
+                          'Disabling video')
                     self._video = False
 
     @property
     def T(self):
+        """
+        Returns
+            the lenght of the measurement in seconds
+        """
         return self._nblocks*self._blocksize/self._samplerate
 
     def start(self):
+        """
+        Start the playback
+        """
         with h5py.File(self._fn, 'r') as f:
             self._ad = f['audio']
             dtype = self._ad.dtype

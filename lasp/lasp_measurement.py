@@ -205,18 +205,32 @@ class Measurement:
 
     @property
     def comment(self):
+        """
+        Return the measurement comment
+
+        Returns:
+            The measurement comment (text string)
+        """
         return self._comment
 
     @comment.setter
     def comment(self, cmt):
+        """
+        Set the measurement comment
+
+        Args:
+            cmt: Comment text string to set
+        """
         with self.file('r+') as f:
+            # Update comment attribute in the file
             f.attrs['comment'] = cmt
             self._comment = cmt
 
     @property
     def recTime(self):
         """
-        Returns the total recording time of the measurement, in float seconds.
+        Returns
+            the total recording time of the measurement, in float seconds.
         """
         return self.blocksize*self.nblocks/self.samplerate
 
@@ -228,9 +242,15 @@ class Measurement:
         return self._time
 
     def scaleBlock(self, block):
-        # When the data is stored as integers, we assume dB full-scale scaling.
-        # Hence, when we convert the data to floats, we divide by the maximum
-        # possible value.
+        """
+        When the data is stored as integers, we assume dB full-scale scaling.
+        Hence, when we convert the data to floats, we divide by the maximum
+        possible value.
+
+        Returns:
+            Block of measurement data, scaled using sensitivity values and
+            retured as floating point values
+        """
         return scaleBlockSens(block, self.sensitivity)
 
     @property
@@ -259,8 +279,8 @@ class Measurement:
 
     def praw(self, block=None):
         """
-        Returns the uncalibrated acoustic pressure signal, converted to floating
-        point acoustic pressure values [Pa].
+        Returns the uncalibrated acoustic pressure signal, converted to
+        floating  point acoustic pressure values [Pa].
         """
         if block is not None:
             with self.file() as f:

@@ -137,12 +137,21 @@ class FilterBank:
 
 
 class OctaveFilterBank(FilterBank, OctaveBankDesigner):
+    """
+    Filter bank which uses FIR filtering for each octave frequency band
+    """
+
     def __init__(self, fs):
         OctaveBankDesigner.__init__(self)
         FilterBank.__init__(self, fs)
 
 
 class ThirdOctaveFilterBank(FilterBank, ThirdOctaveBankDesigner):
+    """
+    Filter bank which uses FIR filtering for each one-third octave frequency
+    band.
+    """
+
     def __init__(self, fs):
         ThirdOctaveBankDesigner.__init__(self)
         FilterBank.__init__(self, fs)
