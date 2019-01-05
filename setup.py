@@ -3,21 +3,25 @@
 """
 @author: J.A. de Jong - ASCEE
 """
-from setuptools import setup
+from setuptools import setup, find_packages
 
-descr = """Library for Acoustic Signal Processing. This Python module contains
-tools and code for common operations on acoustic signals."""
 
 setup(
       name="LASP",
       version="1.0",
-      packages=['lasp'],
+      packages=find_packages(),
+      long_description=open("./README.md", 'r').read(),
+      long_description_content_type="text/markdown",
+      # ext_modules=[CMakeExtension('lasp/wrappers.so'),
+      #              ],
+      package_data={'lasp': ['wrappers.so']},
       author='J.A. de Jong - ASCEE',
       author_email="j.a.dejong@ascee.nl",
       install_requires=['matplotlib>=1.0',
-                        'scipy>=1.0', 'numpy>=1.0', 'h5py'],
+                        'scipy>=1.0', 'numpy>=1.0', 'h5py',
+                        'lrftubes>=1.0'],
       license='MIT',
-      description=descr,
+      description="Library for Acoustic Signal Processing",
       keywords="",
       url="https://www.ascee.nl/lasp/",   # project home page, if any
 

@@ -112,7 +112,13 @@ add_subdirectory(test)
 
 # set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py")
+
+set(DEPS  "${CMAKE_CURRENT_SOURCE_DIR}/*.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py"
+          "wrappers"
+          "lasp_daqdevice")
+
+             # )
 set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
 # configure_file(${SETUP_PY_IN} ${SETUP_PY})
