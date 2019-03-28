@@ -1,7 +1,9 @@
 """
-This file contains the Cython wrapper functions to 
+This file contains the Cython wrapper functions to C implementations.
 """
 include "config.pxi"
+
+__all__ = ['AvPowerSpectra']
 
 setTracerLevel(15)
 cdef extern from "cblas.h":

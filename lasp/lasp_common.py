@@ -7,6 +7,7 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
+           'getFreq',
            'W_REF', 'U_REF', 'I_REF']
 
 # Reference sound pressure level
@@ -53,9 +54,11 @@ class TimeWeighting:
     none = (None, 'Raw (no time weighting)')
     uufast = (1e-4, '0.1 ms')
     ufast = (30e-3, '30 ms')
-    fast = (0.125, 'Fast')
-    slow = (1.0, 'Slow')
-    types = (none, uufast, ufast, fast, slow)
+    fast = (0.125, 'Fast (0.125 s)')
+    slow = (1.0, 'Slow (1.0 s)')
+    tens = (10, '10 s')
+    infinite = (np.Inf, 'Infinite')
+    types = (none, uufast, ufast, fast, slow, tens, infinite)
     default = 2
 
     @staticmethod

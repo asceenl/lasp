@@ -5,7 +5,7 @@ Created on Tue Aug 14 12:49:27 2018
 
 @author: J.A. de Jong - ASCEE
 
-Description: calibrate device using measurement
+Description: apply calibration to measurement files.
 
 """
 import numpy as np
@@ -28,7 +28,8 @@ parser.add_argument('--gain-setting', '-g',
 parser.add_argument(
     'fn', help='File name of calibration measurement', type=str)
 
-parser.add_argument('--channel', help='Channel of the device to calibrate, default = 0',
+parser.add_argument('--channel', help='Channel of the device to calibrate, '
+                    + 'default = 0',
                     type=int, default=0)
 
 parser.add_argument('--spl', '-s', help='Applied sound pressure level to the'

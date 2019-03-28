@@ -34,3 +34,37 @@ additional documentation (the math behind it). This will be published
 in a sister repository in a later stage.
 
 If you have any question(s), please feel free to contact us: info@ascee.nl.
+
+
+## Installation
+
+### Compilation
+
+#### Archlinux
+
+Compiling the code on Archlinux requires the following packages to be available:
+
+- openblas-lapack (AUR)
+- Python 3.7
+- Numpy (Python-numpy)
+- Cython
+
+#### Ubuntu / Linux Mint
+
+*Only tested with Linux Mint 18.04*, we require the following packages for
+compilation:
+
+- build-essential
+- cython
+- python3-numpy
+- libopenblas
+- libclalsadrv-dev
+- libopenblas-base
+- libopenblas-dev
+
+### Dependencies
+
+#### Ubuntu / Linux Mint
+
+*Only tested with Linux Mint 18.04*. The following Dependencies are required
+for Ubuntu:
