@@ -17,7 +17,7 @@ class Playback:
     Play back a single channel from a
     """
 
-    def __init__(self, fn1, channel=0, video=True, verbose=True):
+    def __init__(self, fn1, channel=0, video=False, verbose=True):
         """
         Initialize  a Playback class for playing back audio
 

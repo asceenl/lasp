@@ -6,6 +6,19 @@
 from setuptools import setup, find_packages
 
 
+# class CMakeExtension(Extension):
+#     """
+#     An extension to run the cmake build
+#
+#     This simply overrides the base extension class so that setuptools
+#     doesn't try to build your sources for you
+#     """
+#
+#     def __init__(self, name, sources=[]):
+#
+#         super().__init__(name=name, sources=sources)
+
+
 setup(
       name="LASP",
       version="1.0",
@@ -19,7 +32,7 @@ setup(
       author_email="j.a.dejong@ascee.nl",
       install_requires=['matplotlib>=1.0',
                         'scipy>=1.0', 'numpy>=1.0', 'h5py',
-                        'lrftubes>=1.0'],
+                        ],
       license='MIT',
       description="Library for Acoustic Signal Processing",
       keywords="",
