@@ -25,3 +25,4 @@ lasp/ui_*
 resources_rc.py
 lasp/device/lasp_daqdevice.c
 .ropeproject
+.spyproject
