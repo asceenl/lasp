@@ -10,6 +10,7 @@ cdef extern from "cblas.h":
     int openblas_get_num_threads()
     void openblas_set_num_threads(int)
 
+
 # If we touch this variable: we get segfaults when running from
 # Spyder!
 # openblas_set_num_threads(8)

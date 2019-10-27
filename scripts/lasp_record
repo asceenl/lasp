@@ -1,8 +1,5 @@
 #!/usr/bin/python
 import argparse
-from lasp.lasp_record import Recording
-from lasp.lasp_avstream import AvStream
-from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq, umik
 parser = argparse.ArgumentParser(
     description='Acquire data and store a measurement file'
 )
@@ -16,11 +13,25 @@ parser.add_argument('--comment', '-c', type=str,
 
 device_help = 'DAQ Device to record from'
 parser.add_argument('--input-daq', '-i', help=device_help, type=str,
-                    choices=['roga', 'umik', 'default'], default='roga')
+                    choices=['roga', 'umik', 'nidaq', 'default'], default='roga')
 
 args = parser.parse_args()
 
 device_str = args.input_daq
+
+if device_str == 'nidaq':
+   
+    # Not-integrated way to record with the NI USB 4431 DAQ device
+    from lasp.device.record_ni import USBDAQRecording
+    rec =  USBDAQRecording(args.filename, [0, 1])
+    rec.start()
+    exit(0)
+
+
+from lasp.lasp_record import Recording
+from lasp.lasp_avstream import AvStream
+from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq, umik
+
 if 'roga' == device_str:
     device = roga_plugndaq
 elif 'default' == device_str:

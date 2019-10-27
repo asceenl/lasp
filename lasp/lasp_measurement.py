@@ -41,13 +41,13 @@ import numpy as np
 from .lasp_config import LASP_NUMPY_FLOAT_TYPE
 import wave
 import os
+import time
 
 
 class BlockIter:
     """
     Iterate over the blocks in the audio data of a h5 file
     """
-
     def __init__(self, f):
         """
         Initialize a BlockIter object
@@ -69,7 +69,7 @@ class BlockIter:
         if self.i == self.nblocks:
             raise StopIteration
         self.i += 1
-        return self.fa[self.i-1][:, :]
+        return self.fa[self.i - 1][:, :]
 
 
 def getSampWidth(dtype):
@@ -107,10 +107,10 @@ def scaleBlockSens(block, sens):
     assert sens.size == block.shape[1]
     if np.issubdtype(block.dtype.type, np.integer):
         sw = getSampWidth(block.dtype)
-        fac = 2**(8*sw - 1) - 1
+        fac = 2**(8 * sw - 1) - 1
     else:
         fac = 1.
-    return block.astype(LASP_NUMPY_FLOAT_TYPE)/fac/sens[np.newaxis, :]
+    return block.astype(LASP_NUMPY_FLOAT_TYPE) / fac / sens[np.newaxis, :]
 
 
 def exportAsWave(fn, fs, data, force=False):
@@ -133,7 +133,6 @@ class Measurement:
     Provides access to measurement data stored in the h5 measurement file
     format.
     """
-
     def __init__(self, fn):
         """
         Initialize a Measurement object based on the filename
@@ -162,8 +161,8 @@ class Measurement:
             self.sampwidth = getSampWidth(dtype)
 
             self.samplerate = f.attrs['samplerate']
-            self.N = (self.nblocks*self.blocksize)
-            self.T = self.N/self.samplerate
+            self.N = (self.nblocks * self.blocksize)
+            self.T = self.N / self.samplerate
 
             # comment = read-write thing
             try:
@@ -232,7 +231,7 @@ class Measurement:
         Returns
             the total recording time of the measurement, in float seconds.
         """
-        return self.blocksize*self.nblocks/self.samplerate
+        return self.blocksize * self.nblocks / self.samplerate
 
     @property
     def time(self):
@@ -273,7 +272,7 @@ class Measurement:
         with self.file() as f:
             for block in self.iterBlocks(f):
                 block = self.scaleBlock(block)
-                pms += np.sum(block**2, axis=0)/self.N
+                pms += np.sum(block**2, axis=0) / self.N
         self._prms = np.sqrt(pms)
         return self._prms
 
@@ -291,7 +290,7 @@ class Measurement:
                 for block in self.iterBlocks(f):
                     blocks.append(block)
             blocks = np.asarray(blocks)
-            blocks = blocks.reshape(self.nblocks*self.blocksize,
+            blocks = blocks.reshape(self.nblocks * self.blocksize,
                                     self.nchannels)
 
         # Apply scaling (sensitivity, integer -> float)
@@ -326,7 +325,7 @@ class Measurement:
                   equal to the number of channels.
         """
         if isinstance(sens, float):
-            sens = sens*np.ones(self.nchannels)
+            sens = sens * np.ones(self.nchannels)
 
         valid = sens.ndim == 1
         valid &= sens.shape[0] == self.nchannels
@@ -386,24 +385,30 @@ class Measurement:
             # Scale with maximum value only if we have a nonzero maximum value.
             if max == 0.:
                 max = 1.
-            scalefac = 2**(8*sampwidth)/max
+            scalefac = 2**(8 * sampwidth) / max
 
         with wave.open(fn, 'w') as wf:
-            wf.setparams((self.nchannels, self.sampwidth,
-                          self.samplerate, 0, 'NONE', 'NONE'))
+            wf.setparams((self.nchannels, self.sampwidth, self.samplerate, 0,
+                          'NONE', 'NONE'))
             for block in self.iterBlocks():
                 if isinstance(block.dtype, float):
                     # Convert block to integral data type
-                    block = (block*scalefac).astype(itype)
+                    block = (block * scalefac).astype(itype)
                 wf.writeframes(np.asfortranarray(block).tobytes())
 
     @staticmethod
-    def fromtxt(fn, skiprows, samplerate, sensitivity, mfn=None,
+    def fromtxt(fn,
+                skiprows,
+                samplerate,
+                sensitivity,
+                mfn=None,
                 timestamp=None,
-                delimiter='\t', firstcoltime=True):
+                delimiter='\t',
+                firstcoltime=True):
         """
-        Converts a txt file to a LASP Measurement object and returns the
-        measurement.
+        Converts a txt file to a LASP Measurement file, opens the associated
+        Measurement object and returns it. The measurement file will have
+        the same file name as the txt file, except with h5 extension.
 
         Args:
             fn: Filename of text file
@@ -430,11 +435,16 @@ class Measurement:
         dat = np.loadtxt(fn, skiprows=skiprows, delimiter=delimiter)
         if firstcoltime:
             time = dat[:, 0]
-            if not np.isclose(time[1] - time[0], 1/samplerate):
+            if not np.isclose(time[1] - time[0], 1 / samplerate):
                 raise ValueError('Samplerate given does not agree with '
                                  'samplerate in file')
+
+            # Chop off first column
             dat = dat[:, 1:]
         nchannels = dat.shape[1]
+        if nchannels != sensitivity.shape[0]:
+            raise ValueError(
+                f'Invalid sensitivity length given. Should be: {nchannels}')
 
         with h5.File(mfn, 'w') as hf:
             hf.attrs['samplerate'] = samplerate
@@ -442,13 +452,62 @@ class Measurement:
             hf.attrs['time'] = timestamp
             hf.attrs['blocksize'] = 1
             hf.attrs['nchannels'] = nchannels
-            ad = hf.create_dataset('audio',
-                                   (1, dat.shape[0], dat.shape[1]),
+            ad = hf.create_dataset('audio', (1, dat.shape[0], dat.shape[1]),
                                    dtype=dat.dtype,
                                    maxshape=(1, dat.shape[0], dat.shape[1]),
                                    compression='gzip')
             ad[0] = dat
         return Measurement(mfn)
+ 
 
-    # def __del__(self):
-    #     self.f.close()
+    @staticmethod
+    def fromnpy(data,
+                samplerate,
+                sensitivity,
+                mfn,
+                timestamp=None):
+        """
+        Converts a numpy array to a LASP Measurement file, opens the associated
+        Measurement object and returns it. The measurement file will have
+        the same file name as the txt file, except with h5 extension.
+
+
+        Args:
+            data: Numpy array, first column is sample, second is channel. Can 
+            also be specified with a single column for single-channel data
+            samplerate: Sampling frequency in [Hz]
+            sensitivity: 1D array of channel sensitivities [Pa^-1]
+            mfn: Filepath where measurement file is stored.
+            timestamp: If given, a custom timestamp for the measurement
+            (integer containing seconds since epoch). If not given, the
+            timestamp is obtained from the last modification time.
+            delimiter: Column delimiter
+            firstcoltime: If true, the first column is the treated as the
+            sample time.
+
+        """
+        if os.path.exists(mfn):
+            raise ValueError(f'File {mfn} already exist.')
+        if timestamp is None:
+            timestamp = int(time.time())
+
+        if data.ndim != 2:
+            data = data[:, np.newaxis]
+
+        nchannels = data.shape[1]
+        if nchannels != sensitivity.shape[0]:
+            raise ValueError(
+                f'Invalid sensitivity length given. Should be: {nchannels}')
+
+        with h5.File(mfn, 'w') as hf:
+            hf.attrs['samplerate'] = samplerate
+            hf.attrs['sensitivity'] = sensitivity
+            hf.attrs['time'] = timestamp
+            hf.attrs['blocksize'] = 1
+            hf.attrs['nchannels'] = nchannels
+            ad = hf.create_dataset('audio', (1, data.shape[0], data.shape[1]),
+                                   dtype=data.dtype,
+                                   maxshape=(1, data.shape[0], data.shape[1]),
+                                   compression='gzip')
+            ad[0] = data
+        return Measurement(mfn)

@@ -114,8 +114,8 @@ def getTime(fs, N, start=0):
         N: Number of time samples
         start: Optional start ofset in number of samples
     """
-
-    return np.linspace(start/fs, N/fs, N, endpoint=False)
+    assert N > 0 and fs > 0
+    return np.linspace(start, start + N/fs, N, endpoint=False)
 
 
 def getFreq(fs, nfft):
