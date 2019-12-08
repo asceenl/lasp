@@ -10,8 +10,8 @@ include_directories(
    .
    c
  )
- add_subdirectory(c)
- add_subdirectory(device)
+add_subdirectory(c)
+add_subdirectory(device)
 
 set_source_files_properties(wrappers.c PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} ${CYTHON_EXTRA_C_FLAGS}")
 cython_add_module(wrappers wrappers.pyx)

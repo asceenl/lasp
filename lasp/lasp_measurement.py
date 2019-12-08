@@ -336,7 +336,7 @@ class Measurement:
             f.attrs['sensitivity'] = sens
         self._sens = sens
 
-    def exportAsWave(self, fn=None, force=False, sampwidth=None):
+    def exportAsWave(self, fn=None, force=False, newsampwidth=2, normalize=True):
         """
         Export measurement file as wave. In case the measurement data is stored
         as floats, the values are scaled between 0 and 1
@@ -348,9 +348,12 @@ class Measurement:
             force: If True, overwrites any existing files with the given name
             , otherwise a RuntimeError is raised.
 
-            sampwidth: sample width in bytes with which to export the data.
+            newsampwidth: sample width in bytes with which to export the data.
             This should only be given in case the measurement data is stored as
-            floating point values, otherwise an
+            floating point values, otherwise an error is thrown
+
+            normalize: If set: normalize the level to something sensible.
+
 
         """
         if fn is None:
@@ -362,39 +365,40 @@ class Measurement:
 
         if os.path.exists(fn) and not force:
             raise RuntimeError(f'File already exists: {fn}')
-        with self.file() as f:
-            audio = f['audio'][:]
 
-        if isinstance(audio.dtype, float):
-            if sampwidth is None:
-                raise ValueError('sampwidth parameter should be given '
-                                 'for float data in measurement file')
-            elif sampwidth == 2:
-                itype = np.int16
-            elif sampwidth == 4:
-                itype = np.int32
+        with self.file() as f:
+
+            audio = f['audio']
+            oldsampwidth = getSampWidth(audio.dtype)
+
+            max_ = 1.
+            if normalize:
+                # Find maximum value
+                for block in self.iterBlocks(f):
+                    blockmax = np.max(np.abs(block))
+                    max_ = blockmax if blockmax > max_ else max_
+                # Scale with maximum value only if we have a nonzero maximum value.
+                if max_ == 0.:
+                    max_ = 1.
+
+            if newsampwidth == 2:
+                newtype = np.int16
+            elif newsampwidth == 4:
+                newtype = np.int32
             else:
                 raise ValueError('Invalid sample width, should be 2 or 4')
 
-            # Find maximum
-            max = 0.
-            for block in self.iterBlocks():
-                blockmax = np.max(np.abs(block))
-                if blockmax > max:
-                    max = blockmax
-            # Scale with maximum value only if we have a nonzero maximum value.
-            if max == 0.:
-                max = 1.
-            scalefac = 2**(8 * sampwidth) / max
+            scalefac = 2**(8*(newsampwidth-oldsampwidth))
+            if normalize or isinstance(audio.dtype, float):
+                scalefac *= .01*max
 
-        with wave.open(fn, 'w') as wf:
-            wf.setparams((self.nchannels, self.sampwidth, self.samplerate, 0,
-                          'NONE', 'NONE'))
-            for block in self.iterBlocks():
-                if isinstance(block.dtype, float):
+            with wave.open(fn, 'w') as wf:
+                wf.setparams((self.nchannels, self.sampwidth,
+                              self.samplerate, 0, 'NONE', 'NONE'))
+                for block in self.iterBlocks(f):
                     # Convert block to integral data type
-                    block = (block * scalefac).astype(itype)
-                wf.writeframes(np.asfortranarray(block).tobytes())
+                    block = (block*scalefac).astype(newtype)
+                    wf.writeframes(np.asfortranarray(block).tobytes())
 
     @staticmethod
     def fromtxt(fn,
@@ -431,6 +435,8 @@ class Measurement:
             timestamp = os.path.getmtime(fn)
         if mfn is None:
             mfn = os.path.splitext(fn)[0] + '.h5'
+        else:
+            mfn = os.path.splitext(mfn)[0] + '.h5'
 
         dat = np.loadtxt(fn, skiprows=skiprows, delimiter=delimiter)
         if firstcoltime:

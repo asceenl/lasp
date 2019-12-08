@@ -5,7 +5,7 @@ Author: J.A. de Jong - ASCEE
 
 Description:
 """
-__all__ = ['close', 'Figure', 'Bode', 'PS', 'PSD']
+__all__ = ['Figure', 'Bode', 'PS', 'PSD']
 
 from .config import getReportQuality
 import matplotlib.pyplot as plt
