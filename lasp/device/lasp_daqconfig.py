@@ -9,11 +9,12 @@ Data Acquistiion (DAQ) device descriptors, and the DAQ devices themselves
 
 """
 from dataclasses import dataclass, field
-from .lasp_daqdevice import query_devices, DeviceInfo
-__all__ = ['DAQConfiguration', 'roga_plugndaq', 'umik',
-           'default_soundcard', 'configs',
-           'findDAQDevice']
 
+@dataclass
+class DAQInputChannel:
+    channel_enabled: bool
+    channel_name: str
+    sensitivity: float
 
 @dataclass
 class DAQConfiguration:
@@ -21,11 +22,9 @@ class DAQConfiguration:
     Initialize a device descriptor
 
     Args:
-        name: Name of the device to appear to the user
-        cardname: ALSA name identifier
-        cardlongnamematch: Long name according to ALSA
-        device_name: ASCII name with which to open the device when connected
-        en_format: index in the list of sample formats
+        input_device_name: ASCII name with which to open the device when connected
+        outut_device_name: ASCII name with which to open the device when connected
+        en_format: index of the format in the list of sample formats
         en_input_rate: index of enabled input sampling frequency [Hz]
                             in the list of frequencies.
         en_input_channels: list of channel indices which are used to
@@ -42,19 +41,13 @@ class DAQConfiguration:
 
 
     """
-
-    name: str
-    cardname: str
-    cardlongnamematch: str
-    device_name: str
-    en_format: int
+    input_device_name: bytes
+    output_device_name: bytes
+    en_bit_depth: int
     en_input_rate: int
     en_input_channels: list
-    input_sensitivity: list
-    input_gain_settings: list
     en_input_gain_settings: list = field(default_factory=list)
     en_output_rate: int = -1
-    en_output_channels: list = field(default_factory=list)
 
     def match(self, device):
         """
@@ -83,50 +76,12 @@ class DAQConfiguration:
 
         return match
 
-
-roga_plugndaq = DAQConfiguration(name='Roga-instruments Plug.n.DAQ USB',
-                                 cardname='USB Audio CODEC',
-                                 cardlongnamematch='Burr-Brown from TI USB'
-                                 ' Audio CODEC',
-                                 device_name='iec958:CARD=CODEC,DEV=0',
-                                 en_format=0,
-                                 en_input_rate=2,
-                                 en_input_channels=[0],
-                                 input_sensitivity=[46.92e-3, 46.92e-3],
-                                 input_gain_settings=[-20, 0, 20],
-                                 en_input_gain_settings=[1, 1],
-                                 en_output_rate=1,
-                                 en_output_channels=[False, False]
-                                 )
-umik = DAQConfiguration(name='UMIK-1',
-                        cardname='Umik-1  Gain: 18dB',
-                        cardlongnamematch='miniDSP Umik-1  Gain: 18dB',
-                        device_name='iec958:CARD=U18dB,DEV=0',
-                        en_format=0,
-                        en_input_rate=0,
-                        en_input_channels=[0],
-                        input_sensitivity=[1., 1.],
-                        input_gain_settings=[0., 0.],
-                        en_input_gain_settings=[0, 0],
-                        en_output_rate=0,
-                        en_output_channels=[True, True]
-                        )
-
-default_soundcard = DAQConfiguration(name="Default device",
-                                     cardname=None,
-                                     cardlongnamematch=None,
-                                     device_name='default',
-                                     en_format=0,
-                                     en_input_rate=2,
-                                     en_input_channels=[0],
-                                     input_sensitivity=[1.0, 1.0],
-                                     input_gain_settings=[0],
-                                     en_input_gain_settings=[0, 0],
-                                     en_output_rate=1,
-                                     en_output_channels=[]
-                                     )
-configs = (roga_plugndaq, default_soundcard)
-
+    @staticmethod
+    def emptyFromDeviceAndSettings(device):
+        return DAQConfiguration(
+                name = 'UNKNOWN'
+                input_device_name = 
+        
 
 def findDAQDevice(config: DAQConfiguration) -> DeviceInfo:
     """

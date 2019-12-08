@@ -2,6 +2,68 @@
 This file contains the Cython wrapper functions to C implementations.
 """
 include "config.pxi"
+IF LASP_FLOAT == "double":
+    ctypedef  double d
+    ctypedef double complex c
+    NUMPY_FLOAT_TYPE = np.float64
+    NUMPY_COMPLEX_TYPE = np.complex128
+    CYTHON_NUMPY_FLOAT_t = cnp.NPY_FLOAT64
+    CYTHON_NUMPY_COMPLEX_t = cnp.NPY_COMPLEX128
+
+ELSE:
+    ctypedef  float d
+    ctypedef float complex c
+    NUMPY_FLOAT_TYPE = np.float32
+    NUMPY_COMPLEX_TYPE = np.complex64
+    CYTHON_NUMPY_FLOAT_t = cnp.NPY_FLOAT32
+    CYTHON_NUMPY_COMPLEX_t = cnp.NPY_COMPLEX64
+
+ctypedef size_t us
+
+cdef extern from "lasp_tracer.h":
+    void setTracerLevel(int)
+    void TRACE(int,const char*)
+    void fsTRACE(int)
+    void feTRACE(int)
+    void clearScreen()
+
+
+cdef extern from "lasp_mat.h":
+    ctypedef struct dmat:
+        us n_cols
+        us n_rows
+        d* _data
+        bint _foreign_data
+    ctypedef struct cmat:
+        pass
+    ctypedef cmat vc
+    ctypedef dmat vd
+
+    dmat dmat_foreign_data(us n_rows,
+                           us n_cols,
+                           d* data,
+                           bint own_data)
+    cmat cmat_foreign_data(us n_rows,
+                           us n_cols,
+                           c* data,
+                           bint own_data)
+
+    cmat cmat_alloc(us n_rows,us n_cols)
+    dmat dmat_alloc(us n_rows,us n_cols)
+    vd vd_foreign(const us size,d* data)
+    void vd_free(vd*)
+
+    void dmat_free(dmat*)
+    void cmat_free(cmat*)
+    void cmat_copy(cmat* to,cmat* from_)
+
+
+cdef extern from "numpy/arrayobject.h":
+    void PyArray_ENABLEFLAGS(cnp.ndarray arr, int flags)
+
+
+cdef extern from "lasp_python.h":
+    object dmat_to_ndarray(dmat*,bint transfer_ownership)
 
 __all__ = ['AvPowerSpectra']
 

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.0)
-project(beamforming)
+project(LASP)
 
 # Whether we want to use blas yes or no
 set(LASP_USE_BLAS TRUE)
@@ -39,6 +39,7 @@ set(Python_ADDITIONAL_VERSIONS "3")
 
 if(LASP_DEBUG)
   set(TRACERNAME LASPTracer)
+  set(LASP_DEBUG_CYTHON=True)
   set(CMAKE_BUILD_TYPE Debug)
   message("Building debug code")
   set(CMAKE_BUILD_TYPE Debug)
@@ -46,8 +47,6 @@ if(LASP_DEBUG)
   add_definitions(-DTRACERNAME=${TRACERNAME})
   add_definitions(-DDEBUG)
   add_definitions(-DTRACER=1)
-
-  set(CYTHON_VARIABLES "#cython: boundscheck=True")
   # This will produce html files
   set(CYTHON_ANNOTATE ON)
   # Add the __FILENAME__ macro
@@ -55,9 +54,9 @@ if(LASP_DEBUG)
 else()
   message("Building LASP for release")
   set(CMAKE_BUILD_TYPE Release)
+  set(LASP_DEBUG_CYTHON=False)
   set(CYTHON_ANNOTATE OFF)
   set(CYTHON_NO_DOCSTRINGS ON)
-  set(CYTHON_VARIABLES "#cython: boundscheck=False,wraparound=False,embedsignature=False,emit_code_comments=False")
   # Strip unnecessary symbols
   # set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--gc-sections")
   # set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--gc-sections")

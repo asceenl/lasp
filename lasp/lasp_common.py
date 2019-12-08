@@ -2,13 +2,35 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from .wrappers import Window as wWindow
+import appdirs, os, shelve
 """
 Common definitions used throughout the code.
 """
 
-__all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'calfile',
-           'getFreq',
+__all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 
+           'getFreq', 'lasp_shelve'
            'W_REF', 'U_REF', 'I_REF']
+
+lasp_appdir = appdirs.user_data_dir('Lasp', 'ASCEE')
+
+
+if not os.path.exists(lasp_appdir):
+    try:
+        os.mkdir(lasp_appdir)
+    except:
+        print('Fatal error: could not create application directory')
+        exit(1)
+
+
+class lasp_shelve:
+    def __enter__(self):
+        self.shelve = shelve.open(os.path.join(lasp_appdir, 'config.shelve'))
+        return self.shelve
+
+    def __exit__(self, type, value, traceback):
+        self.shelve.close()
+    
+
 
 # Reference sound pressure level
 P_REF = 2e-5
@@ -18,9 +40,6 @@ I_REF = 1e-12  # 1 picoWatt/ m^2
 
 # Reference velocity for sound velocity level
 U_REF = 5e-8
-
-# Todo: fix This
-calfile = None
 
 
 class Window:

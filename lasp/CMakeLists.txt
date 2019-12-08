@@ -1,6 +1,7 @@
 
 configure_file(config.pxi.in config.pxi)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CYTHON_EXECUTABLE "cython3")
 include(UseCython)
 find_package(Numpy REQUIRED )
 
