@@ -1,6 +1,7 @@
 import sys
 include "config.pxi"
 cimport cython
+from .lasp_daqconfig import DeviceInfo
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libc.string cimport memcpy
@@ -99,57 +100,27 @@ cdef extern from "RtAudio.h" nogil:
         unsigned int getStreamSampleRate()
         void showWarnings(bool value)
     
-cdef class SampleFormat:
-    cdef:
-        RtAudioFormat _format
-        string _name
-        public:
-            # The size in bytes of a single audio sample, for the current
-            # format
-            unsigned int sampleSize 
-
-    def __cinit__(self, RtAudioFormat format_):
-        self._format = format_
-        if format_ == RTAUDIO_SINT8:
-            self._name = b'8-bit integers'
-            self.sampleSize = 1
-        elif format_ == RTAUDIO_SINT16:
-            self._name = b'16-bit integers'
-            self.sampleSize = 2
-        elif format_ == RTAUDIO_SINT24:
-            self._name = b'24-bit integers'
-            self.sampleSize = 3
-        elif format_ == RTAUDIO_SINT32:
-            self._name = b'32-bit integers'
-            self.sampleSize = 4
-        elif format_ == RTAUDIO_FLOAT32:
-            self._name = b'32-bit floats'
-            self.sampleSize = 4
-        elif format_ == RTAUDIO_FLOAT64:
-            self._name = b'64-bit floats'
-            self.sampleSize = 8
-        else:
-            raise ValueError('Invalid RtAudioFormat code')
-
-    def __repr__(self):
-        return self._name.decode('utf-8')
-
-
-    def __str__(self):
-        return self.__repr__()
-
-# Pre-define format and expose to Python
-Format_SINT8   = SampleFormat(RTAUDIO_SINT8)
-Format_SINT16  = SampleFormat(RTAUDIO_SINT16)
-Format_SINT24  = SampleFormat(RTAUDIO_SINT24)
-Format_SINT32  = SampleFormat(RTAUDIO_SINT32)
-Format_FLOAT32 = SampleFormat(RTAUDIO_FLOAT32)
-Format_FLOAT64 = SampleFormat(RTAUDIO_FLOAT64)
-
+_formats_strkey = {
+        '8-bit integers': (RTAUDIO_SINT8, 1),
+        '16-bit integers': (RTAUDIO_SINT16,2),
+        '24-bit integers': (RTAUDIO_SINT24,3),
+        '32-bit integers': (RTAUDIO_SINT32,4),
+        '32-bit floats': (RTAUDIO_FLOAT32,  4),
+        '64-bit floats': (RTAUDIO_FLOAT64,  8),
+}
+_formats_rtkey = {
+        RTAUDIO_SINT8: ('8-bit integers', 1),
+        RTAUDIO_SINT16: ('16-bit integers',2),
+        RTAUDIO_SINT24: ('24-bit integers',3),
+        RTAUDIO_SINT32: ('32-bit integers',4),
+        RTAUDIO_FLOAT32: ('32-bit floats',  4),
+        RTAUDIO_FLOAT64: ('64-bit floats',  8),
+}
 cdef class _Stream:
     cdef:
         object pyCallback
-        RtAudioFormat format
+        unsigned int sampleSize
+        RtAudioFormat sampleformat
         cppRtAudio.StreamParameters inputParams
         cppRtAudio.StreamParameters outputParams
         # These boolean values tell us whether the structs above here are
@@ -226,7 +197,7 @@ cdef int audioCallback(void* outputBuffer,
                 assert outputBuffer != NULL, "Bug: RtAudio does not give output buffer!"
                 assert npy_output.shape[0] == stream.outputParams.nChannels, "Bug: channel mismatch in output buffer!"
                 assert npy_output.shape[1] == nFrames, "Bug: frame mismatch in output buffer!"
-                assert npy_output.itemsize == stream._format.sampleSize, "Bug: invalid sample type in output buffer!"
+                assert npy_output.itemsize == stream.sampleSize, "Bug: invalid sample type in output buffer!"
             except AssertionError as e:
                 print(e)
         fromNPYToBuffer(npy_output, outputBuffer) 
@@ -234,6 +205,8 @@ cdef int audioCallback(void* outputBuffer,
 
 cdef void errorCallback(RtAudioError.Type _type,const string& errortxt) nogil:
     pass
+
+
 
 
 cdef class RtAudio:
@@ -263,31 +236,26 @@ cdef class RtAudio:
         Return device information of the current device
         """
         cdef cppRtAudio.DeviceInfo devinfo = self._rtaudio.getDeviceInfo(device)
-        pydevinfo = {}
-        pydevinfo['index'] = device
-        pydevinfo['probed'] = devinfo.probed
-        pydevinfo['name'] = devinfo.name.decode('utf-8')
-        pydevinfo['outputchannels'] = devinfo.outputChannels
-        pydevinfo['inputchannels'] = devinfo.inputChannels
-        pydevinfo['duplexchannels'] = devinfo.duplexChannels
-        pydevinfo['isdefaultoutput'] = devinfo.isDefaultOutput
-        pydevinfo['isdefaultinpput'] = devinfo.isDefaultInput
-        pydevinfo['samplerates'] = devinfo.sampleRates
-        pydevinfo['prefsamprate'] = devinfo.preferredSampleRate
-        # Manually add these
-        nf = devinfo.nativeFormats
         sampleformats = []
+        nf = devinfo.nativeFormats
         for format_ in [ RTAUDIO_SINT8, RTAUDIO_SINT16, RTAUDIO_SINT24,
                 RTAUDIO_SINT32, RTAUDIO_FLOAT32, RTAUDIO_FLOAT64]:
             if nf & format_:
-                sampleformats.append(SampleFormat(format_))
-
-        pydevinfo['sampleformats'] = sampleformats
-        return pydevinfo
+                sampleformats.append(_formats_rtkey[format_][0])
+        return DeviceInfo(
+                index = device,
+                probed = devinfo.probed,
+                name = devinfo.name.decode('utf-8'),
+                outputchannels = devinfo.outputChannels,
+                inputchannels = devinfo.inputChannels,
+                duplexchannels = devinfo.duplexChannels,
+                samplerates = devinfo.sampleRates,
+                sampleformats = sampleformats,
+                prefsamplerate = devinfo.preferredSampleRate)
 
     def openStream(self,object outputParams,
                         object inputParams,
-                        SampleFormat format,
+                        str sampleformat,
                         unsigned int sampleRate,
                         unsigned int bufferFrames,
                         object pyCallback,
@@ -342,7 +310,7 @@ cdef class RtAudio:
             self._stream.bufferFrames = bufferFrames
             self._rtaudio.openStream(rtOutputParams_ptr,
                                      rtInputParams_ptr,
-                                     format._format,
+                                     _formats_strkey[sampleformat][0],
                                      sampleRate,
                                      &self._stream.bufferFrames,
                                      audioCallback,

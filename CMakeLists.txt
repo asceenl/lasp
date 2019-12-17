@@ -115,7 +115,7 @@ set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
 set(DEPS  "${CMAKE_CURRENT_SOURCE_DIR}/*.py"
           "${CMAKE_CURRENT_SOURCE_DIR}/lasp/*.py"
           "wrappers"
-          "lasp_daqdevice")
+          "lasp_rtaudio")
 
              # )
 set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")

@@ -7,7 +7,7 @@ import cv2 as cv
 from .lasp_atomic import Atomic
 from threading import Thread, Condition, Lock
 import time
-from .device import DAQDevice, roga_plugndaq
+from .device import DAQConfiguration
 import numpy as np
 __all__ = ['AvType', 'AvStream']
 
@@ -21,9 +21,16 @@ class AvType:
 
 
 class AvStream:
-    def __init__(self, daqconfig=roga_plugndaq, video=None):
+    def __init__(self, 
+            rtaudio_input,
+            rtaudio_output,
+            input_device,
+            output_device, daqconfig, video=None):
+
 
         self.daqconfig = daqconfig
+        self.input_device = input_device
+        self.output_device = output_device
         try:
             daq = DAQDevice(daqconfig)
             self.nchannels = len(daq.channels_en)

@@ -8,7 +8,7 @@ Common definitions used throughout the code.
 """
 
 __all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 
-           'getFreq', 'lasp_shelve'
+           'getFreq', 'lasp_shelve',
            'W_REF', 'U_REF', 'I_REF']
 
 lasp_appdir = appdirs.user_data_dir('Lasp', 'ASCEE')
@@ -23,12 +23,21 @@ if not os.path.exists(lasp_appdir):
 
 
 class lasp_shelve:
+    refcount = 0
+    shelve = None
+
     def __enter__(self):
-        self.shelve = shelve.open(os.path.join(lasp_appdir, 'config.shelve'))
-        return self.shelve
+        if lasp_shelve.shelve is None:
+            assert lasp_shelve.refcount == 0
+            lasp_shelve.shelve = shelve.open(os.path.join(lasp_appdir, 'config.shelve'))
+        lasp_shelve.refcount += 1
+        return lasp_shelve.shelve
 
     def __exit__(self, type, value, traceback):
-        self.shelve.close()
+        lasp_shelve.refcount -= 1
+        if lasp_shelve.refcount == 0:
+            lasp_shelve.shelve.close()
+            lasp_shelve.shelve = None
     
 
 
