@@ -1,6 +1,9 @@
 import numpy as np
 cimport numpy as cnp
 
+# Do this, our segfaults will be your destination
+cnp.import_array()
+
 DEF LASP_FLOAT = "@LASP_FLOAT@"
 DEF LASP_DEBUG_CYTHON = "@LASP_DEBUG_CYTHON@"
 

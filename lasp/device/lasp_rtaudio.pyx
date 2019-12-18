@@ -109,12 +109,12 @@ _formats_strkey = {
         '64-bit floats': (RTAUDIO_FLOAT64,  8),
 }
 _formats_rtkey = {
-        RTAUDIO_SINT8: ('8-bit integers', 1),
-        RTAUDIO_SINT16: ('16-bit integers',2),
+        RTAUDIO_SINT8: ('8-bit integers', 1, cnp.NPY_INT8),
+        RTAUDIO_SINT16: ('16-bit integers',2, cnp.NPY_INT16),
         RTAUDIO_SINT24: ('24-bit integers',3),
-        RTAUDIO_SINT32: ('32-bit integers',4),
-        RTAUDIO_FLOAT32: ('32-bit floats',  4),
-        RTAUDIO_FLOAT64: ('64-bit floats',  8),
+        RTAUDIO_SINT32: ('32-bit integers',4, cnp.NPY_INT32),
+        RTAUDIO_FLOAT32: ('32-bit floats',  4, cnp.NPY_FLOAT32),
+        RTAUDIO_FLOAT64: ('64-bit floats',  8, cnp.NPY_FLOAT64),
 }
 cdef class _Stream:
     cdef:
@@ -133,14 +133,15 @@ cdef class _Stream:
 # It took me quite a long time to fully understand Cython's idiosyncrasies
 # concerning C(++) callbacks, the GIL and passing Python objects as pointers
 # into C(++) functions. But finally, here it is!
-cdef object fromBufferToNPYNoCopy(buffer_format_type,
+cdef object fromBufferToNPYNoCopy(
+                             cnp.NPY_TYPES buffer_format_type,
                              void* buf,
                              size_t nchannels,
                              size_t nframes):
-    cdef cnp.npy_intp[2] dims = [nchannels, nframes];
+    cdef cnp.npy_intp[2] dims = [nchannels, nframes]
  
-    array = cnp.PyArray_SimpleNewFromData(2, dims, buffer_format_type,
-            buf)
+    array = cnp.PyArray_SimpleNewFromData(2, &dims[0], buffer_format_type,
+            buf).transpose()
 
     return array
 
@@ -163,7 +164,9 @@ cdef int audioCallback(void* outputBuffer,
     Calls the Python callback function and converts data
 
     """
-    cdef int rval = 0
+    cdef:
+        int rval = 0
+        cnp.NPY_TYPES npy_format
 
     with gil:
         if status == RTAUDIO_INPUT_OVERFLOW:
@@ -177,8 +180,17 @@ cdef int audioCallback(void* outputBuffer,
         # Obtain stream information
         npy_input = None
         if stream.hasInput: 
-            assert inputBuffer != NULL
-            # cdef 
+            try:
+                assert inputBuffer != NULL
+                npy_format = _formats_rtkey[stream.sampleformat][2]
+                npy_input = fromBufferToNPYNoCopy(
+                        npy_format,
+                        inputBuffer,
+                        stream.inputParams.nChannels,
+                        nFrames)
+
+            except Exception as e:
+                print('Exception in Cython callback: ', str(e))
         try:
             npy_output, rval = stream.pyCallback(npy_input,
                                            nFrames,
@@ -192,15 +204,15 @@ cdef int audioCallback(void* outputBuffer,
             if npy_output is None:
                 print('No output buffer given!')
                 return 1
-        IF LASP_DEBUG_CYTHON:
-            try:
-                assert outputBuffer != NULL, "Bug: RtAudio does not give output buffer!"
-                assert npy_output.shape[0] == stream.outputParams.nChannels, "Bug: channel mismatch in output buffer!"
-                assert npy_output.shape[1] == nFrames, "Bug: frame mismatch in output buffer!"
-                assert npy_output.itemsize == stream.sampleSize, "Bug: invalid sample type in output buffer!"
-            except AssertionError as e:
-                print(e)
-        fromNPYToBuffer(npy_output, outputBuffer) 
+            IF LASP_DEBUG_CYTHON:
+                try:
+                    assert outputBuffer != NULL, "Bug: RtAudio does not give output buffer!"
+                    assert npy_output.shape[0] == stream.outputParams.nChannels, "Bug: channel mismatch in output buffer!"
+                    assert npy_output.shape[1] == nFrames, "Bug: frame mismatch in output buffer!"
+                    assert npy_output.itemsize == stream.sampleSize, "Bug: invalid sample type in output buffer!"
+                except AssertionError as e:
+                    print(e)
+            fromNPYToBuffer(npy_output, outputBuffer) 
     return rval
 
 cdef void errorCallback(RtAudioError.Type _type,const string& errortxt) nogil:
@@ -253,6 +265,7 @@ cdef class RtAudio:
                 sampleformats = sampleformats,
                 prefsamplerate = devinfo.preferredSampleRate)
 
+    @cython.nonecheck(True)
     def openStream(self,object outputParams,
                         object inputParams,
                         str sampleformat,
@@ -291,6 +304,7 @@ cdef class RtAudio:
 
         self._stream = _Stream()
         self._stream.pyCallback = pyCallback
+        self._stream.sampleformat = _formats_strkey[sampleformat][0]
 
         if outputParams is not None:
             rtOutputParams_ptr = &self._stream.outputParams
@@ -300,7 +314,7 @@ cdef class RtAudio:
             self._stream.hasOutput = True
 
         if inputParams is not None:
-            rtOutputParams_ptr = &self._stream.inputParams
+            rtInputParams_ptr = &self._stream.inputParams
             rtInputParams_ptr.deviceId = inputParams['deviceid']
             rtInputParams_ptr.nChannels = inputParams['nchannels']
             rtInputParams_ptr.firstChannel = inputParams['firstchannel']
@@ -321,6 +335,9 @@ cdef class RtAudio:
         except Exception as e:
             print('Exception occured in stream opening: ', str(e))
             self._stream = None
+            raise
+
+        return self._stream.bufferFrames
 
     def startStream(self):
         self._rtaudio.startStream()

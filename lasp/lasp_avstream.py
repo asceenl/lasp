@@ -21,23 +21,42 @@ class AvType:
 
 
 class AvStream:
-    def __init__(self, 
-            rtaudio_input,
-            rtaudio_output,
-            input_device,
-            output_device, daqconfig, video=None):
-
+    def __init__(self,
+                 rtaudio,
+                 output_device,
+                 input_device,
+                 daqconfig, video=None):
 
         self.daqconfig = daqconfig
         self.input_device = input_device
         self.output_device = output_device
+
+        # Determine highest input channel number
+        channelconfigs = daqconfig.en_input_channels
+        max_input_channel = 0
+
+        self._rtaudio = rtaudio
+        self.samplerate = int(daqconfig.en_input_rate)
+        self.sensitivity = self.daqconfig.getSensitivities()
+
+        for i, channelconfig in enumerate(channelconfigs):
+            if channelconfig.channel_enabled:
+                self.nchannels = i+1
+
         try:
-            daq = DAQDevice(daqconfig)
-            self.nchannels = len(daq.channels_en)
-            self.samplerate = daq.input_rate
-            self.blocksize = daq.blocksize
-            self.sensitivity = np.asarray(daqconfig.input_sensitivity)[
-                                          daq.channels_en]
+            if input_device is not None:
+                inputparams = {'deviceid': input_device.index,
+                               'nchannels': self.nchannels,
+                               'firstchannel': 0}
+
+                self.blocksize = rtaudio.openStream(
+                        None, # Outputparams
+                        inputparams, #Inputparams
+                        daqconfig.en_input_sample_format, # Sampleformat
+                        self.samplerate,
+                        2048,
+                        self._audioCallback)
+
         except Exception as e:
             raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 
@@ -55,8 +74,10 @@ class AvStream:
         self._video = video
         self._video_started = Atomic(False)
         self._callbacks = []
-        self._audiothread = None
         self._videothread = None
+
+    def close(self):
+        self._rtaudio.closeStream()
 
     def nCallbacks(self):
         """
@@ -86,31 +107,15 @@ class AvStream:
         if self._running:
             raise RuntimeError('Stream already started')
 
-        assert self._audiothread is None
         assert self._videothread is None
 
         self._running <<= True
-        self._audiothread = Thread(target=self._audioThread)
         if self._video is not None:
             self._videothread = Thread(target=self._videoThread)
             self._videothread.start()
         else:
             self._video_started <<= True
-        self._audiothread.start()
-
-    def _audioThread(self):
-        # Raw stream to allow for in24 packed data type
-        try:
-            daq = DAQDevice(self.daqconfig)
-            # Get a single block first and do not process it. This one often
-            # contains quite some rubbish.
-            data = daq.read()
-            while self._running:
-                # print('read data...')
-                data = daq.read()
-                self._audioCallback(data)
-        except RuntimeError as e:
-            print(f'Runtime error occured during audio capture: {str(e)}')
+        self._rtaudio.startStream()
 
     def _videoThread(self):
         cap = cv.VideoCapture(self._video)
@@ -139,22 +144,20 @@ class AvStream:
         cap.release()
         print('stopped videothread')
 
-    def _audioCallback(self, indata):
-        """This is called (from a separate thread) for each audio block."""
-        if not self._video_started:
-            return
-
+    def _audioCallback(self, indata, nframes, streamtime):
+        """
+        This is called (from a separate thread) for each audio block.
+        """
+        self._aframectr += 1
         with self._callbacklock:
             for cb in self._callbacks:
                 cb(AvType.audio, indata, self._aframectr(), self._vframectr())
-        self._aframectr += 1
+        return None, 0 if self._running else 1
 
     def stop(self):
         self._running <<= False
         with self._running_cond:
             self._running_cond.notify()
-        self._audiothread.join()
-        self._audiothread = None
         if self._video:
             self._videothread.join()
             self._videothread = None

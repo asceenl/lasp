@@ -26,7 +26,7 @@ parser.add_argument('--gain-setting', '-g',
                     type=float, default=gain_default)
 
 parser.add_argument(
-    'fn', help='File name of calibration measurement', type=str)
+    'fn', help='File name of calibration measurement', type=str, default=None)
 
 parser.add_argument('--channel', help='Channel of the device to calibrate, '
                     + 'default = 0',
@@ -51,10 +51,11 @@ prms = P_REF*10**(args.spl/20)
 sens = Vrms / prms
 
 print(f'Computed sensitivity: {sens[args.channel]:.5} V/Pa')
-print('Searching for files in directory to apply sensitivity value to...')
-dir_ = os.path.dirname(args.fn)
-for f in os.listdir(dir_):
-    yn = input(f'Apply sensitivity to {f}? [Y/n]')
-    if yn in ['', 'Y', 'y']:
-        meas = Measurement(os.path.join(dir_, f))
-        meas.sensitivity = sens
+if args.fn:
+    print('Searching for files in directory to apply sensitivity value to...')
+    dir_ = os.path.dirname(args.fn)
+    for f in os.listdir(dir_):
+        yn = input(f'Apply sensitivity to {f}? [Y/n]')
+        if yn in ['', 'Y', 'y']:
+            meas = Measurement(os.path.join(dir_, f))
+            meas.sensitivity = sens

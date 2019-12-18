@@ -1,5 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import argparse
+
+
+
 parser = argparse.ArgumentParser(
     description='Acquire data and store a measurement file'
 )
@@ -8,38 +11,49 @@ parser.add_argument('filename', type=str,
                     ' Extension is automatically added.')
 parser.add_argument('--duration', '-d', type=float,
                     help='The recording duration in [s]')
-parser.add_argument('--comment', '-c', type=str,
-                    help='Add a measurement comment, optionally')
 
 device_help = 'DAQ Device to record from'
 parser.add_argument('--input-daq', '-i', help=device_help, type=str,
-                    choices=['roga', 'umik', 'nidaq', 'default'], default='roga')
+                    default='Default')
 
 args = parser.parse_args()
 
-device_str = args.input_daq
 
-if device_str == 'nidaq':
-   
-    # Not-integrated way to record with the NI USB 4431 DAQ device
-    from lasp.device.record_ni import USBDAQRecording
-    rec =  USBDAQRecording(args.filename, [0, 1])
-    rec.start()
-    exit(0)
-
-
-from lasp.lasp_record import Recording
 from lasp.lasp_avstream import AvStream
-from lasp.device.lasp_daqconfig import default_soundcard, roga_plugndaq, umik
+from lasp.lasp_record import Recording
+from lasp.device import DAQConfiguration, RtAudio
 
-if 'roga' == device_str:
-    device = roga_plugndaq
-elif 'default' == device_str:
-    device = default_soundcard
-elif 'umik' == device_str:
-    device = umik
+config = DAQConfiguration.loadConfigs()[args.input_daq]
 
-stream = AvStream(device)
+print(config)
+rtaudio = RtAudio()
+count = rtaudio.getDeviceCount()
+devices = [rtaudio.getDeviceInfo(i) for i in range(count)]
+
+input_devices = {}
+for device in devices:
+    if device.inputchannels >= 0:
+        input_devices[device.name] = device
+
+try:
+    input_device = input_devices[config.input_device_name]
+except KeyError:
+    raise RuntimeError(f'Input device {config.input_device_name} not available')
+
+print(input_device)
+
+stream = AvStream(rtaudio,
+                  None, # No output device
+                  input_device,
+                  config)
+
 rec = Recording(args.filename, stream, args.duration)
 rec.start()
+
+print('Stopping stream...')
 stream.stop()
+
+print('Stream stopped')
+print('Closing stream...')
+stream.close()
+print('Stream closed')

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 10 08:28:03 2018
-
 Read data from stream and record sound and video at the same time
 """
 import numpy as np
@@ -34,6 +32,7 @@ class Recording:
         self._fn = fn
 
         self._video_frame_positions = []
+        self._curT_rounded_to_seconds = 0
 
         self._aframeno = Atomic(0)
         self._vframeno = 0
@@ -104,8 +103,14 @@ class Recording:
             self._vCallback(data)
 
     def _aCallback(self, frames, aframe):
-        print('.', end='')
         curT = self._aframeno()*self.blocksize/self.samplerate
+        curT_rounded_to_seconds = int(curT)
+        if curT_rounded_to_seconds > self._curT_rounded_to_seconds:
+            self._curT_rounded_to_seconds = curT_rounded_to_seconds
+            print(f'{curT_rounded_to_seconds}', end='', flush=True)
+        else:
+            print('.', end='', flush=True)
+
         if self.rectime is not None and curT > self.rectime:
             # We are done!
             self._running <<= False

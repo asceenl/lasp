@@ -74,6 +74,16 @@ class DAQConfiguration:
 
     en_input_channels: list
 
+    def getEnabledChannels(self):
+        en_channels = []
+        for chan in self.en_input_channels:
+            if chan.channel_enabled:
+                en_channels.append(chan)
+        return en_channels
+
+    def getSensitivities(self):
+        return [float(channel.sensitivity) for channel in self.getEnabledChannels()]
+
     @staticmethod
     def loadConfigs():
         """
