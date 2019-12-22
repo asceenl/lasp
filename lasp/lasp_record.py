@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 Read data from stream and record sound and video at the same time
@@ -12,6 +12,7 @@ import time
 
 
 class Recording:
+
     def __init__(self, fn, stream, rectime=None):
         """
 
@@ -23,6 +24,7 @@ class Recording:
         ext = '.h5'
         if ext not in fn:
             fn += ext
+
         self._stream = stream
         self.blocksize = stream.blocksize
         self.samplerate = stream.samplerate
@@ -43,7 +45,7 @@ class Recording:
         with h5py.File(self._fn, 'w') as f:
             self._ad = f.create_dataset('audio',
                                         (1, stream.blocksize, stream.nchannels),
-                                        dtype=stream.dtype,
+                                        dtype=stream.numpy_dtype,
                                         maxshape=(None, stream.blocksize,
                                                   stream.nchannels),
                                         compression='gzip'
@@ -69,7 +71,10 @@ class Recording:
             if not stream.isRunning():
                 stream.start()
 
-            stream.addCallback(self._callback)
+            stream.addCallback(self._aCallback, AvType.audio_input)
+            if stream.hasVideo():
+                stream.addCallback(self._aCallback, AvType.audio_input)
+
             with self._running_cond:
                 try:
                     print('Starting record....')
@@ -79,9 +84,10 @@ class Recording:
                     print("Keyboard interrupt on record")
                     self._running <<= False
 
-            stream.removeCallback(self._callback)
+            stream.removeCallback(self._aCallback, AvType.audio_input)
 
             if stream.hasVideo():
+                stream.removeCallback(self._vCallback, AvType.video_input)
                 f['video_frame_positions'] = self._video_frame_positions
 
             print('\nEnding record')
@@ -91,18 +97,8 @@ class Recording:
         with self._running_cond:
             self._running_cond.notify()
 
-    def _callback(self, _type, data, aframe, vframe):
-        if not self._stream.isRunning():
-            self._running <<= False
-            with self._running_cond:
-                self._running_cond.notify()
-
-        if _type == AvType.audio:
-            self._aCallback(data, aframe)
-        elif _type == AvType.video:
-            self._vCallback(data)
-
     def _aCallback(self, frames, aframe):
+
         curT = self._aframeno()*self.blocksize/self.samplerate
         curT_rounded_to_seconds = int(curT)
         if curT_rounded_to_seconds > self._curT_rounded_to_seconds:
@@ -122,7 +118,7 @@ class Recording:
         self._ad[self._aframeno(), :, :] = frames
         self._aframeno += 1
 
-    def _vCallback(self, frame):
+    def _vCallback(self, frame, framectr):
         self._video_frame_positions.append(self._aframeno())
         vframeno = self._vframeno
         self._vd.resize(vframeno+1, axis=0)

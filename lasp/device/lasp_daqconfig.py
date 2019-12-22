@@ -9,6 +9,8 @@ Data Acquistiion (DAQ) device descriptors, and the DAQ devices themselves
 
 """
 from dataclasses import dataclass, field
+import numpy as np
+
 
 @dataclass
 class DeviceInfo:
@@ -82,7 +84,9 @@ class DAQConfiguration:
         return en_channels
 
     def getSensitivities(self):
-        return [float(channel.sensitivity) for channel in self.getEnabledChannels()]
+        return np.array(
+                [float(channel.sensitivity) for channel in
+                    self.getEnabledChannels()])
 
     @staticmethod
     def loadConfigs():

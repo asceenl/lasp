@@ -101,12 +101,12 @@ cdef extern from "RtAudio.h" nogil:
         void showWarnings(bool value)
     
 _formats_strkey = {
-        '8-bit integers': (RTAUDIO_SINT8, 1),
-        '16-bit integers': (RTAUDIO_SINT16,2),
-        '24-bit integers': (RTAUDIO_SINT24,3),
-        '32-bit integers': (RTAUDIO_SINT32,4),
-        '32-bit floats': (RTAUDIO_FLOAT32,  4),
-        '64-bit floats': (RTAUDIO_FLOAT64,  8),
+        '8-bit integers': (RTAUDIO_SINT8,   1, np.int8),
+        '16-bit integers': (RTAUDIO_SINT16, 2, np.int16),
+        '24-bit integers': (RTAUDIO_SINT24, 3),
+        '32-bit integers': (RTAUDIO_SINT32, 4, np.int32),
+        '32-bit floats': (RTAUDIO_FLOAT32,  4, np.float32),
+        '64-bit floats': (RTAUDIO_FLOAT64,  8, np.float64),
 }
 _formats_rtkey = {
         RTAUDIO_SINT8: ('8-bit integers', 1, cnp.NPY_INT8),
@@ -116,6 +116,12 @@ _formats_rtkey = {
         RTAUDIO_FLOAT32: ('32-bit floats',  4, cnp.NPY_FLOAT32),
         RTAUDIO_FLOAT64: ('64-bit floats',  8, cnp.NPY_FLOAT64),
 }
+
+def get_numpy_dtype_from_format_string(format_string):
+    return _formats_strkey[format_string][-1]
+def get_sampwidth_from_format_string(format_string):
+    return _formats_strkey[format_string][-2]
+
 cdef class _Stream:
     cdef:
         object pyCallback

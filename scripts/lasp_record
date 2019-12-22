@@ -19,7 +19,7 @@ parser.add_argument('--input-daq', '-i', help=device_help, type=str,
 args = parser.parse_args()
 
 
-from lasp.lasp_avstream import AvStream
+from lasp.lasp_avstream import AvStream, AvType
 from lasp.lasp_record import Recording
 from lasp.device import DAQConfiguration, RtAudio
 
@@ -42,9 +42,8 @@ except KeyError:
 
 print(input_device)
 
-stream = AvStream(rtaudio,
-                  None, # No output device
-                  input_device,
+stream = AvStream(input_device,
+                  AvType.audio_input,
                   config)
 
 rec = Recording(args.filename, stream, args.duration)
