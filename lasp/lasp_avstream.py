@@ -55,6 +55,7 @@ class AvStream:
         self.daqconfig = daqconfig
         self._device = device
         self.avtype = avtype
+        self.duplex_mode = daqconfig.duplex_mode
 
         # Determine highest input channel number
         channelconfigs = daqconfig.en_input_channels
@@ -125,7 +126,9 @@ class AvStream:
         """
         Returns the current number of installed callbacks
         """
-        return len(self._callbacks)
+        return len(self._callbacks[AvType.audio_input]) + \
+               len(self._callbacks[AvType.audio_output]) + \
+               len(self._callbacks[AvType.video]) 
 
     def addCallback(self, cb: callable, cbtype: AvType):
         """
@@ -196,9 +199,15 @@ class AvStream:
         output_signal = None
         with self._callbacklock:
             for cb in self._callbacks[AvType.audio_input]:
-                cb(indata, self._aframectr())
+                try:
+                    cb(indata, self._aframectr())
+                except Exception as e:
+                    print(e)
             for cb in self._callbacks[AvType.audio_output]:
-                output_data = cb(indata, self._aframectr())
+                try:
+                    output_signal = cb(indata, self._aframectr())
+                except Exception as e:
+                    print(e)
         return output_signal, 0 if self._running else 1
 
     def stop(self):

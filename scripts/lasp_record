@@ -47,7 +47,8 @@ stream = AvStream(input_device,
                   config)
 
 rec = Recording(args.filename, stream, args.duration)
-rec.start()
+with rec:
+    pass
 
 print('Stopping stream...')
 stream.stop()
