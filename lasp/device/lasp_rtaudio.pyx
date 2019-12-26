@@ -26,7 +26,7 @@ cdef extern from "RtAudio.h" nogil:
             THREAD_ERROR
 
     ctypedef unsigned long RtAudioStreamFlags
-    RtAudioStreamFlags RT_AUDIO_NONINTERLEAVED
+    RtAudioStreamFlags RTAUDIO_NONINTERLEAVED
     RtAudioStreamFlags RTAUDIO_MINIMIZE_LATENCY
     RtAudioStreamFlags RTAUDIO_HOG_DEVICE
     RtAudioStreamFlags RTAUDIO_ALSA_USE_DEFAULT
@@ -144,10 +144,12 @@ cdef object fromBufferToNPYNoCopy(
                              void* buf,
                              size_t nchannels,
                              size_t nframes):
-    cdef cnp.npy_intp[2] dims = [nchannels, nframes]
+    cdef cnp.npy_intp[2] dims = [nframes, nchannels]
  
+    # Interleaved data is C-style contiguous. Therefore, we can directly use
+    # SimpleNewFromData()
     array = cnp.PyArray_SimpleNewFromData(2, &dims[0], buffer_format_type,
-            buf).transpose()
+            buf)
 
     return array
 
@@ -160,8 +162,8 @@ cdef void fromNPYToBuffer(cnp.ndarray arr,
     memcpy(buf, arr.data, arr.size*arr.itemsize)
 
 
-cdef int audioCallback(void* outputBuffer,
-                       void* inputBuffer,
+cdef int audioCallback(void* outputbuffer,
+                       void* inputbuffer,
                        unsigned int nFrames,
                        double streamTime,
                        RtAudioStreamStatus status,
@@ -185,41 +187,42 @@ cdef int audioCallback(void* outputBuffer,
         
         # Obtain stream information
         npy_input = None
+        npy_output = None
         if stream.hasInput: 
             try:
-                assert inputBuffer != NULL
+                assert inputbuffer != NULL
                 npy_format = _formats_rtkey[stream.sampleformat][2]
                 npy_input = fromBufferToNPYNoCopy(
                         npy_format,
-                        inputBuffer,
+                        inputbuffer,
                         stream.inputParams.nChannels,
                         nFrames)
 
             except Exception as e:
-                print('Exception in Cython callback: ', str(e))
+                print('exception in cython callback: ', str(e))
+
+        if stream.hasOutput:
+            try:
+                assert outputbuffer != NULL
+                npy_format = _formats_rtkey[stream.sampleformat][2]
+                npy_output = fromBufferToNPYNoCopy(
+                        npy_format,
+                        outputbuffer,
+                        stream.outputParams.nChannels,
+                        nFrames)
+
+            except Exception as e:
+                print('exception in cython callback: ', str(e))
         try:
-            npy_output, rval = stream.pyCallback(npy_input,
-                                           nFrames,
-                                           streamTime)
+            rval = stream.pyCallback(npy_input,
+                                     npy_output,
+                                     nFrames,
+                                     streamTime)
         except Exception as e:
             print('Exception in Python callback: ', str(e))
             return 1
 
-
-        if stream.hasOutput:
-            if npy_output is None:
-                print('No output buffer given!')
-                return 1
-            IF LASP_DEBUG_CYTHON:
-                try:
-                    assert outputBuffer != NULL, "Bug: RtAudio does not give output buffer!"
-                    assert npy_output.shape[0] == stream.outputParams.nChannels, "Bug: channel mismatch in output buffer!"
-                    assert npy_output.shape[1] == nFrames, "Bug: frame mismatch in output buffer!"
-                    assert npy_output.itemsize == stream.sampleSize, "Bug: invalid sample type in output buffer!"
-                except AssertionError as e:
-                    print(e)
-            fromNPYToBuffer(npy_output, outputBuffer) 
-    return rval
+        return rval
 
 cdef void errorCallback(RtAudioError.Type _type,const string& errortxt) nogil:
     pass

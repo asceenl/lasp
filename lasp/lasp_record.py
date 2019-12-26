@@ -131,7 +131,7 @@ class Recording:
 
 
 
-    def _aCallback(self, frames, aframe):
+    def _aCallback(self, indata, outdata, aframe):
 
         curT = self._aframeno()*self.blocksize/self.samplerate
         recstatus = RecordStatus(
@@ -158,7 +158,7 @@ class Recording:
             return
 
         self._ad.resize(self._aframeno()+1, axis=0)
-        self._ad[self._aframeno(), :, :] = frames
+        self._ad[self._aframeno(), :, :] = indata
         self._aframeno += 1
 
     def _vCallback(self, frame, framectr):
@@ -168,10 +168,3 @@ class Recording:
         self._vd[vframeno, :, :] = frame
         self._vframeno += 1
 
-
-if __name__ == '__main__':
-    stream = AvStream()
-    rec = Recording('test', stream, 5)
-    with rec(wait=True):
-        sleep
-    rec.start()

@@ -67,7 +67,8 @@ class AvStream:
 
         if daqconfig.duplex_mode or avtype == AvType.audio_output:
             rtaudio_outputparams = {'deviceid': device.index,
-                                    'nchannels': device.outputchannels,
+            # TODO: Add option to specify the number of output channels to use
+                                    'nchannels': 1,  #device.outputchannels,
                                     'firstchannel': 0}
             self.sampleformat = daqconfig.en_output_sample_format
             self.samplerate = int(daqconfig.en_output_rate)
@@ -191,24 +192,23 @@ class AvStream:
         cap.release()
         print('stopped videothread')
 
-    def _audioCallback(self, indata, nframes, streamtime):
+    def _audioCallback(self, indata, outdata, nframes, streamtime):
         """
         This is called (from a separate thread) for each audio block.
         """
         self._aframectr += 1
-        output_signal = None
         with self._callbacklock:
             for cb in self._callbacks[AvType.audio_input]:
                 try:
-                    cb(indata, self._aframectr())
+                    cb(indata, outdata, self._aframectr())
                 except Exception as e:
                     print(e)
             for cb in self._callbacks[AvType.audio_output]:
                 try:
-                    output_signal = cb(indata, self._aframectr())
+                    cb(indata, outdata, self._aframectr())
                 except Exception as e:
                     print(e)
-        return output_signal, 0 if self._running else 1
+        return 0 if self._running else 1
 
     def stop(self):
         self._running <<= False

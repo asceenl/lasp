@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+import argparse
+import numpy as np
+
+
+parser = argparse.ArgumentParser(
+    description='Play a sine wave'
+)
+device_help = 'DAQ Device to play to'
+parser.add_argument('--device', '-d', help=device_help, type=str,
+                    default='Default')
+
+args = parser.parse_args()
+
+from lasp.lasp_avstream import AvStream, AvType
+from lasp.device import DAQConfiguration, RtAudio
+
+config = DAQConfiguration.loadConfigs()[args.device]
+
+rtaudio = RtAudio()
+count = rtaudio.getDeviceCount()
+devices = [rtaudio.getDeviceInfo(i) for i in range(count)]
+
+output_devices = {}
+for device in devices:
+    if device.outputchannels >= 0:
+        output_devices[device.name] = device
+
+try:
+    output_device = output_devices[config.output_device_name]
+except KeyError:
+    raise RuntimeError(f'output device {config.output_device_name} not available')
+
+samplerate = int(config.en_output_rate)
+stream = AvStream(output_device,
+                  AvType.audio_output,
+                  config)
+
+# freq = 440.
+freq = 1000.
+omg = 2*np.pi*freq
+
+
+def mycallback(indata, outdata, blockctr):
+    frames = outdata.shape[0]
+    nchannels = outdata.shape[1]
+    # nchannels = 1
+    streamtime = blockctr*frames/samplerate
+    t = np.linspace(streamtime, streamtime + frames/samplerate,
+            frames)[np.newaxis, :]
+    outp = 0.01*np.sin(omg*t)
+    for i in range(nchannels):
+        outdata[:,i] = ((2**16-1)*outp).astype(np.int16)
+
+stream.addCallback(mycallback, AvType.audio_output)
+stream.start()
+
+input()
+
+print('Stopping stream...')
+stream.stop()
+
+print('Stream stopped')
+print('Closing stream...')
+stream.close()
+print('Stream closed')
