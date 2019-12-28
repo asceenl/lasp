@@ -17,16 +17,17 @@ typedef struct {} Siggen;
  * Create a sine wave signal generator
  * 
  * @param[in] fs: Sampling frequency [Hz]
+ * @param[in] level: Relative level in [dB], should be between -inf and 0
  * @param[freq] Sine wave frequency [Hz]
  */
-Siggen* Siggen_Sinewave_create(const d fs,const d freq);
+Siggen* Siggen_Sinewave_create(const d fs,const d freq,const d level_dB);
 
 /**
  * Create a white noise signal generator
  * 
  * @return Siggen* handle
  */
-Siggen* Siggen_Whitenoise_create();
+Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB);
 
 /**
  * Create a pink (1/f) noise signal generator
@@ -34,7 +35,7 @@ Siggen* Siggen_Whitenoise_create();
  * @param[in] fs: Sampling frequency [Hz]
  * @return Siggen* handle
  */
-Siggen* Siggen_Pinknoise_create(const us fs);
+Siggen* Siggen_Pinknoise_create(const us fs,const d level_dB);
 
 /* Siggen* Siggen_ForwardSweep_create(const d fs,; */
 /* Siggen* Siggen_(const d fs,; */

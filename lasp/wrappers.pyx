@@ -471,8 +471,8 @@ cdef class SPLowpass:
 
 cdef extern from "lasp_siggen.h":
     ctypedef struct c_Siggen "Siggen"
-    c_Siggen* Siggen_Whitenoise_create()
-    c_Siggen* Siggen_Sinewave_create(d fs, d freq)
+    c_Siggen* Siggen_Whitenoise_create(d fs, d level_dB)
+    c_Siggen* Siggen_Sinewave_create(d fs, d freq, d level_dB)
     void Siggen_genSignal(c_Siggen*, vd* samples) nogil
     void Siggen_free(c_Siggen*)
 
@@ -505,16 +505,16 @@ cdef class Siggen:
 
 
     @staticmethod
-    def sineWave(fs, freq):
-        cdef c_Siggen* c_siggen = Siggen_Sinewave_create(fs, freq)
+    def sineWave(d fs,d freq,d level_dB):
+        cdef c_Siggen* c_siggen = Siggen_Sinewave_create(fs, freq, level_dB)
         siggen = Siggen()
         siggen._siggen = c_siggen
         return siggen
 
 
     @staticmethod
-    def whiteNoise():
-        cdef c_Siggen* c_siggen = Siggen_Whitenoise_create()
+    def whiteNoise(d fs, d level_dB):
+        cdef c_Siggen* c_siggen = Siggen_Whitenoise_create(fs, level_dB)
         siggen = Siggen()
         siggen._siggen = c_siggen
         return siggen

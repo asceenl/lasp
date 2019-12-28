@@ -1,4 +1,7 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.0) 
+
+# This is used for code completion in vim
+set(CMAKE_EXPORT_COMPILE_COMMANDS=ON)
 project(LASP)
 
 # Whether we want to use blas yes or no
