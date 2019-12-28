@@ -65,6 +65,8 @@ class AvStream:
         rtaudio_inputparams = None
         rtaudio_outputparams = None
 
+        self.nframes_per_block = 2048
+
         if self.duplex_mode or avtype == AvType.audio_output:
             rtaudio_outputparams = {'deviceid': device.index,
             # TODO: Add option to specify the number of output channels to use
@@ -92,7 +94,7 @@ class AvStream:
                     rtaudio_inputparams,   # Inputparams
                     self.sampleformat,     # Sampleformat
                     self.samplerate,
-                    2048,                  # Buffer size in frames
+                    self.nframes_per_block, # Buffer size in frames
                     self._audioCallback)
 
         except Exception as e:

@@ -14,6 +14,7 @@ add_library(lasp_lib
   lasp_aps.c
   lasp_ps.c
   lasp_mq.c
+  lasp_siggen.c
   lasp_worker.c
   lasp_dfifo.c
   lasp_filterbank.c

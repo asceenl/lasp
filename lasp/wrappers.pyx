@@ -467,3 +467,54 @@ cdef class SPLowpass:
         vd_free(&input_vd)
 
         return result
+
+
+cdef extern from "lasp_siggen.h":
+    ctypedef struct c_Siggen "Siggen"
+    c_Siggen* Siggen_Whitenoise_create()
+    c_Siggen* Siggen_Sinewave_create(d fs, d freq)
+    void Siggen_genSignal(c_Siggen*, vd* samples) nogil
+    void Siggen_free(c_Siggen*)
+
+
+cdef class Siggen:
+    cdef c_Siggen *_siggen
+
+    def __cinit__(self):
+        self._siggen = NULL
+
+    def __dealloc__(self):
+        if self._siggen:
+            Siggen_free(self._siggen)
+
+    def genSignal(self, us nsamples):
+        output = np.empty(nsamples, dtype=np.float)
+        assert self._siggen != NULL
+
+        cdef d[:] output_view = output
+
+        cdef dmat output_dmat = dmat_foreign_data(nsamples,
+                                                  1,
+                                                  &output_view[0],
+                                                  False)
+        with nogil:
+            Siggen_genSignal(self._siggen,
+                             &output_dmat)
+
+        return output
+
+
+    @staticmethod
+    def sineWave(fs, freq):
+        cdef c_Siggen* c_siggen = Siggen_Sinewave_create(fs, freq)
+        siggen = Siggen()
+        siggen._siggen = c_siggen
+        return siggen
+
+
+    @staticmethod
+    def whiteNoise():
+        cdef c_Siggen* c_siggen = Siggen_Whitenoise_create()
+        siggen = Siggen()
+        siggen._siggen = c_siggen
+        return siggen

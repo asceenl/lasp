@@ -30,6 +30,8 @@ void DBG_AssertFailedExtImplementation(const char* file,
     	DBG_AssertFailedExtImplementation(__FILE__, __LINE__, assert_string );  \
     }
 
+#define assertvalidptr(ptr) dbgassert(ptr,NULLPTRDEREF)
+
 #else // LASP_DEBUG not defined
 
 #define dbgassert(assertion, assert_string)
