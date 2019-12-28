@@ -28,7 +28,7 @@ cdef extern from "lasp_tracer.h":
     void clearScreen()
 
 
-cdef extern from "lasp_mat.h":
+cdef extern from "lasp_mat.h" nogil:
     ctypedef struct dmat:
         us n_cols
         us n_rows
@@ -127,11 +127,11 @@ cdef class Fft:
                                         timedata.shape[1],
                                         &timedata[0,0],
                                         False)
+        with nogil:
+            Fft_fft(self._fft,&t,&r)
 
-        Fft_fft(self._fft,&t,&r)
-
-        dmat_free(&t)
-        cmat_free(&r)
+            dmat_free(&t)
+            cmat_free(&r)
 
         return result
 
@@ -159,10 +159,11 @@ cdef class Fft:
                                         &timedata_view[0,0],
                                         False)
 
-        Fft_ifft(self._fft,&f,&t)
+        with nogil:
+            Fft_ifft(self._fft,&f,&t)
 
-        dmat_free(&t)
-        cmat_free(&f)
+            dmat_free(&t)
+            cmat_free(&f)
 
         return timedata
 
@@ -189,7 +190,7 @@ cdef extern from "lasp_ps.h":
 
     void PowerSpectra_compute(const c_PowerSpectra* ps,
                              const dmat * timedata,
-                             cmat * result)
+                             cmat * result) nogil
 
 
     void PowerSpectra_free(c_PowerSpectra*)
@@ -236,8 +237,8 @@ cdef class PowerSpectra:
                                        False)
 
 
-
-        PowerSpectra_compute(self._ps,&td,&result_mat)
+        with nogil:
+            PowerSpectra_compute(self._ps,&td,&result_mat)
 
         dmat_free(&td)
         cmat_free(&result_mat)
@@ -259,7 +260,7 @@ cdef extern from "lasp_aps.h":
                                            const vd* weighting)
 
     cmat* AvPowerSpectra_addTimeData(const c_AvPowerSpectra* ps,
-                                     const dmat * timedata)
+                                     const dmat * timedata) nogil
 
 
     void AvPowerSpectra_free(c_AvPowerSpectra*)
@@ -319,16 +320,6 @@ cdef class AvPowerSpectra:
                                &timedata[0,0],
                                False)
 
-        result_ptr = AvPowerSpectra_addTimeData(self.aps,
-                                                &td)
-
-        # The array here is created in such a way that the strides
-        # increase with increasing dimension. This is required for
-        # interoperability with the C-code, that stores all
-        # cross-spectra in a 2D matrix, where the first axis is the
-        # frequency axis, and the second axis corresponds to a certain
-        # cross-spectrum, as C_ij(f) = result[freq,i+j*nchannels]
-
         result = np.empty((self.nfft//2+1,nchannels,nchannels),
                           dtype = NUMPY_COMPLEX_TYPE,
                           order='F')
@@ -339,11 +330,22 @@ cdef class AvPowerSpectra:
                                           nchannels*nchannels,
                                           &result_view[0,0,0],
                                           False)
-        # Copy result
-        cmat_copy(&res,result_ptr)
+        with nogil:
+            result_ptr = AvPowerSpectra_addTimeData(self.aps,
+                                                &td)
 
-        cmat_free(&res)
-        dmat_free(&td)
+        # The array here is created in such a way that the strides
+        # increase with increasing dimension. This is required for
+        # interoperability with the C-code, that stores all
+        # cross-spectra in a 2D matrix, where the first axis is the
+        # frequency axis, and the second axis corresponds to a certain
+        # cross-spectrum, as C_ij(f) = result[freq,i+j*nchannels]
+
+            # Copy result
+            cmat_copy(&res,result_ptr)
+
+            cmat_free(&res)
+            dmat_free(&td)
 
         return result
 
@@ -377,7 +379,10 @@ cdef class FilterBank:
         cdef dmat input_vd = dmat_foreign_data(input_.shape[0],1,
                                              &input_[0, 0],False)
 
-        cdef dmat output = FilterBank_filter(self.fb,&input_vd)
+        
+        cdef dmat output
+        with nogil:
+            output = FilterBank_filter(self.fb,&input_vd)
 
         # Steal the pointer from output
         result = dmat_to_ndarray(&output,True)

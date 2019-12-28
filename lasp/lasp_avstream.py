@@ -65,7 +65,7 @@ class AvStream:
         rtaudio_inputparams = None
         rtaudio_outputparams = None
 
-        if daqconfig.duplex_mode or avtype == AvType.audio_output:
+        if self.duplex_mode or avtype == AvType.audio_output:
             rtaudio_outputparams = {'deviceid': device.index,
             # TODO: Add option to specify the number of output channels to use
                                     'nchannels': 1,  #device.outputchannels,
@@ -73,7 +73,7 @@ class AvStream:
             self.sampleformat = daqconfig.en_output_sample_format
             self.samplerate = int(daqconfig.en_output_rate)
 
-        if avtype == AvType.audio_input:
+        if avtype == AvType.audio_input or self.duplex_mode:
             for i, channelconfig in enumerate(channelconfigs):
                 if channelconfig.channel_enabled:
                     self.nchannels = i+1
@@ -139,6 +139,7 @@ class AvStream:
             outputcallbacks = self._callbacks[AvType.audio_output]
             if cbtype == AvType.audio_output and len(outputcallbacks) > 0:
                 raise RuntimeError('Only one audio output callback can be allowed')
+
             if cb not in self._callbacks[cbtype]:
                 self._callbacks[cbtype].append(cb)
 
@@ -203,11 +204,13 @@ class AvStream:
                     cb(indata, outdata, self._aframectr())
                 except Exception as e:
                     print(e)
+                    return 1
             for cb in self._callbacks[AvType.audio_output]:
                 try:
                     cb(indata, outdata, self._aframectr())
                 except Exception as e:
                     print(e)
+                    return 1
         return 0 if self._running else 1
 
     def stop(self):
