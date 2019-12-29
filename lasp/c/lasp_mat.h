@@ -21,6 +21,7 @@ typedef struct {
     us stride;
     d* _data;
 } dmat;
+
 /// Dense matrix of complex floating point values
 typedef struct {
     us n_rows;

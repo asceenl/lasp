@@ -20,10 +20,11 @@
 /** 
  * Create a numpy array from an existing dmat.
  *
- * @param mat 
- * @param transfer_ownership 
+ * @param mat dmat struccture containing array data and metadata.
+ * @param transfer_ownership If set to true, Numpy array will be responsible
+ * for freeing the data.
  *
- * @return 
+ * @return Numpy array
  */
 static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
     fsTRACE(15);
@@ -50,7 +51,7 @@ static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
     }
 
     // Transpose the array
-    PyObject* arr = PyArray_Transpose(arr_t,NULL);
+    PyObject* arr = PyArray_Transpose((PyArrayObject*) arr_t,NULL);
     if(!arr) {
         WARN("Array transpose failure");
         feTRACE(15);

@@ -173,6 +173,8 @@ static inline d d_dot(const d a[],const d b[],const us size){
  * @param to : Array to write to
  * @param from : Array to read from
  * @param size : Size of arrays
+ * @param to_inc : Mostly equal to 1, the stride of the array to copy to
+ * @param from_inc : Mostly equal to 1, the stride of the array to copy from
  */
 static inline void d_copy(d to[],
                           const d from[],

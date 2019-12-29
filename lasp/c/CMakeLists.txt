@@ -25,4 +25,4 @@ add_library(lasp_lib
 
 
 
-target_link_libraries(lasp_lib fftpack openblas)
+target_link_libraries(lasp_lib ${LASP_FFT_LIBRARY} openblas)
