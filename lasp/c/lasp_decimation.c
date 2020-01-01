@@ -6,7 +6,7 @@
 // Implementation of the decimator
 //////////////////////////////////////////////////////////////////////
 #include "lasp_decimation.h"
-#include "lasp_filterbank.h"
+#include "lasp_firfilterbank.h"
 #include "lasp_tracer.h"
 #include "lasp_alloc.h"
 #include "lasp_dfifo.h"
@@ -34,7 +34,7 @@ static __thread DecFilter DecFilters[] = {
 typedef struct Decimator_s {
     us nchannels;
     us dec_fac;
-    FilterBank** fbs;
+    Firfilterbank** fbs;
     dFifo* output_fifo;
 } Decimator;
 
@@ -61,14 +61,14 @@ Decimator* Decimator_create(us nchannels,DEC_FAC df) {
     
     /* Create the filterbanks */
     Decimator* dec = a_malloc(sizeof(Decimator));
-    dec->fbs = a_malloc(sizeof(FilterBank*)*nchannels);
+    dec->fbs = a_malloc(sizeof(Firfilterbank*)*nchannels);
     dec->nchannels = nchannels;
     dec->dec_fac = filter->dec_fac;
 
     dmat h = dmat_foreign_data(filter->ntaps,1,filter->h,false);
 
     for(us channelno=0;channelno<nchannels;channelno++) {
-        dec->fbs[channelno] = FilterBank_create(&h,DEC_FFT_LEN);
+        dec->fbs[channelno] = Firfilterbank_create(&h,DEC_FFT_LEN);
     }
 
     dmat_free(&h);
@@ -128,10 +128,10 @@ dmat Decimator_decimate(Decimator* dec,const dmat* samples) {
                                          chan);
 
         /* Low-pass filter stuff */
-        dmat filtered_res = FilterBank_filter(dec->fbs[chan],
+        dmat filtered_res = Firfilterbank_filter(dec->fbs[chan],
                                                  &samples_channel);
 
-        dbgassert(filtered_res.n_cols == 1,"Bug in FilterBank");
+        dbgassert(filtered_res.n_cols == 1,"Bug in Firfilterbank");
 
         vd_free(&samples_channel);
 
@@ -148,7 +148,7 @@ dmat Decimator_decimate(Decimator* dec,const dmat* samples) {
                                             1);
 
             dbgassert(filtered_res.n_rows == filtered_col.n_rows,
-                      "Not all FilterBank's have same output number"
+                      "Not all Firfilterbank's have same output number"
                       " of rows!");
 
             dmat_copy_rows(&filtered_col,
@@ -209,7 +209,7 @@ void Decimator_free(Decimator* dec) {
     dFifo_free(dec->output_fifo);
 
     for(us chan=0;chan<dec->nchannels;chan++) {
-        FilterBank_free(dec->fbs[chan]);
+        Firfilterbank_free(dec->fbs[chan]);
     }
 
     a_free(dec->fbs);

@@ -11,7 +11,7 @@
 #define LASP_SIGGEN_H
 #include "lasp_mat.h"
 
-typedef struct {} Siggen;
+typedef struct Siggen Siggen;
 
 /**
  * Create a sine wave signal generator
@@ -54,5 +54,5 @@ void Siggen_genSignal(Siggen*,vd* samples);
  */
 void Siggen_free(Siggen*);
 
-#endif LASP_SIGGEN_H
+#endif //LASP_SIGGEN_H
 //////////////////////////////////////////////////////////////////////

@@ -349,30 +349,30 @@ cdef class AvPowerSpectra:
 
         return result
 
-cdef extern from "lasp_filterbank.h":
-    ctypedef struct c_FilterBank "FilterBank"
-    c_FilterBank* FilterBank_create(const dmat* h,const us nfft) nogil
-    dmat FilterBank_filter(c_FilterBank* fb,const vd* x) nogil
-    void FilterBank_free(c_FilterBank* fb) nogil
+cdef extern from "lasp_firfilterbank.h":
+    ctypedef struct c_Firfilterbank "Firfilterbank"
+    c_Firfilterbank* Firfilterbank_create(const dmat* h,const us nfft) nogil
+    dmat Firfilterbank_filter(c_Firfilterbank* fb,const vd* x) nogil
+    void Firfilterbank_free(c_Firfilterbank* fb) nogil
 
 
 cdef class FilterBank:
     cdef:
-        c_FilterBank* fb
+        c_Firfilterbank* fb
     def __cinit__(self,d[::1,:] h, us nfft):
         cdef dmat hmat = dmat_foreign_data(h.shape[0],
                                            h.shape[1],
                                            &h[0,0],
                                            False)
 
-        self.fb = FilterBank_create(&hmat,nfft)
+        self.fb = Firfilterbank_create(&hmat,nfft)
         dmat_free(&hmat)
         if not self.fb:
             raise RuntimeError('Error creating FilberBank')
 
     def __dealloc__(self):
         if self.fb:
-            FilterBank_free(self.fb)
+            Firfilterbank_free(self.fb)
 
     def filter_(self,d[::1, :] input_):
         assert input_.shape[1] == 1
@@ -382,7 +382,7 @@ cdef class FilterBank:
         
         cdef dmat output
         with nogil:
-            output = FilterBank_filter(self.fb,&input_vd)
+            output = Firfilterbank_filter(self.fb,&input_vd)
 
         # Steal the pointer from output
         result = dmat_to_ndarray(&output,True)

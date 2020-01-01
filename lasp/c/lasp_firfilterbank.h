@@ -1,8 +1,8 @@
-// lasp_filterbank.h
+// lasp_firfilterbank.h
 //
 // Author: J.A. de Jong - ASCEE
 //
-// Description: Implemententation of a discrete filterbank using fast
+// Description: Implemententation of a discrete FIR filterbank using fast
 // convolution and the overlap-save (overlap-scrap method). Multiple
 // filters can be applied to the same input data (*filterbank*).
 // Implementation is computationally efficient, as the forward FFT is
@@ -10,14 +10,14 @@
 // each filter in the filterbank.
 //////////////////////////////////////////////////////////////////////
 #pragma once
-#ifndef LASP_FILTERBANK_H
-#define LASP_FILTERBANK_H
+#ifndef LASP_FIRFILTERBANK_H
+#define LASP_FIRFILTERBANK_H
 #include "lasp_types.h"
 #include "lasp_mat.h"
-typedef struct FilterBank_s FilterBank;
+typedef struct Firfilterbank_s Firfilterbank;
 
 /** 
- * Initializes a fast convolution filter bank and returns a FilterBank
+ * Initializes a fast convolution filter bank and returns a Firfilterbank
  * handle. The nfft will be chosen to be at least four times the
  * length of the FIR filters.
  *
@@ -30,9 +30,9 @@ typedef struct FilterBank_s FilterBank;
  * times the filter lengths. For the lowest possible latency, it is
  * better to set nfft at twice the filter length.
  *
- * @return FilterBank handle, NULL on error.
+ * @return Firfilterbank handle, NULL on error.
  */
-FilterBank* FilterBank_create(const dmat* h,const us nfft);
+Firfilterbank* Firfilterbank_create(const dmat* h,const us nfft);
 
 /** 
  * Filters x using h, returns y
@@ -44,7 +44,7 @@ FilterBank* FilterBank_create(const dmat* h,const us nfft);
  * filterbank. The number of output samples is equal to the number of
  * input samples in x.
  */
-dmat FilterBank_filter(FilterBank* fb,
+dmat Firfilterbank_filter(Firfilterbank* fb,
                        const vd* x);
 
 /** 
@@ -52,8 +52,8 @@ dmat FilterBank_filter(FilterBank* fb,
  *
  * @param f Filter handle
  */
-void FilterBank_free(FilterBank* f);
+void Firfilterbank_free(Firfilterbank* f);
 
 
-#endif // LASP_FILTERBANK_H
+#endif // LASP_FIRFILTERBANK_H
 //////////////////////////////////////////////////////////////////////

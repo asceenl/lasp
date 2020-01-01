@@ -6,6 +6,7 @@
 // Signal generator implementation
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
+#include "lasp_siggen.h"
 #include "lasp_alloc.h"
 #include "lasp_assert.h"
 #include "lasp_mat.h"
@@ -19,7 +20,7 @@ typedef enum {
 
 } SignalType;
 
-typedef struct {
+typedef struct Siggen {
     SignalType signaltype;
     d fs; // Sampling frequency [Hz]
     d level_amp;

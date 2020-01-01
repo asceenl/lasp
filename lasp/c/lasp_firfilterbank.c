@@ -3,17 +3,17 @@
 // Author: J.A. de Jong -ASCEE
 // 
 // Description:
-// FilterBank implementation.
+// Firfilterbank implementation.
 //////////////////////////////////////////////////////////////////////
 #define TRACERPLUS (-5)
-#include "lasp_filterbank.h"
+#include "lasp_firfilterbank.h"
 #include "lasp_fft.h"
 #include "lasp_dfifo.h"
 #include "lasp_tracer.h"
 #include "lasp_alg.h"
 #define FIFO_SIZE_MULT 2
 
-typedef struct FilterBank_s {
+typedef struct Firfilterbank_s {
     us nfft;
 
     us P_m_1;                   /**< Filter length minus one */
@@ -25,9 +25,9 @@ typedef struct FilterBank_s {
 
     Fft* fft;                   /* Handle to internal FFT-function */
 
-} FilterBank;
+} Firfilterbank;
 
-FilterBank* FilterBank_create(const dmat* h,
+Firfilterbank* Firfilterbank_create(const dmat* h,
                               const us nfft) {
 
     fsTRACE(15);
@@ -46,7 +46,7 @@ FilterBank* FilterBank_create(const dmat* h,
         return NULL;
     }
 
-    FilterBank* fb = a_malloc(sizeof(FilterBank));
+    Firfilterbank* fb = a_malloc(sizeof(Firfilterbank));
 
     fb->nfft = nfft;
     fb->P_m_1 = P-1;
@@ -77,7 +77,7 @@ FilterBank* FilterBank_create(const dmat* h,
     feTRACE(15);
     return fb;
 }
-void FilterBank_free(FilterBank* fb) {
+void Firfilterbank_free(Firfilterbank* fb) {
     fsTRACE(15);
     dbgassert(fb,NULLPTRDEREF);
     cmat_free(&fb->filters);
@@ -87,7 +87,7 @@ void FilterBank_free(FilterBank* fb) {
     a_free(fb);
     feTRACE(15);
 }
-dmat FilterBank_filter(FilterBank* fb,
+dmat Firfilterbank_filter(Firfilterbank* fb,
                        const vd* x) {
 
     fsTRACE(15);
