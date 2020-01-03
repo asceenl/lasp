@@ -3,7 +3,8 @@
 """!
 Author: J.A. de Jong - ASCEE
 
-Description: Filter design for frequency weightings A and C.
+Description: Filter design for frequency weighting curves (i.e. A and C 
+weighting)
 """
 from .fir_design import freqResponse, arbitrary_fir_design
 import numpy as np

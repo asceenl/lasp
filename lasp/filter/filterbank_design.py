@@ -51,7 +51,7 @@ class FilterBankDesigner:
         """
         return self.fm(x)*self.G**(1/(2*self.b))
 
-    def createFilter(self, fs, x):
+    def createFirFilter(self, fs, x):
         """
         Create a FIR filter for band designator b and sampling frequency fs.
         Decimation should be obtained from decimation() method.

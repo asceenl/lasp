@@ -4,10 +4,8 @@
 Weighting and calibration filter in one
 @author: J.A. de Jong - ASCEE
 """
-from .filter.freqweighting_fir import A, C
 from .lasp_common import FreqWeighting
-from .filter.fir_design import (arbitrary_fir_design,
-                                freqResponse as frp)
+from .filter import (A, C, arbitrary_fir_design, freqResponse as frp)
 from lasp.lasp_config import ones, empty
 from .wrappers import FilterBank
 import numpy as np

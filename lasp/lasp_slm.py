@@ -47,7 +47,7 @@ class SLM:
         self._Lmax = 0.
 
         # Storage for computing the equivalent level
-        self._sq = 0.
+        self._sq = 0. # Square of the level data, storage
         self._N = 0
         self._Leq = 0.
 

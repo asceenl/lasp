@@ -6,14 +6,14 @@ Author: J.A. de Jong - ASCEE
 Provides the FIR implementation of the octave filter bank
 
 """
-__all__ = ['OctaveFilterBank', 'ThirdOctaveFilterBank']
+__all__ = ['FirOctaveFilterBank', 'FirThirdOctaveFilterBank']
 
-from .filter.bandpass_fir import OctaveBankDesigner, ThirdOctaveBankDesigner
+from .filter.filterbank_design import OctaveBankDesigner, ThirdOctaveBankDesigner
 from .wrappers import Decimator, FilterBank as pyxFilterBank
 import numpy as np
 
 
-class FilterBank:
+class FirFilterBank:
     """
     Single channel octave filter bank implementation
     """
@@ -65,7 +65,7 @@ class FilterBank:
                 #  These are the filters that do not require lasp_decimation
                 #  prior to filtering
                 nominals_txt.append(self.nominal_txt(x))
-                firs[:, i] = self.createFilter(fs, x)
+                firs[:, i] = self.createFirFilter(fs, x)
             filterbank = {'fb': pyxFilterBank(firs, 1024),
                           'xs': xs,
                           'nominals': nominals_txt}
@@ -136,17 +136,17 @@ class FilterBank:
         return output
 
 
-class OctaveFilterBank(FilterBank, OctaveBankDesigner):
+class FirOctaveFilterBank(FirFilterBank, OctaveBankDesigner):
     """
     Filter bank which uses FIR filtering for each octave frequency band
     """
 
     def __init__(self, fs):
         OctaveBankDesigner.__init__(self)
-        FilterBank.__init__(self, fs)
+        FirFilterBank.__init__(self, fs)
 
 
-class ThirdOctaveFilterBank(FilterBank, ThirdOctaveBankDesigner):
+class FirThirdOctaveFilterBank(FirFilterBank, ThirdOctaveBankDesigner):
     """
     Filter bank which uses FIR filtering for each one-third octave frequency
     band.
@@ -154,4 +154,4 @@ class ThirdOctaveFilterBank(FilterBank, ThirdOctaveBankDesigner):
 
     def __init__(self, fs):
         ThirdOctaveBankDesigner.__init__(self)
-        FilterBank.__init__(self, fs)
+        FirFilterBank.__init__(self, fs)
