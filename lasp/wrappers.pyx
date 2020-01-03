@@ -65,7 +65,7 @@ cdef extern from "numpy/arrayobject.h":
 cdef extern from "lasp_python.h":
     object dmat_to_ndarray(dmat*,bint transfer_ownership)
 
-__all__ = ['AvPowerSpectra']
+__all__ = ['AvPowerSpectra', 'SosFilterBank', 'FilterBank']
 
 setTracerLevel(15)
 cdef extern from "cblas.h":
@@ -383,6 +383,58 @@ cdef class FilterBank:
         cdef dmat output
         with nogil:
             output = Firfilterbank_filter(self.fb,&input_vd)
+
+        # Steal the pointer from output
+        result = dmat_to_ndarray(&output,True)
+
+        dmat_free(&output)
+        vd_free(&input_vd)
+
+        return result
+
+cdef extern from "lasp_sosfilterbank.h":
+    ctypedef struct c_Sosfilterbank "Sosfilterbank"
+    c_Sosfilterbank* Sosfilterbank_create(const us filterbank_size, const us nsections) nogil
+    void Sosfilterbank_setFilter(c_Sosfilterbank* fb,const us filter_no, const vd filter_coefs)
+    dmat Sosfilterbank_filter(c_Sosfilterbank* fb,const vd* x) nogil
+    void Sosfilterbank_free(c_Sosfilterbank* fb) nogil
+
+
+cdef class SosFilterBank:
+    cdef:
+        c_Sosfilterbank* fb
+    def __cinit__(self,const us filterbank_size, const us nsections):
+
+        self.fb = Sosfilterbank_create(filterbank_size,nsections)
+
+    def setFilter(self,us filter_no, d[:, ::1] sos):
+        """
+
+        Args:
+            filter_no: Filter number of the filterbank to set the
+            filter for
+            sos: Second axis are the filter coefficients, first axis 
+            is the section
+
+        """
+        cdef dmat coefs = dmat_foreign_data(sos.size,1,
+                                            &sos[0, 0],False)
+        Sosfilterbank_setFilter(self.fb,filter_no, coefs)
+
+    def __dealloc__(self):
+        if self.fb:
+            Sosfilterbank_free(self.fb)
+
+    def filter_(self,d[::1, :] input_):
+        # Only single channel input
+        assert input_.shape[1] == 1
+        cdef dmat input_vd = dmat_foreign_data(input_.shape[0],1,
+                                             &input_[0, 0],False)
+
+        
+        cdef dmat output
+        with nogil:
+            output = Sosfilterbank_filter(self.fb,&input_vd)
 
         # Steal the pointer from output
         result = dmat_to_ndarray(&output,True)

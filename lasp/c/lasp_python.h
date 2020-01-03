@@ -58,8 +58,7 @@ static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
         return NULL;
     }
     Py_DECREF(arr_t);
-
-                                              
+ 
     feTRACE(15);
     return arr;
 }

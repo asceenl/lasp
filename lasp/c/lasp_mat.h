@@ -10,6 +10,7 @@
 #define LASP_MAT_H
 #include "lasp_math_raw.h"
 #include "lasp_alloc.h"
+#include "lasp_assert.h"
 #include "lasp_tracer.h"
 #include "lasp_assert.h"
 
@@ -18,7 +19,7 @@ typedef struct {
     us n_rows;
     us n_cols;
     bool _foreign_data;
-    us stride;
+    us colstride;
     d* _data;
 } dmat;
 
@@ -27,7 +28,7 @@ typedef struct {
     us n_rows;
     us n_cols;
     bool _foreign_data;
-    us stride;
+    us colstride;
     c* _data;
 } cmat;
 
@@ -47,9 +48,9 @@ typedef cmat vc;
     (vec)->_data[index] = val;
 
 #define setmatval(mat,row,col,val)                              \
-    dbgassert((((us) row) <= mat->n_rows),OUTOFBOUNDSMATR);     \
-    dbgassert((((us) col) <= mat->n_cols),,OUTOFBOUNDSMATC);    \
-    (mat)->data[(col)*(mat)->stride+(row)] = val;
+    dbgassert((((us) row) <= (mat)->n_rows),OUTOFBOUNDSMATR);     \
+    dbgassert((((us) col) <= (mat)->n_cols),OUTOFBOUNDSMATC);    \
+    (mat)->_data[(col)*(mat)->colstride+(row)] = val;
 
 /**
  * Return pointer to a value from a vector
@@ -68,7 +69,7 @@ static inline d* getdmatval(const dmat* mat,us row,us col){
     dbgassert(mat,NULLPTRDEREF);
     dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
     dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
-    return &mat->_data[col*mat->stride+row];
+    return &mat->_data[col*mat->colstride+row];
 }
 /**
  * Return a value from a matrix of complex floating points
@@ -81,7 +82,7 @@ static inline c* getcmatval(const cmat* mat,const us row,const us col){
     dbgassert(mat,NULLPTRDEREF);
     dbgassert(row < mat->n_rows,OUTOFBOUNDSMATR);
     dbgassert(col < mat->n_cols,OUTOFBOUNDSMATC);
-    return &mat->_data[col*mat->stride+row];
+    return &mat->_data[col*mat->colstride+row];
 }
 
 static inline d* getvdval(const vd* vec,us row){
@@ -110,7 +111,7 @@ static inline c* getvcval(const vc* vec,us row){
 #define check_overflow_xmat(xmat)                               \
     TRACE(15,"Checking overflow " #xmat);                        \
     if(!(xmat)._foreign_data) {                                  \
-        dbgassert((xmat)._data[((xmat).n_cols-1)*(xmat).stride+(xmat).n_rows] \
+        dbgassert((xmat)._data[((xmat).n_cols-1)*(xmat).colstride+(xmat).n_rows] \
                   == OVERFLOW_MAGIC_NUMBER,                             \
                   "Buffer overflow detected on" #xmat );                \
     }                                                                   \
@@ -165,7 +166,10 @@ static inline void cmat_set(cmat* mat,const c value){
  */
 static inline dmat dmat_alloc(us n_rows,
                               us n_cols) {
-    dmat result = { n_rows, n_cols, false, n_rows, NULL};
+    dmat result = { n_rows, n_cols, 
+                   false,
+                   n_rows, // The column stride
+                   NULL};
 
     #ifdef LASP_DEBUG
     result._data = (d*) a_malloc((n_rows*n_cols+1)*sizeof(d));
@@ -234,7 +238,7 @@ static inline vc vc_alloc(us size) {
  * Creates a dmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
- * destroyed. Assumes the column stride equals to n_rows.
+ * destroyed. Assumes the column colstride equals to n_rows.
  *
  * @param n_rows Number of rows
  * @param n_cols Number of columns
@@ -247,12 +251,12 @@ static inline dmat dmat_foreign(dmat* other) {
     dmat result = {other->n_rows,
                    other->n_cols,
                    true,
-                   other->stride,
+                   other->colstride,
                    other->_data};
     return result;
 }
 /**
- * Create a dmat from foreign data. Assumes the stride of the data is
+ * Create a dmat from foreign data. Assumes the colstride of the data is
  * n_rows.
  *
  * @param n_rows Number of rows
@@ -275,7 +279,7 @@ static inline dmat dmat_foreign_data(us n_rows,
     return result;
 }
 /**
- * Create a cmat from foreign data. Assumes the stride of the data is
+ * Create a cmat from foreign data. Assumes the colstride of the data is
  * n_rows.
  *
  * @param n_rows Number of rows
@@ -302,7 +306,7 @@ static inline cmat cmat_foreign_data(us n_rows,
  * Creates a cmat from foreign data. Does not copy the data, but only
  * initializes the row pointers. Assumes column-major ordering for the
  * data. Please do not keep this one alive after the data has been
- * destroyed. Assumes the column stride equals to n_rows.
+ * destroyed. Assumes the column colstride equals to n_rows.
  *
  * @param n_rows
  * @param n_cols
@@ -315,7 +319,7 @@ static inline cmat cmat_foreign(cmat* other) {
     cmat result = {other->n_rows,
                    other->n_cols,
                    true,
-                   other->stride,
+                   other->colstride,
                    other->_data};
     return result;
 }
@@ -392,7 +396,7 @@ static inline dmat dmat_submat(const dmat* parent,
 
     dmat result = { n_rows,n_cols,
                     true,           // Foreign data = true
-                    parent->n_rows, // This is the stride to get to
+                    parent->n_rows, // This is the colstride to get to
                     // the next column.
                     getdmatval(parent,startrow,startcol)};
 
@@ -422,7 +426,7 @@ static inline cmat cmat_submat(cmat* parent,
 
     cmat result = { n_rows,n_cols,
                     true,           // Foreign data = true
-                    parent->n_rows, // This is the stride to get to
+                    parent->n_rows, // This is the colstride to get to
                     // the next column.
                     getcmatval(parent,startrow,startcol)};
 
@@ -497,7 +501,7 @@ static inline void vc_copy(vc* to,const vc* from) {
  * @return vector with reference to column
  */
 static inline vd dmat_column(dmat* x,us col) {
-    vd res = {x->n_rows,1,true,x->stride,getdmatval(x,0,col)};
+    vd res = {x->n_rows,1,true,x->colstride,getdmatval(x,0,col)};
     return res;
 }
 
@@ -510,7 +514,7 @@ static inline vd dmat_column(dmat* x,us col) {
  * @return vector with reference to column
  */
 static inline vc cmat_column(cmat* x,us col) {
-    vc res = {x->n_rows,1,true,x->stride,getcmatval(x,0,col)};
+    vc res = {x->n_rows,1,true,x->colstride,getcmatval(x,0,col)};
     return res;
 }
 

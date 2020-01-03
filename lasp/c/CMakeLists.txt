@@ -1,6 +1,5 @@
 if(!LASP_DEBUG)
-# SET_SOURCE_FILES_PROPERTIES(y.c PROPERTIES COMPILE_FLAGS -O3)
-# SET_SOURCE_FILES_PROPERTIES(x.c PROPERTIES COMPILE_FLAGS -O3)
+SET_SOURCE_FILES_PROPERTIES(lasp_sosfilterbank.c PROPERTIES COMPILE_FLAGS -O3)
 endif(!LASP_DEBUG)
 
 add_library(lasp_lib
@@ -19,7 +18,6 @@ add_library(lasp_lib
   lasp_dfifo.c
   lasp_firfilterbank.c
   lasp_sosfilterbank.c
-  # lasp_octave_fir.c
   lasp_decimation.c
   lasp_sp_lowpass.c
   )
