@@ -106,8 +106,7 @@ def C_fir_design():
 
 
 def show_Afir():
-    from asceefigs.plot import close, Figure
-    close('all')
+    from asceefig.plot import Figure
 
     fs = 48000.
     freq_design = np.linspace(0, 17e3, 3000)
@@ -133,8 +132,7 @@ def show_Afir():
 
 
 def show_Cfir():
-    from asceefigs.plot import close, Figure
-    close('all')
+    from asceefig.plot import Figure
 
     fs = 48000.
     freq_design = np.linspace(0, 17e3, 3000)

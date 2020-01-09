@@ -38,8 +38,6 @@ class lasp_shelve:
         if lasp_shelve.refcount == 0:
             lasp_shelve.shelve.close()
             lasp_shelve.shelve = None
-    
-
 
 # Reference sound pressure level
 P_REF = 2e-5
@@ -77,7 +75,6 @@ class Window:
     def getCurrent(cb):
         return Window.types[cb.currentIndex()]
 
-
 class TimeWeighting:
     none = (None, 'Raw (no time weighting)')
     uufast = (1e-4, '0.1 ms')
@@ -105,7 +102,6 @@ class TimeWeighting:
     def getCurrent(cb):
         return TimeWeighting.types[cb.currentIndex()]
 
-
 class FreqWeighting:
     """
     Frequency weighting types
@@ -132,7 +128,6 @@ class FreqWeighting:
     def getCurrent(cb):
         return FreqWeighting.types[cb.currentIndex()]
 
-
 def getTime(fs, N, start=0):
     """
     Return a time array for given number of points and sampling frequency.
@@ -144,7 +139,6 @@ def getTime(fs, N, start=0):
     """
     assert N > 0 and fs > 0
     return np.linspace(start, start + N/fs, N, endpoint=False)
-
 
 def getFreq(fs, nfft):
     """
