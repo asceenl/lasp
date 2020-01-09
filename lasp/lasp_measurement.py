@@ -315,6 +315,31 @@ class Measurement:
         """
         return self._sens
 
+    def checkOverflow(self):
+        """
+        Coarse check for overflow in measurement
+
+        Return:
+            True if overflow is possible, else False
+
+        """
+
+        with self.file() as f:
+            for block in self.iterBlocks(f):
+                dtype = block.dtype
+                print(dtype)
+                if dtype.kind == 'i':
+                    # if dtype in ['
+                    # minvalue = np.iinfo(dtype).min
+                    maxvalue = np.iinfo(dtype).max
+                    if np.max(np.abs(block)) > maxvalue / 2:
+                        return True
+                else:
+                    # Cannot check for floating point values.
+                    return False
+            return False
+
+
     @sensitivity.setter
     def sensitivity(self, sens):
         """
