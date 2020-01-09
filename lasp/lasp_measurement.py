@@ -327,12 +327,10 @@ class Measurement:
         with self.file() as f:
             for block in self.iterBlocks(f):
                 dtype = block.dtype
-                print(dtype)
                 if dtype.kind == 'i':
-                    # if dtype in ['
                     # minvalue = np.iinfo(dtype).min
                     maxvalue = np.iinfo(dtype).max
-                    if np.max(np.abs(block)) > maxvalue / 2:
+                    if np.max(np.abs(block)) >= 0.9*maxvalue:
                         return True
                 else:
                     # Cannot check for floating point values.
