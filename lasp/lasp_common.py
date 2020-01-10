@@ -82,9 +82,9 @@ class TimeWeighting:
     fast = (0.125, 'Fast (0.125 s)')
     slow = (1.0, 'Slow (1.0 s)')
     tens = (10, '10 s')
-    infinite = (np.Inf, 'Infinite')
+    infinite = (np.Inf, 'Infinite (Leq)')
     types = (none, uufast, ufast, fast, slow, tens, infinite)
-    default = 2
+    default = 3
 
     @staticmethod
     def fillComboBox(cb):

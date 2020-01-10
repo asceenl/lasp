@@ -30,7 +30,7 @@ class FilterBankDesigner:
             fs: Sampling frequency [Hz]
         """
         # Default FIR filter length
-        firFilterLength = 256  # Filter order
+        self.firFilterLength = 256  # Filter order
         self.fs = fs
 
         # Constant G, according to standard
@@ -99,8 +99,8 @@ class FilterBankDesigner:
         Returns:
             filter: 1D ndarray with FIR filter coefficients
         """
-        assert np.isclose(fs, self.fs), "Invalid sampling frequency"
-        fd = fs / np.prod(self.firDecimation(x))
+        assert np.isclose(self.fs, 48000), "Invalid sampling frequency"
+        fd = self.fs / np.prod(self.firDecimation(x))
 
         # For designing the filter, the lower and upper frequencies need to be
         # slightly adjusted to fall within the limits for a class 1 filter.

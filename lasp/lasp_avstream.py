@@ -60,6 +60,8 @@ class AvStream:
         # Determine highest input channel number
         channelconfigs = daqconfig.en_input_channels
 
+        self.channel_names = []
+
         self.sensitivity = self.daqconfig.getSensitivities()
 
         rtaudio_inputparams = None
@@ -79,6 +81,7 @@ class AvStream:
             for i, channelconfig in enumerate(channelconfigs):
                 if channelconfig.channel_enabled:
                     self.nchannels = i+1
+                    self.channel_names.append(channelconfig.channel_name)
             rtaudio_inputparams = {'deviceid': device.index,
                                    'nchannels': self.nchannels,
                                    'firstchannel': 0}

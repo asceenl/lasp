@@ -115,7 +115,7 @@ class FirFilterBank:
                     #  These are the filters that do not require lasp_decimation
                     #  prior to filtering
                     nominals_txt.append(self.designer.nominal_txt(x))
-                    firs[:, i] = self.designer.createFirFilter(fs, x)
+                    firs[:, i] = self.designer.createFirFilter(x)
                 filterbank = {'fb': pyxFilterBank(firs, 1024),
                               'xs': xs,
                               'nominals': nominals_txt}
@@ -203,7 +203,7 @@ class FirOctaveFilterBank(FirFilterBank):
     """
 
     def __init__(self, fs, xmin, xmax):
-        self.designer = OctaveBankDesigner()
+        self.designer = OctaveBankDesigner(fs)
         FirFilterBank.__init__(self, fs, xmin, xmax)
 
 
@@ -231,6 +231,7 @@ class SosFilterBank:
         self.fs = fs
         self.xs = list(range(xmin, xmax + 1))
         nfilt = len(self.xs)
+        self.nfilt = nfilt
         self._fb = pyxSosFilterBank(nfilt, 5)
         for i, x in enumerate(self.xs):
             sos = self.designer.createSOSFilter(x)
@@ -279,7 +280,7 @@ class SosThirdOctaveFilterBank(SosFilterBank):
     band.
     """
 
-    def __init__(self, fs, xmin, xmax):
+    def __init__(self, fs, xmin=None, xmax=None):
         """
         Initialize a second order sections filterbank.
 
@@ -289,6 +290,10 @@ class SosThirdOctaveFilterBank(SosFilterBank):
             xmax: Maximum value for the bands
         """
         self.designer = ThirdOctaveBankDesigner(fs)
+        if xmin is None:
+            xmin = self.designer.xs[0]
+        if xmax is None:
+            xmax = self.designer.xs[-1]
         SosFilterBank.__init__(self, fs, xmin, xmax)
 
 
@@ -298,16 +303,20 @@ class SosOctaveFilterBank(SosFilterBank):
     band.
     """
 
-    def __init__(self, fs, xmin, xmax):
+    def __init__(self, fs, xmin=None, xmax=None):
         """
         Initialize a second order sections filterbank.
 
         Args:
             fs: Sampling frequency [Hz]
-            xmin: Minimum value for the bands
-            xmax: Maximum value for the bands
+            xmin: Minimum value for the bands, if not specified, use minimum
+            xmax: Maximum value for the bands, if not specified, use maximum
         """
         self.designer = OctaveBankDesigner(fs)
+        if xmin is None:
+            xmin = self.designer.xs[0]
+        if xmax is None:
+            xmax = self.designer.xs[-1]
         SosFilterBank.__init__(self, fs, xmin, xmax)
 
 
