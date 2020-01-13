@@ -40,7 +40,7 @@ class FilterBankDesigner:
         self.fr = 1000.
 
     def testStandardCompliance(self, x, freq, h_dB, filter_class=0):
-        """Test whether the filter with given frequency response is compliant 
+        """Test whether the filter with given frequency response is compliant
         with the standard.
 
         Args:
@@ -52,7 +52,6 @@ class FilterBankDesigner:
 
         Returns:
             True if filter is norm-compliant, False if not
-        
         """
         # Skip zero-frequency
         if np.isclose(freq[0], 0):
@@ -62,7 +61,8 @@ class FilterBankDesigner:
 
         # Interpolate limites to frequency array as given
         llim_full = np.interp(freq, freqlim, llim, left=-np.inf, right=-np.inf)
-        ulim_full = np.interp(freq, freqlim, ulim, left=ulim[0], right=ulim[-1])
+        ulim_full = np.interp(freq, freqlim, ulim,
+                              left=ulim[0], right=ulim[-1])
 
         return bool(np.all(llim_full <= h_dB) and
                     np.all(ulim_full >= h_dB))
@@ -161,6 +161,66 @@ class FilterBankDesigner:
         raise ValueError(
             f'Could not find an x-value corresponding to {nom_txt}.')
 
+    def getxs(self, nom_txt_start, nom_txt_end):
+        """Returns a list of all filter designators, for given start end end
+        nominal frequencies.
+
+        Args:
+            nom_txt_start: Start frequency band, i.e. '31.5'
+            nom_txt_end: End frequency band, i.e. '10k'
+
+        Returns:
+            [x0, x1, ..]
+        """
+        xstart = self.nominal_txt_tox(nom_txt_start)
+        xend = self.nominal_txt_tox(nom_txt_end)
+        return list(range(xstart, xend+1))
+
+    def getNarrowBandFromOctaveBand(self, xl, xu,
+                                    levels_in_bands, npoints=500):
+        """Create a narrow band spectrum based on a spectrum in (fractional) 
+        octave bands. The result is create such that the total energy in each
+        frequency band is constant. The latter can be checked by working it
+        back to (fractional) octave bands, which is doen using the function
+        `getOctaveBandsFromNarrowBand`. Note that the resulting narrow band has
+        units of *power*, not power spectral density. Input should be levels in
+        **deciBells**.
+
+        Args:
+            xl: Band designator of lowest band
+            xu: Band designator of highest band
+            levels_in_bands: levels in dB for each band, should have length
+            (xu+1 - xl)
+            npoints: Number of discrete frequency points in linear frequency
+            array.
+
+        Returns:
+            freq, levels_dB. Where levels_dB is an array of narrow band levels
+        """
+        # Lowest frequency of all frequencies
+        fll = self.fl(xl)
+        # Highest frequency of all frequencies
+        fuu = self.fu(xu)
+
+        freq = np.linspace(fll, fuu, npoints)
+        levels_narrow = np.empty_like(freq)
+        for i, x in enumerate(range(xl, xu + 1)):
+            fl = self.fl(x)
+            fu = self.fu(x)
+            # Find the indices in the frequency array which correspond to the 
+            # frequency band x
+            if x != xu:
+                indices_cur = np.where((freq >= fl) & (freq < fu))
+            else:
+                indices_cur = np.where((freq >= fl) & (freq <= fu))
+
+            power_cur = 10**(levels_in_bands[i] / 10)
+            power_narrow = power_cur / indices_cur[0].size
+            level_narrow = 10*np.log10(power_narrow)
+            levels_narrow[indices_cur] = level_narrow
+
+        return freq, levels_narrow
+
 
 class OctaveBankDesigner(FilterBankDesigner):
     """Octave band filter designer."""
@@ -204,9 +264,11 @@ class OctaveBankDesigner(FilterBankDesigner):
         mininf = -1e300
 
         if filter_class == 1:
-            lower_limits_pos = [-0.3, -0.4, -0.6, -1.3, -5.0, -5.0] + 4*[mininf]
+            lower_limits_pos = [-0.3, -0.4, -
+                                0.6, -1.3, -5.0, -5.0] + 4*[mininf]
         elif filter_class == 0:
-            lower_limits_pos = [-0.15, -0.2, -0.4, -1.1, -4.5, -4.5] + 4*[mininf]
+            lower_limits_pos = [-0.15, -0.2, -
+                                0.4, -1.1, -4.5, -4.5] + 4*[mininf]
         lower_limits_neg = lower_limits_pos[:]
         lower_limits_neg.reverse()
         lower_limits = np.asarray(lower_limits_neg[:-1] + lower_limits_pos)
@@ -222,7 +284,6 @@ class OctaveBankDesigner(FilterBankDesigner):
         freqs = fm*self.G**np.asarray(G_power_values)
 
         return freqs, lower_limits, upper_limits
-
 
     def nominal_txt(self, x):
         """Returns textual repressentation of corresponding to the nominal
