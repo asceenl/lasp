@@ -24,16 +24,23 @@ typedef struct Siggen {
     SignalType signaltype;
     d fs; // Sampling frequency [Hz]
     d level_amp;
-    void* private;
-
     char private_data[PRIVATE_SIZE];
-
 } Siggen;
 
 typedef struct { 
     d curtime;
     d omg;
 } SinewaveSpecific;
+
+typedef struct { 
+    d fl;
+    d fu;
+    d Ts;
+    d phase;
+    d tau;
+    bool pos;
+    us flags;
+} SweepSpecific;
 
 typedef struct {
     d V1, V2, S;
@@ -51,7 +58,6 @@ Siggen* Siggen_create(SignalType type, const d fs,const d level_dB) {
     Siggen* siggen = a_malloc(sizeof(Siggen));
     siggen->signaltype = type;
     siggen->fs = fs;
-    siggen->private = NULL;
     siggen->level_amp = level_amp(level_dB);
 
     feTRACE(15);
@@ -61,23 +67,24 @@ Siggen* Siggen_create(SignalType type, const d fs,const d level_dB) {
 Siggen* Siggen_Sinewave_create(const d fs, const d freq,const d level_dB) {
     fsTRACE(15);
 
-    Siggen* sinesiggen = Siggen_create(SINEWAVE, fs, level_dB);
-    sinesiggen->private = sinesiggen->private_data;
-    SinewaveSpecific* sp = (SinewaveSpecific*) sinesiggen->private;
+    Siggen* sine = Siggen_create(SINEWAVE, fs, level_dB);
+    dbgassert(sizeof(SinewaveSpecific) <= sizeof(sine->private_data),
+            "Allocated memory too small");
+    SinewaveSpecific* sp = (SinewaveSpecific*) sine->private_data;
     sp->curtime = 0;
     sp->omg = 2*number_pi*freq;
 
     feTRACE(15);
-    return sinesiggen;
+    return sine;
 }
 
 Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB) {
     fsTRACE(15);
 
     Siggen* whitenoise = Siggen_create(WHITENOISE, fs, level_dB);
-    whitenoise->private = whitenoise->private_data;
-    dbgassert(sizeof(WhitenoiseSpecific) <= sizeof(whitenoise->private_data), "Allocated memory too small");
-    WhitenoiseSpecific* wn = whitenoise->private;
+    dbgassert(sizeof(WhitenoiseSpecific) <= sizeof(whitenoise->private_data),
+            "Allocated memory too small");
+    WhitenoiseSpecific* wn = (WhitenoiseSpecific*) whitenoise->private_data;
     wn->phase = 0;
     wn->V1 = 0;
     wn->V2 = 0;
@@ -87,12 +94,50 @@ Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB) {
     return whitenoise;
 }
 
+
+Siggen* Siggen_Sweep_create(const d fs,const d fl,const d fu,
+        const d Ts, const us flags, const d level_dB) {
+    fsTRACE(15);
+
+    Siggen* sweep = Siggen_create(SWEEP, fs, level_dB);
+    dbgassert(sizeof(SweepSpecific) <= sizeof(sweep->private_data), 
+            "Allocated memory too small");
+    // Set pointer to inplace data storage
+    SweepSpecific* sp = (SweepSpecific*) sweep->private_data;
+    if(fl < 0 || fu < 0 || Ts <= 0) {
+        return NULL;
+    }
+
+    sp->flags = flags;
+
+    sp->fl = fl;
+    sp->fu = fu;
+    sp->Ts = Ts;
+    sp->phase = 0;
+    sp->pos = flags & SWEEP_FLAG_BACKWARD ? false: true;
+    if(flags & SWEEP_FLAG_BACKWARD) {
+        sp->tau = Ts;
+    } else {
+        sp->tau = 0;
+    }
+    /* sp->pos = false; */
+    /* sp->tau = Ts/2; */
+
+    feTRACE(15);
+    return sweep;
+}
+
 void Siggen_free(Siggen* siggen) {
     fsTRACE(15);
     assertvalidptr(siggen);
 
-    if(siggen->signaltype == SWEEP) {
-        /* Sweep specific stuff here */
+    switch(siggen->signaltype) {
+        case SWEEP:
+            /* Sweep specific stuff here */
+            break;
+        case SINEWAVE:
+            /* Sweep specific stuff here */
+            break;
     }
 
     a_free(siggen);
@@ -111,6 +156,81 @@ static void Sinewave_genSignal(Siggen* siggen, SinewaveSpecific* sine, vd* sampl
         curtime = curtime + ts;
     }
     sine->curtime = curtime;
+    feTRACE(15);
+}
+
+static void Sweep_genSignal(Siggen* siggen, SweepSpecific* sweep,
+        vd* samples) {
+    fsTRACE(15);
+    assertvalidptr(sweep);
+
+    const d fl = sweep->fl;
+    const d fu = sweep->fu;
+    const d deltat = 1/siggen->fs;
+    const d Ts = sweep->Ts;
+
+    const d Thalf = Ts/2;
+
+    dVARTRACE(20, deltat);
+
+    // Load state
+    d tau = sweep->tau;
+    bool pos = sweep->pos;
+
+    // Obtain flags and expand
+    us flags = sweep->flags;
+    bool forward_sweep = flags & SWEEP_FLAG_FORWARD;
+    bool backward_sweep = flags & SWEEP_FLAG_BACKWARD;
+    dbgassert(!(forward_sweep && backward_sweep), "Both forward and backward flag set");
+    
+    d k, Treverse;
+    if(forward_sweep || backward_sweep) {
+        k = (fu - fl)/Ts;
+        Treverse = Ts;
+    }
+    else {
+        k = (fu - fl)/Thalf;
+        Treverse = Ts/2;
+    }
+
+
+    /* const d k = 0; */
+
+    d phase = sweep->phase;
+    d curfreq;
+    for(us i =0; i< samples->n_rows; i++) {
+
+        curfreq = fl + k*tau;
+        phase = phase + 2*number_pi*curfreq*deltat;
+
+        // Subtract some to avoid possible overflow. Don't know whether such a
+        // thing really happens
+        if(phase > 2*number_pi)
+            phase = phase - 2*number_pi;
+
+        if(pos) {
+            tau = tau + deltat;
+            if(tau >= Treverse) { 
+                if(forward_sweep) { tau = 0; }
+                else if(backward_sweep) { dbgassert(false, "BUG"); }
+                else { pos = false; }
+            }
+
+        } else {
+            /* dbgassert(false, "cannot get here"); */
+            tau = tau - deltat;
+            if(tau <= 0) { 
+                if(backward_sweep) { tau = Treverse; }
+                else if(forward_sweep) { dbgassert(false, "BUG"); }
+                else { pos = true; }
+            }
+        }
+        setvecval(samples, i, siggen->level_amp*d_sin(phase));
+    }
+    // Store state
+    sweep->phase = phase;
+    sweep->pos = pos;
+    sweep->tau = tau;
     feTRACE(15);
 }
 
@@ -155,19 +275,23 @@ void Siggen_genSignal(Siggen* siggen,vd* samples) {
     fsTRACE(15);
     assertvalidptr(siggen);
     assert_vx(samples);
-    d fs = siggen->fs;
 
     switch(siggen->signaltype) {
         case SINEWAVE:
-            Sinewave_genSignal(siggen, (SinewaveSpecific*) siggen->private, 
+            Sinewave_genSignal(siggen,
+                    (SinewaveSpecific*) siggen->private_data,
                     samples);
 
             break;
         case WHITENOISE:
-            Whitenoise_genSignal(siggen, (WhitenoiseSpecific*) siggen->private,
+            Whitenoise_genSignal(siggen,
+                    (WhitenoiseSpecific*) siggen->private_data,
                     samples);
             break;
         case SWEEP:
+            Sweep_genSignal(siggen,
+                    (SweepSpecific*) siggen->private_data,
+                    samples);
             break;
         default:
             dbgassert(false, "Not implementend signal type");

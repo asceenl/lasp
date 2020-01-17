@@ -1,4 +1,4 @@
-#define TRACERPLUS 10
+#define TRACERPLUS (-5)
 #include "lasp_sosfilterbank.h"
 
 

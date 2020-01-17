@@ -37,8 +37,30 @@ Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB);
  */
 Siggen* Siggen_Pinknoise_create(const us fs,const d level_dB);
 
-/* Siggen* Siggen_ForwardSweep_create(const d fs,; */
-/* Siggen* Siggen_(const d fs,; */
+// Define this flag to repeat a forward sweep only, or backward only. If not
+// set, we do a continuous sweep
+#define SWEEP_FLAG_FORWARD      1
+#define SWEEP_FLAG_BACKWARD     2
+
+// Types of sweeps
+#define SWEEP_FLAG_LINEAR       4
+#define SWEEP_FLAG_EXPONENTIAL  8
+#define SWEEP_FLAG_HYPERBOLIC  16
+
+/**
+ * Create a forward sweep
+ * 
+ * @param[in] fs: Sampling frequency [Hz]
+ * @param[in] fl: Lower frequency [Hz]
+ * @param[in] fl: Upper frequency [Hz]
+ * @param[in] Ts: Sweep period [s]
+ * @param[in] sweep_flags: Sweep period [s]
+ * @param[in] level: Relative level in [dB], should be between -inf and 0
+ * @return Siggen* handle
+ */
+Siggen* Siggen_Sweep_create(const d fs,const d fl,const d fu,
+                            const d Ts, const us sweep_flags,
+                            const d level);
 
 /**
  * Obtain a new piece of signal
