@@ -65,7 +65,9 @@ cdef extern from "numpy/arrayobject.h":
 cdef extern from "lasp_python.h":
     object dmat_to_ndarray(dmat*,bint transfer_ownership)
 
-__all__ = ['AvPowerSpectra', 'SosFilterBank', 'FilterBank']
+__all__ = ['AvPowerSpectra', 'SosFilterBank', 'FilterBank', 'Siggen',
+           'sweep_flag_forward', 'sweep_flag_backward', 'sweep_flag_linear',
+           'sweep_flag_exponential', 'sweep_flag_hyperbolic']
 
 setTracerLevel(15)
 cdef extern from "cblas.h":
@@ -523,13 +525,27 @@ cdef class SPLowpass:
 
 cdef extern from "lasp_siggen.h":
     ctypedef struct c_Siggen "Siggen"
+    us SWEEP_FLAG_FORWARD, SWEEP_FLAG_BACKWARD, SWEEP_FLAG_LINEAR
+    us SWEEP_FLAG_EXPONENTIAL,SWEEP_FLAG_HYPERBOLIC
+
     c_Siggen* Siggen_Whitenoise_create(d fs, d level_dB)
     c_Siggen* Siggen_Sinewave_create(d fs, d freq, d level_dB)
+    c_Siggen* Siggen_Sweep_create(d fs, d fl,
+                                  d fu, d Ts,us sweep_flags,
+                                  d level_dB)
     void Siggen_genSignal(c_Siggen*, vd* samples) nogil
     void Siggen_free(c_Siggen*)
 
+# Sweep flags
+sweep_flag_forward = SWEEP_FLAG_FORWARD
+sweep_flag_backward = SWEEP_FLAG_BACKWARD
+
+sweep_flag_linear = SWEEP_FLAG_LINEAR
+sweep_flag_exponential = SWEEP_FLAG_EXPONENTIAL
+sweep_flag_hyperbolic = SWEEP_FLAG_HYPERBOLIC
 
 cdef class Siggen:
+
     cdef c_Siggen *_siggen
 
     def __cinit__(self):
@@ -567,6 +583,20 @@ cdef class Siggen:
     @staticmethod
     def whiteNoise(d fs, d level_dB):
         cdef c_Siggen* c_siggen = Siggen_Whitenoise_create(fs, level_dB)
+        siggen = Siggen()
+        siggen._siggen = c_siggen
+        return siggen
+
+    @staticmethod
+    def sweep(d fs, d fl, d fu, d Ts,us sweep_flags, d level_dB):
+        cdef c_Siggen* c_siggen = Siggen_Sweep_create(fs,
+                                                      fl,
+                                                      fu,
+                                                      Ts,
+                                                      sweep_flags,
+                                                      level_dB)
+        if c_siggen == NULL:
+            raise ValueError('Failed creating signal generator')
         siggen = Siggen()
         siggen._siggen = c_siggen
         return siggen
