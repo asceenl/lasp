@@ -177,8 +177,10 @@ class FilterBankDesigner:
         return list(range(xstart, xend+1))
 
     def getNarrowBandFromOctaveBand(self, xl, xu,
-                                    levels_in_bands, npoints=500):
-        """Create a narrow band spectrum based on a spectrum in (fractional) 
+                                    levels_in_bands, npoints=500,
+                                    method='flat',
+                                    scale='lin'):
+        """Create a narrow band spectrum based on a spectrum in (fractional)
         octave bands. The result is create such that the total energy in each
         frequency band is constant. The latter can be checked by working it
         back to (fractional) octave bands, which is doen using the function
@@ -193,6 +195,11 @@ class FilterBankDesigner:
             (xu+1 - xl)
             npoints: Number of discrete frequency points in linear frequency
             array.
+            method: 'flat' to give the same power for all frequencies in a
+            certain band.
+            scale: 'lin' for a linear frequency distribution. 'log' for a
+            logspace. Use 'log' with caution and only if you really know what
+            you are doing!'
 
         Returns:
             freq, levels_dB. Where levels_dB is an array of narrow band levels
@@ -202,24 +209,79 @@ class FilterBankDesigner:
         # Highest frequency of all frequencies
         fuu = self.fu(xu)
 
-        freq = np.linspace(fll, fuu, npoints)
+        if scale == 'lin':
+            freq = np.linspace(fll, fuu, npoints)
+        elif scale == 'log':
+            freq = np.logspace(np.log10(fll), np.log10(fuu), npoints)
+        else:
+            raise ValueError(f'Invalid scale parameter: {scale}')
+
         levels_narrow = np.empty_like(freq)
-        for i, x in enumerate(range(xl, xu + 1)):
+
+        if method == 'flat':
+            for i, x in enumerate(range(xl, xu + 1)):
+                fl = self.fl(x)
+                fu = self.fu(x)
+                # Find the indices in the frequency array which correspond to the
+                # frequency band x
+                if x != xu:
+                    indices_cur = np.where((freq >= fl) & (freq < fu))
+                else:
+                    indices_cur = np.where((freq >= fl) & (freq <= fu))
+
+                power_cur = 10**(levels_in_bands[i] / 10)
+                power_narrow = power_cur / indices_cur[0].size
+                level_narrow = 10*np.log10(power_narrow)
+                levels_narrow[indices_cur] = level_narrow
+
+            return freq, levels_narrow
+        else:
+            raise ValueError('Unimplemented interpolation method')
+
+    def getOctaveBandFromNarrowBand(self, freq, levels_narrow):
+        """Put all level results in a certain frequency band (`binning`), by
+        summing up the power.
+
+        Args:
+            freq: Narrow-band frequency array
+            levels_narrow: Narrow band power levels, should be power, not *PSD*
+
+        Returns:
+            (fm, levels_binned, nom_txt)
+        """
+        # Find lower frequency xl
+        for x in self.xs:
+            xl = x
+            fl = self.fl(x)
+            if self.fl(x+1) > freq[0]:
+                break
+
+        # Find upper frequency xu
+        for x in self.xs:
+            xu = x
+            fu = self.fu(xu)
+            if fu >= freq[-1]:
+                break
+
+        freq_in_bands = []
+        levels_in_bands = []
+        nom_txt = []
+
+        for x in range(xl, xu+1):
             fl = self.fl(x)
             fu = self.fu(x)
-            # Find the indices in the frequency array which correspond to the 
-            # frequency band x
             if x != xu:
                 indices_cur = np.where((freq >= fl) & (freq < fu))
             else:
                 indices_cur = np.where((freq >= fl) & (freq <= fu))
 
-            power_cur = 10**(levels_in_bands[i] / 10)
-            power_narrow = power_cur / indices_cur[0].size
-            level_narrow = 10*np.log10(power_narrow)
-            levels_narrow[indices_cur] = level_narrow
+            power_cur = np.sum(10**(levels_narrow[indices_cur] / 10))
+            levels_in_bands.append(10*np.log10(power_cur))
 
-        return freq, levels_narrow
+            nom_txt.append(self.nominal_txt(x))
+            freq_in_bands.append(self.fm(x))
+
+        return np.array(freq_in_bands), np.array(levels_in_bands), nom_txt
 
 
 class OctaveBankDesigner(FilterBankDesigner):
