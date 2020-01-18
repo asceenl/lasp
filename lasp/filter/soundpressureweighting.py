@@ -136,57 +136,29 @@ class SPLFilterDesigner:
         z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
         sos = zpk2sos(z, p, k)
         return sos
-        # return z, p, k
-        # return zeros_analog, poles_analog, k_analog
 
-def show_Afir():
-    from asceefig.plot import Figure
+    def A_Sos_design(self, fs):
+        """
+        Create filter coefficients of the A-weighting filter. Uses the bilinear
+        transform to convert the analog filter to a digital one.
 
-    fs = 48000.
-    freq_design = np.linspace(0, 17e3, 3000)
-    freq_design[-1] = fs/2
-    amp_design = A(freq_design)
-    amp_design[-1] = 0.
-    firs = []
+        Args:
+            fs: Sampling frequency [Hz]
 
-    # firs.append(arbitrary_fir_design(fs,L,freq_design,amp_design,window='hamming'))
-    # firs.append(arbitrary_fir_design(fs,L,freq_design,amp_design,window='hann'))
-    firs.append(A_fir_design())
-    # from scipy.signal import iirdesign
-    # b,a = iirdesign()
-    freq_check = np.logspace(0, np.log10(fs/2), 5000)
-    f = Figure()
+        Returns:
+            Sos: Second order sections
+        """
+        # Poles of A-filter 
+        p1 = 2*np.pi*self.f1
+        p2 = 2*np.pi*self.f2
+        p3 = 2*np.pi*self.f3
+        p4 = 2*np.pi*self.f4
 
-    f.semilogx(freq_check, 20*np.log10(A(freq_check)))
-    for fir in firs:
-        H = freqResponse(fs, freq_check, fir)
-        f.plot(freq_check, 20*np.log10(np.abs(H)))
+        zeros_analog = [0,0,0,0]
+        poles_analog = [p1, p1, p2, p3, p4, p4]
+        k_analog = p4**2/self._A_uncor(self.fr)
 
-    f.fig.get_axes()[0].set_ylim(-75, 3)
-
-
-def show_Cfir():
-    from asceefig.plot import Figure
-
-    fs = 48000.
-    freq_design = np.linspace(0, 17e3, 3000)
-    freq_design[-1] = fs/2
-    amp_design = C(freq_design)
-    amp_design[-1] = 0.
-    firs = []
-
-    # firs.append(arbitrary_fir_design(fs,L,freq_design,amp_design,window='hamming'))
-    # firs.append(arbitrary_fir_design(fs,L,freq_design,amp_design,window='hann'))
-    firs.append(C_fir_design())
-    # from scipy.signal import iirdesign
-    # b,a = iirdesign()
-    freq_check = np.logspace(0, np.log10(fs/2), 5000)
-    f = Figure()
-
-    f.semilogx(freq_check, 20*np.log10(C(freq_check)))
-    for fir in firs:
-        H = freqResponse(fs, freq_check, fir)
-        f.plot(freq_check, 20*np.log10(np.abs(H)))
-
-    f.fig.get_axes()[0].set_ylim(-30, 1)
+        z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
+        sos = zpk2sos(z, p, k)
+        return sos
 
