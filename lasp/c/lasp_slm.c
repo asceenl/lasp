@@ -118,6 +118,7 @@ dmat Slm_run(Slm *slm, vd *input_data) {
 
     for (us ch = 0; ch < bandpassed.n_cols; ch++) {
         iVARTRACE(15, ch);
+        cur_offset = slm->cur_offset;
         /// Inplace squaring of the signal
         for (us sample = 0; sample < bandpassed.n_rows; sample++) {
             tmp = getdmatval(&bandpassed, sample, ch);
@@ -147,11 +148,11 @@ dmat Slm_run(Slm *slm, vd *input_data) {
         iVARTRACE(15, cur_offset);
         iVARTRACE(15, i);
         dbgassert(i == nsamples_output, "BUG");
-        slm->cur_offset = cur_offset - samples_bandpassed;
 
         vd_free(&chan);
         vd_free(&power_filtered);
     }
+    slm->cur_offset = cur_offset - samples_bandpassed;
 
     vd_free(&prefiltered);
     dmat_free(&bandpassed);
