@@ -73,6 +73,9 @@ class FilterBankDesigner:
         Args:
             x: Midband designator
         """
+        if type(x) == list:
+            x = np.asarray(x)
+
         # Exact midband frequency
         return self.G**(x/self.b)*self.fr
 
