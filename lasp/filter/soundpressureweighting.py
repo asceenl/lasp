@@ -33,6 +33,14 @@ class SPLFilterDesigner:
     f4 = np.sqrt((-b+np.sqrt(b**2-4*c))/2)
     f4sq = f4**2
 
+    def __init__(self, fs):
+        """Initialize a filter bank designer.
+
+        Args:
+            fs: Sampling frequency [Hz]
+        """
+        self.fs = fs
+
     def _A_uncor(self, f):
         """
         Computes the uncorrected frequency response of the A-filter
@@ -88,7 +96,9 @@ class SPLFilterDesigner:
         return Cuncor/C1000
 
 
-    def A_fir_design(self, fs):
+    def A_fir_design(self):
+
+        fs = self.fs
 
         assert int(fs) == 48000
         freq_design = np.linspace(0, 17e3, 3000)
@@ -102,7 +112,8 @@ class SPLFilterDesigner:
         return fir
 
 
-    def C_fir_design(self, fs):
+    def C_fir_design(self):
+        fs = self.fs
         assert int(fs) == 48000
         fs = 48000.
         freq_design = np.linspace(0, 17e3, 3000)
@@ -115,18 +126,15 @@ class SPLFilterDesigner:
                                    window='rectangular')
         return fir
 
-    def C_Sos_design(self, fs):
+    def C_Sos_design(self):
         """
         Create filter coefficients of the C-weighting filter. Uses the bilinear
         transform to convert the analog filter to a digital one.
 
-        Args:
-            fs: Sampling frequency [Hz]
-
         Returns:
             Sos: Second order sections
         """
-        
+        fs = self.fs 
         p1 = 2*np.pi*self.f1
         p4 = 2*np.pi*self.f4
         zeros_analog = [0,0]
@@ -136,8 +144,28 @@ class SPLFilterDesigner:
         z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
         sos = zpk2sos(z, p, k)
         return sos
-        # return z, p, k
-        # return zeros_analog, poles_analog, k_analog
+
+    def A_Sos_design(self):
+        """
+        Create filter coefficients of the A-weighting filter. Uses the bilinear
+        transform to convert the analog filter to a digital one.
+
+        Returns:
+            Sos: Second order sections
+        """
+        fs = self.fs 
+        p1 = 2*np.pi*self.f1
+        p2 = 2*np.pi*self.f2
+        p3 = 2*np.pi*self.f3
+        p4 = 2*np.pi*self.f4
+        zeros_analog = [0,0,0,0]
+        poles_analog = [p1,p1, p2,p3,p4, p4]
+        k_analog = p4**2/self._A_uncor(self.fr)
+
+        z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
+        sos = zpk2sos(z, p, k)
+        return sos
+
 
 def show_Afir():
     from asceefig.plot import Figure
