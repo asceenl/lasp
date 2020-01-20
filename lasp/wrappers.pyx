@@ -456,7 +456,7 @@ cdef extern from "lasp_decimation.h":
     void Decimator_free(c_Decimator* dec) nogil
 
 
-cdef extern from "lasp_slm.h":
+cdef extern from "lasp_slm.h" nogil:
     ctypedef struct c_Slm "Slm"
     d TAU_FAST, TAU_SLOW, TAU_IMPULSE
     c_Slm* Slm_create(c_Sosfilterbank* prefilter,
@@ -476,21 +476,28 @@ cdef class Slm:
        c_Slm* c_slm 
        us downsampling_fac
 
-    def __cinit__(self, d[:, ::1] sos_prefilter,
+    def __cinit__(self, d[::1] sos_prefilter,
                         d[:, ::1] sos_bandpass,
                         d fs, d tau, d ref_level):
 
         cdef:
-            us prefilter_nsections = sos_prefilter.shape[1] // 6
+            us prefilter_nsections = sos_prefilter.size // 6
             us bandpass_nsections = sos_bandpass.shape[1] // 6
             us bandpass_nchannels = sos_bandpass.shape[0]
             c_Sosfilterbank* prefilter = NULL
             c_Sosfilterbank* bandpass = NULL
-        
+            vd coefs_vd
+            d[:] coefs
+        assert sos_prefilter.size % 6 == 0
+        assert sos_bandpass.shape[1] % 6 == 0
+
         if sos_prefilter is not None:
-            if sos_prefilter.shape[0] != 1:
-                raise ValueError('Prefilter should have only one channel')
             prefilter = Sosfilterbank_create(1,prefilter_nsections)
+            coefs = sos_prefilter
+            coefs_vd = dmat_foreign_data(prefilter_nsections*6,1,
+                                         &coefs[0],False)
+            Sosfilterbank_setFilter(prefilter, 0, coefs_vd)
+
             if prefilter is NULL:
                 raise RuntimeError('Error creating pre-filter')
 
@@ -501,6 +508,14 @@ cdef class Slm:
                 if prefilter:
                     Sosfilterbank_free(prefilter)
                 raise RuntimeError('Error creating bandpass filter')
+
+
+            for i in range(bandpass_nchannels):
+                coefs = sos_bandpass[i, :]
+                coefs_vd = dmat_foreign_data(bandpass_nsections*6,1,
+                                             &coefs[0],False)
+
+                Sosfilterbank_setFilter(bandpass, i, coefs_vd)
 
         self.c_slm = Slm_create(prefilter, bandpass,
                                 fs, tau, ref_level,
@@ -513,7 +528,9 @@ cdef class Slm:
     def run(self, d[::1] data):
         cdef vd data_vd = dmat_foreign_data(data.shape[0], 1,
                                       &data[0], False)
-        cdef dmat res = Slm_run(self.c_slm, &data_vd)
+        cdef dmat res
+        with nogil:
+            res = Slm_run(self.c_slm, &data_vd)
         result = dmat_to_ndarray(&res,True)
         return result
         
