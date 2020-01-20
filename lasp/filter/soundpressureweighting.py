@@ -138,7 +138,7 @@ class SPLFilterDesigner:
         p1 = 2*np.pi*self.f1
         p4 = 2*np.pi*self.f4
         zeros_analog = [0,0]
-        poles_analog = [p1, p1, p4, p4]
+        poles_analog = [-p1, -p1, -p4, -p4]
         k_analog = p4**2/self._C_uncor(self.fr)
 
         z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
@@ -159,7 +159,7 @@ class SPLFilterDesigner:
         p3 = 2*np.pi*self.f3
         p4 = 2*np.pi*self.f4
         zeros_analog = [0,0,0,0]
-        poles_analog = [p1,p1, p2,p3,p4, p4]
+        poles_analog = [-p1,-p1,-p2,-p3,-p4,-p4]
         k_analog = p4**2/self._A_uncor(self.fr)
 
         z, p, k = bilinear_zpk(zeros_analog, poles_analog, k_analog, fs)
