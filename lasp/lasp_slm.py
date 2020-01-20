@@ -4,7 +4,7 @@
 Sound level meter implementation
 @author: J.A. de Jong - ASCEE
 """
-from .wrappers import SPLowpass
+from .wrappers import Slm as pyxSlm
 import numpy as np
 from .lasp_common import (TimeWeighting, P_REF)
 
@@ -24,11 +24,11 @@ class SLM:
     """
     Multi-channel Sound Level Meter. Input data: time data with a certain
     sampling frequency. Output: time-weighted (fast/slow) sound pressure
-    levels in dB(A/C/Z).
+    levels in dB(A/C/Z). Possibly in octave bands.
 
     """
 
-    def __init__(self, fs, tw=TimeWeighting.default):
+    def __init__(self, fs, tw=TimeWeighting.default, ):
         """
         Initialize a sound level meter object.
         Number of channels comes from the weighcal object.

@@ -33,6 +33,7 @@
 #define d_sin sin
 #define d_cos cos
 #define d_pow pow
+#define d_log10 log10
 
 #else  // LASP_DOUBLE_PRECISION not defined
 #define c_conj conjf
@@ -47,7 +48,7 @@
 #define d_sin sinf
 #define d_cos cosf
 #define d_pow powf
-
+#define d_log10 log10f
 #endif // LASP_DOUBLE_PRECISION
 
 #ifdef M_PI

@@ -455,6 +455,76 @@ cdef extern from "lasp_decimation.h":
     dmat Decimator_decimate(c_Decimator* dec,const dmat* samples) nogil
     void Decimator_free(c_Decimator* dec) nogil
 
+
+cdef extern from "lasp_slm.h":
+    ctypedef struct c_Slm "Slm"
+    d TAU_FAST, TAU_SLOW, TAU_IMPULSE
+    c_Slm* Slm_create(c_Sosfilterbank* prefilter,
+                    c_Sosfilterbank* bandpass,
+                    d fs, d tau, d ref_level,
+                    us* downsampling_fac)
+    dmat Slm_run(c_Slm* slm,vd* input_data)
+    void Slm_free(c_Slm* slm)
+
+
+tau_fast = TAU_FAST
+tau_slow = TAU_SLOW
+tau_impulse = TAU_IMPULSE
+
+cdef class Slm:
+    cdef:
+       c_Slm* c_slm 
+       us downsampling_fac
+
+    def __cinit__(self, d[:, ::1] sos_prefilter,
+                        d[:, ::1] sos_bandpass,
+                        d fs, d tau, d ref_level):
+
+        cdef:
+            us prefilter_nsections = sos_prefilter.shape[1] // 6
+            us bandpass_nsections = sos_bandpass.shape[1] // 6
+            us bandpass_nchannels = sos_bandpass.shape[0]
+            c_Sosfilterbank* prefilter = NULL
+            c_Sosfilterbank* bandpass = NULL
+        
+        if sos_prefilter is not None:
+            if sos_prefilter.shape[0] != 1:
+                raise ValueError('Prefilter should have only one channel')
+            prefilter = Sosfilterbank_create(1,prefilter_nsections)
+            if prefilter is NULL:
+                raise RuntimeError('Error creating pre-filter')
+
+        if sos_bandpass is not None:
+            bandpass =  Sosfilterbank_create(bandpass_nchannels,
+                                             bandpass_nsections)
+            if bandpass == NULL:
+                if prefilter:
+                    Sosfilterbank_free(prefilter)
+                raise RuntimeError('Error creating bandpass filter')
+
+        self.c_slm = Slm_create(prefilter, bandpass,
+                                fs, tau, ref_level,
+                                &self.downsampling_fac)
+        if self.c_slm is NULL:
+            Sosfilterbank_free(prefilter)
+            Sosfilterbank_free(bandpass)
+            raise RuntimeError('Error creating sound level meter')
+
+    def run(self, d[::1] data):
+        cdef vd data_vd = dmat_foreign_data(data.shape[0], 1,
+                                      &data[0], False)
+        cdef dmat res = Slm_run(self.c_slm, &data_vd)
+        result = dmat_to_ndarray(&res,True)
+        return result
+        
+
+    def __dealloc__(self):
+        if self.c_slm:
+            Slm_free(self.c_slm)
+
+
+
+
 cdef class Decimator:
     cdef:
         c_Decimator* dec

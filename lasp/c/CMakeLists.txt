@@ -19,7 +19,7 @@ add_library(lasp_lib
   lasp_firfilterbank.c
   lasp_sosfilterbank.c
   lasp_decimation.c
-  lasp_sp_lowpass.c
+  lasp_slm.c
   )
 
 
