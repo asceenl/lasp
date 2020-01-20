@@ -73,6 +73,8 @@ void Sosfilterbank_setFilter(Sosfilterbank* fb,const us filter_no,
     fsTRACE(15);
     assertvalidptr(fb);
     assert_vx(&filter_coefs);
+    iVARTRACE(15, filter_coefs.n_rows);
+    iVARTRACE(15, filter_no);
     dbgassert(filter_no < fb->filterbank_size, "Illegal filter number");
     dbgassert(filter_coefs.n_rows == fb->nsections * 6, 
             "Illegal filter coefficient length");
