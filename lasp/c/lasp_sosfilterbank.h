@@ -38,7 +38,7 @@ us Sosfilterbank_getFilterbankSize(const Sosfilterbank* fb);
  * @param filter_no: Filter number in the bank
  * @param coefss: Array of filter coefficients. Should have a length of 
  * nsections x 6, for each of the sections, it contains (b0, b1, b2, a0, 
- * a1, a2), where a are the numerator coefficients and b are the denominator 
+ * a1, a2), where b are the numerator coefficients and a are the denominator 
  * coefficients. 
  *
 */
