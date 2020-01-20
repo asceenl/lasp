@@ -21,6 +21,13 @@ typedef struct Sosfilterbank {
     dmat state;
 } Sosfilterbank;
 
+us Sosfilterbank_getFilterbankSize(const Sosfilterbank* fb) {
+    fsTRACE(15);
+    assertvalidptr(fb);
+    return fb->filterbank_size;
+    feTRACE(15);
+
+}
 
 Sosfilterbank* Sosfilterbank_create(const us filterbank_size,
         const us nsections) {
