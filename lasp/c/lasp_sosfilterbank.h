@@ -24,13 +24,21 @@ Sosfilterbank* Sosfilterbank_create(const us filterbank_size,
                                     const us nsections);
 
 /**
+ * Returns the number of channels in the filterbank (the filberbank size).
+ *
+ * @param[in] fb: Filterbank handle
+ * @return The number of filters in the bank
+ * */
+us Sosfilterbank_getFilterbankSize(const Sosfilterbank* fb);
+
+/**
  * Initialize the filter coeficients in the filterbank
  *
  * @param fb: Filterbank handle
  * @param filter_no: Filter number in the bank
  * @param coefss: Array of filter coefficients. Should have a length of 
  * nsections x 6, for each of the sections, it contains (b0, b1, b2, a0, 
- * a1, a2), where a are the numerator coefficients and b are the denominator 
+ * a1, a2), where b are the numerator coefficients and a are the denominator 
  * coefficients. 
  *
 */
