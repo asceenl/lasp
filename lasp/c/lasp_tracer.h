@@ -8,6 +8,7 @@
 #pragma once
 #ifndef ASCEE_TRACER_H
 #define ASCEE_TRACER_H
+#include "lasp_types.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
