@@ -474,24 +474,24 @@ tau_impulse = TAU_IMPULSE
 cdef class Slm:
     cdef:
        c_Slm* c_slm 
-       us downsampling_fac
+       public us downsampling_fac
 
     def __cinit__(self, d[::1] sos_prefilter,
                         d[:, ::1] sos_bandpass,
                         d fs, d tau, d ref_level):
 
         cdef:
-            us prefilter_nsections = sos_prefilter.size // 6
-            us bandpass_nsections = sos_bandpass.shape[1] // 6
-            us bandpass_nchannels = sos_bandpass.shape[0]
+            us prefilter_nsections
+            us bandpass_nsections 
+            us bandpass_nchannels
             c_Sosfilterbank* prefilter = NULL
             c_Sosfilterbank* bandpass = NULL
             vd coefs_vd
             d[:] coefs
-        assert sos_prefilter.size % 6 == 0
-        assert sos_bandpass.shape[1] % 6 == 0
 
         if sos_prefilter is not None:
+            assert sos_prefilter.size % 6 == 0
+            prefilter_nsections = sos_prefilter.size // 6
             prefilter = Sosfilterbank_create(1,prefilter_nsections)
             coefs = sos_prefilter
             coefs_vd = dmat_foreign_data(prefilter_nsections*6,1,
@@ -502,6 +502,9 @@ cdef class Slm:
                 raise RuntimeError('Error creating pre-filter')
 
         if sos_bandpass is not None:
+            assert sos_bandpass.shape[1] % 6 == 0
+            bandpass_nsections = sos_bandpass.shape[1] // 6
+            bandpass_nchannels = sos_bandpass.shape[0]
             bandpass =  Sosfilterbank_create(bandpass_nchannels,
                                              bandpass_nsections)
             if bandpass == NULL:
@@ -525,9 +528,10 @@ cdef class Slm:
             Sosfilterbank_free(bandpass)
             raise RuntimeError('Error creating sound level meter')
 
-    def run(self, d[::1] data):
+    def run(self, d[:, ::1] data):
+        assert data.shape[1] == 1
         cdef vd data_vd = dmat_foreign_data(data.shape[0], 1,
-                                      &data[0], False)
+                                      &data[0,0], False)
         cdef dmat res
         with nogil:
             res = Slm_run(self.c_slm, &data_vd)

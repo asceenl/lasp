@@ -76,15 +76,15 @@ class Window:
         return Window.types[cb.currentIndex()]
 
 class TimeWeighting:
-    none = (None, 'Raw (no time weighting)')
+    none = (-1, 'Raw (no time weighting)')
     uufast = (1e-4, '0.1 ms')
-    ufast = (30e-3, '30 ms')
+    ufast = (35e-3, 'Impulse (35 ms)')
     fast = (0.125, 'Fast (0.125 s)')
     slow = (1.0, 'Slow (1.0 s)')
     tens = (10, '10 s')
     infinite = (np.Inf, 'Infinite (Leq)')
     types = (none, uufast, ufast, fast, slow, tens, infinite)
-    default = 3
+    default = fast
 
     @staticmethod
     def fillComboBox(cb):
