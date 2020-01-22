@@ -67,6 +67,9 @@ class FilterBankDesigner:
         return bool(np.all(llim_full <= h_dB) and
                     np.all(ulim_full >= h_dB))
 
+    def band_limits(self, x, filter_class):
+        raise NotImplementedError()
+
     def fm(self, x):
         """Returns the exact midband frequency of the bandpass filter.
 
@@ -569,3 +572,4 @@ class ThirdOctaveBankDesigner(FilterBankDesigner):
         else:
             raise ValueError('Unimplemented sampling frequency for SOS'
                              'filter design')
+
