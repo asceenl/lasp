@@ -259,7 +259,7 @@ class FilterBankDesigner:
         for x in self.xs:
             xl = x
             fl = self.fl(x)
-            if self.fl(x+1) > freq[0]:
+            if fl >= freq[0]:
                 break
 
         # Find upper frequency xu
