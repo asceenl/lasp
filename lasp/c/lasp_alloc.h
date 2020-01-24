@@ -15,6 +15,11 @@
  * else when required. For example for debugging purposes.
  */
 static inline void* a_malloc(size_t nbytes) {
+#if LASP_DEBUG
+    if(nbytes == 0) {
+        FATAL("Tried to allocate 0 bytes");
+    }
+#endif
     void* ptr = malloc(nbytes);
     if(!ptr) {
         FATAL("Memory allocation failed. Exiting");

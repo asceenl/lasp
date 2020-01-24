@@ -82,11 +82,12 @@ class SLM:
         if fbdesigner is not None:
             assert fbdesigner.fs == fs
             sos0 = fbdesigner.createSOSFilter(self.xs[0]).flatten()
+            self.nom_txt.append(fbdesigner.nominal_txt(self.xs[0]))
             sos = np.empty((nfilters, sos0.size), dtype=float, order='C')
             sos[0, :] = sos0
 
             for i, x in enumerate(self.xs[1:]):
-                sos[i, :] = fbdesigner.createSOSFilter(x).flatten()
+                sos[i+1, :] = fbdesigner.createSOSFilter(x).flatten()
                 self.nom_txt.append(fbdesigner.nominal_txt(x))
 
             if include_overall:
@@ -117,20 +118,6 @@ class SLM:
         self.N = 0
 
 
-    @property
-    def Leq(self):
-        """
-        Returns the equivalent level of the recorded signal so far
-        """
-        return self._Leq
-
-    @property
-    def Lmax(self):
-        """
-        Returns the currently maximum recorded level
-        """
-        return self._Lmax
-
     def run(self, data):
         """
         Add new fresh timedata to the Sound Level Meter
@@ -159,10 +146,50 @@ class SLM:
         for i, x in enumerate(self.xs):
             # '31.5' to '16k'
             output[self.nom_txt[i]] = {'t': t, 
-                                       'data': levels[:, i],
+                                       'data': levels[:, [i]],
                                        'x': x}
         if self.include_overall and self.fbdesigner is not None:
             output['overall'] = {'t': t, 'data': levels[:, i+1], 'x': 0}
+
         return output
 
 
+    def return_as_dict(self, dat):
+        """
+        Helper function used to 
+        """
+        output = {}
+        for i, x in enumerate(self.xs):
+            # '31.5' to '16k'
+            output[self.nom_txt[i]] = { 'data': dat[i],
+                                       'x': x}
+        if self.include_overall and self.fbdesigner is not None:
+            output['overall'] = {'data': dat[i+1], 'x': 0}
+        return output
+
+    def Leq(self):
+        """
+        Returns the computed equivalent levels for each filter channel
+        """
+        return self.return_as_dict(self.slm.Leq())
+
+    def Lmax(self):
+        """
+        Returns the computed max levels for each filter channel
+        """
+        return self.return_as_dict(self.slm.Lmax())
+
+    def Lpeak(self):
+        """
+        Returns the computed peak levels for each filter channel
+        """
+        return self.return_as_dict(self.slm.Lpeak())
+
+    def Leq_array(self):
+        return self.slm.Leq()
+
+    def Lmax_array(self):
+        return self.slm.Lmax()
+
+    def Lpeak_array(self):
+        return self.slm.Lpeak()

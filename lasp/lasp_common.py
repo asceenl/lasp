@@ -81,10 +81,10 @@ class TimeWeighting:
     ufast = (35e-3, 'Impulse (35 ms)')
     fast = (0.125, 'Fast (0.125 s)')
     slow = (1.0, 'Slow (1.0 s)')
-    tens = (10, '10 s')
-    infinite = (np.Inf, 'Infinite (Leq)')
-    types = (none, uufast, ufast, fast, slow, tens, infinite)
+    tens = (10., '10 s')
+    types = (none, uufast, ufast, fast, slow, tens)
     default = fast
+    default_index = 3
 
     @staticmethod
     def fillComboBox(cb):
@@ -97,8 +97,9 @@ class TimeWeighting:
         cb.clear()
         for tw in TimeWeighting.types:
             cb.addItem(tw[1], tw)
-        cb.setCurrentIndex(TimeWeighting.default)
+        cb.setCurrentIndex(TimeWeighting.default_index)
 
+    @staticmethod
     def getCurrent(cb):
         return TimeWeighting.types[cb.currentIndex()]
 
@@ -110,7 +111,8 @@ class FreqWeighting:
     C = ('C', 'C-weighting')
     Z = ('Z', 'Z-weighting')
     types = (A, C, Z)
-    default = 0
+    default = A
+    default_index = 0
 
     @staticmethod
     def fillComboBox(cb):
@@ -123,8 +125,9 @@ class FreqWeighting:
         cb.clear()
         for fw in FreqWeighting.types:
             cb.addItem(fw[1], fw)
-        cb.setCurrentIndex(FreqWeighting.default)
+        cb.setCurrentIndex(FreqWeighting.default_index)
 
+    @staticmethod
     def getCurrent(cb):
         return FreqWeighting.types[cb.currentIndex()]
 

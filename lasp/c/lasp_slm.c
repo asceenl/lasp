@@ -43,12 +43,18 @@ Slm *Slm_create(Sosfilterbank *prefilter, Sosfilterbank *bandpass, const d fs,
     /// of 20 dB less than its 'signal'.
     us ds_fac;
     if (tau > 0) {
-        const d fs_slm = 1 / (2 * number_pi * tau) * (1 - 0.01) / 0.01;
+        // A reasonable 'framerate' for the sound level meter, based on the
+        // filtering time constant.
+        d fs_slm = 10 / tau;
         dVARTRACE(15, fs_slm);
+        if(fs_slm < 30) {
+            fs_slm = 30;
+        }
         ds_fac = (us)(fs / fs_slm);
-        // If we get 0, it should be 1
-        if (ds_fac == 0)
+        if (ds_fac == 0) {
+            // If we get 0, it should be 1
             ds_fac++;
+        }
     } else {
         ds_fac = 1;
     }
@@ -132,13 +138,16 @@ dmat Slm_run(Slm *slm, vd *input_data) {
     us cur_offset = slm->cur_offset;
 
     /// Compute the number of samples output
-    int nsamples_output = samples_bandpassed;
+    us nsamples_output = samples_bandpassed;
     if (downsampling_fac > 1) {
         nsamples_output = (samples_bandpassed - cur_offset) / downsampling_fac;
-        while (nsamples_output * downsampling_fac + cur_offset < samples_bandpassed)
-            nsamples_output++;
-        if (nsamples_output < 0)
+        if(nsamples_output > samples_bandpassed) {
+            // This means overflow of unsigned number calculations
             nsamples_output = 0;
+        }
+        while(nsamples_output * downsampling_fac + cur_offset < samples_bandpassed) {
+            nsamples_output++;
+        }
     }
 
     iVARTRACE(15, nsamples_output);
@@ -241,17 +250,18 @@ vd Slm_Lpeak(Slm* slm) {
 vd Slm_Lmax(Slm* slm) {
     fsTRACE(15);
     assertvalidptr(slm);
-    vd Lpeak = levels_from_power(&(slm->Pmax), slm->ref_level);
+    vd Lmax = levels_from_power(&(slm->Pmax), slm->ref_level);
     feTRACE(15);
-    return Lpeak;
+    return Lmax;
 }
 
 vd Slm_Leq(Slm* slm) {
     fsTRACE(15);
     assertvalidptr(slm);
-    vd Lpeak = levels_from_power(&(slm->Pm), slm->ref_level);
+    print_vd(&(slm->Pm));
+    vd Leq = levels_from_power(&(slm->Pm), slm->ref_level);
     feTRACE(15);
-    return Lpeak;
+    return Leq;
 }
 
 void Slm_free(Slm *slm) {
