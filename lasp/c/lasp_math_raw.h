@@ -11,6 +11,7 @@
 #include "lasp_assert.h"
 #include "lasp_tracer.h"
 #include "lasp_types.h"
+#include <float.h>
 #include <math.h>
 
 #if LASP_USE_BLAS == 1
@@ -34,6 +35,7 @@
 #define d_cos cos
 #define d_pow pow
 #define d_log10 log10
+#define d_epsilon (DBL_EPSILON)
 
 #else  // LASP_DOUBLE_PRECISION not defined
 #define c_conj conjf
@@ -49,7 +51,11 @@
 #define d_cos cosf
 #define d_pow powf
 #define d_log10 log10f
+#define d_epsilon (FLT_EPSILON)
 #endif // LASP_DOUBLE_PRECISION
+
+/// Positive infinite
+#define d_inf (INFINITY)
 
 #ifdef M_PI
 static const d number_pi = M_PI;

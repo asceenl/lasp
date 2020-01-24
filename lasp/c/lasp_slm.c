@@ -1,4 +1,4 @@
-#define TRACERPLUS (10)
+#define TRACERPLUS (-5)
 #include "lasp_slm.h"
 #include "lasp_assert.h"
 #include "lasp_tracer.h"
@@ -10,7 +10,10 @@ typedef struct Slm {
     d ref_level;               /// Reference value for computing decibels
     us downsampling_fac;       /// Every x'th sample is returned.
     us cur_offset;             /// Storage for offset point in input arrays
-    vd Leq; /// Storage for the computed equivalent levels so far.
+    vd Pm;    /// Storage for the computing the mean of the square of the signal.
+    vd Pmax;  /// Storage for maximum computed signal power so far.
+    vd Ppeak; /// Storage for computing peak powers so far.
+    us N;     /// Counter for the number of time samples counted that came in
 
 } Slm;
 
@@ -42,9 +45,10 @@ Slm *Slm_create(Sosfilterbank *prefilter, Sosfilterbank *bandpass, const d fs,
     if (tau > 0) {
         const d fs_slm = 1 / (2 * number_pi * tau) * (1 - 0.01) / 0.01;
         dVARTRACE(15, fs_slm);
-        ds_fac = (us) (fs / fs_slm);
+        ds_fac = (us)(fs / fs_slm);
         // If we get 0, it should be 1
-        if(ds_fac == 0) ds_fac++;
+        if (ds_fac == 0)
+            ds_fac++;
     } else {
         ds_fac = 1;
     }
@@ -83,6 +87,14 @@ Slm *Slm_create(Sosfilterbank *prefilter, Sosfilterbank *bandpass, const d fs,
         slm->splowpass = NULL;
     }
 
+    /// Initialize statistics gatherers
+    slm->Ppeak = vd_alloc(filterbank_size);
+    slm->Pmax = vd_alloc(filterbank_size);
+    slm->Pm = vd_alloc(filterbank_size);
+    slm->N = 0;
+    vd_set(&(slm->Ppeak), 0);
+    vd_set(&(slm->Pmax), 0);
+    vd_set(&(slm->Pm), 0);
     feTRACE(15);
     return slm;
 }
@@ -121,7 +133,7 @@ dmat Slm_run(Slm *slm, vd *input_data) {
 
     /// Compute the number of samples output
     int nsamples_output = samples_bandpassed;
-    if(downsampling_fac > 1) {
+    if (downsampling_fac > 1) {
         nsamples_output = (samples_bandpassed - cur_offset) / downsampling_fac;
         while (nsamples_output * downsampling_fac + cur_offset < samples_bandpassed)
             nsamples_output++;
@@ -132,14 +144,16 @@ dmat Slm_run(Slm *slm, vd *input_data) {
     iVARTRACE(15, nsamples_output);
     iVARTRACE(15, cur_offset);
     dmat levels = dmat_alloc(nsamples_output, filterbank_size);
+    us N, ch;
 
-    for (us ch = 0; ch < bandpassed.n_cols; ch++) {
+    for (ch = 0; ch < bandpassed.n_cols; ch++) {
         iVARTRACE(15, ch);
         vd chan = dmat_column(&bandpassed, ch);
         /// Inplace squaring of the signal
         for (us sample = 0; sample < bandpassed.n_rows; sample++) {
             tmp = getdmatval(&bandpassed, sample, ch);
             *tmp = *tmp * *tmp;
+            *getvdval(&(slm->Ppeak), ch) = d_max(*getvdval(&(slm->Ppeak), ch), *tmp);
         }
 
         // Now that all data for the channel is squared, we can run it through
@@ -149,7 +163,7 @@ dmat Slm_run(Slm *slm, vd *input_data) {
         /// Apply single-pole lowpass filter for current filterbank channel
         TRACE(15, "Start filtering");
         vd power_filtered;
-        if(slm->splowpass) {
+        if (slm->splowpass) {
             power_filtered = Sosfilterbank_filter(slm->splowpass[ch], &chan);
         } else {
             power_filtered = dmat_foreign(&chan);
@@ -159,12 +173,27 @@ dmat Slm_run(Slm *slm, vd *input_data) {
 
         /// Output resulting levels at a lower interval
         us i = 0;
+        N = slm->N;
+        d *Pm = getvdval(&(slm->Pm), ch);
         while (cur_offset < samples_bandpassed) {
             iVARTRACE(10, i);
             iVARTRACE(10, cur_offset);
+
+            /// Filtered power.
+            const d P = *getvdval(&power_filtered, cur_offset);
+            dVARTRACE(15, P);
+
+            /// Compute maximum, compare to current maximum
+            *getvdval(&(slm->Pmax), ch) = d_max(*getvdval(&(slm->Pmax), ch), P);
+
+            /// Update mean power
+            d Nd = (d) N;
+            *Pm = (*Pm*Nd + P ) / (Nd+1);
+            N++;
+            dVARTRACE(15, *Pm);
+
             /// Compute level
-            d level = 10 * d_log10(*getvdval(&power_filtered, cur_offset) /
-                    ref_level / ref_level);
+            d level = 10 * d_log10((P + d_epsilon ) / ref_level / ref_level);
 
             *getdmatval(&levels, i++, ch) = level;
             cur_offset = cur_offset + downsampling_fac;
@@ -176,12 +205,53 @@ dmat Slm_run(Slm *slm, vd *input_data) {
         vd_free(&power_filtered);
         vd_free(&chan);
     }
+    /// Update sample counter
+    dbgassert(ch >0, "BUG");
+    slm->N = N;
     slm->cur_offset = cur_offset - samples_bandpassed;
 
     vd_free(&prefiltered);
     dmat_free(&bandpassed);
     feTRACE(15);
     return levels;
+}
+
+
+static inline vd levels_from_power(const vd* power,const d ref_level){
+    fsTRACE(15);
+
+    vd levels = dmat_alloc_from_dmat(power);
+    for(us i=0; i< levels.n_rows; i++) {
+        *getvdval(&levels, i) = 10 * d_log10(
+                (*getvdval(power, i) + d_epsilon) / ref_level / ref_level);
+
+    }
+    feTRACE(15);
+    return levels;
+}
+
+vd Slm_Lpeak(Slm* slm) {
+    fsTRACE(15);
+    assertvalidptr(slm);
+    vd Lpeak = levels_from_power(&(slm->Ppeak), slm->ref_level);
+    feTRACE(15);
+    return Lpeak;
+}
+
+vd Slm_Lmax(Slm* slm) {
+    fsTRACE(15);
+    assertvalidptr(slm);
+    vd Lpeak = levels_from_power(&(slm->Pmax), slm->ref_level);
+    feTRACE(15);
+    return Lpeak;
+}
+
+vd Slm_Leq(Slm* slm) {
+    fsTRACE(15);
+    assertvalidptr(slm);
+    vd Lpeak = levels_from_power(&(slm->Pm), slm->ref_level);
+    feTRACE(15);
+    return Lpeak;
 }
 
 void Slm_free(Slm *slm) {
@@ -204,6 +274,9 @@ void Slm_free(Slm *slm) {
         }
         a_free(slm->splowpass);
     }
+    vd_free(&(slm->Ppeak));
+    vd_free(&(slm->Pmax));
+    vd_free(&(slm->Pm));
     a_free(slm);
 
     feTRACE(15);

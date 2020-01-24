@@ -445,10 +445,22 @@ static inline void dmat_copy(dmat* to,const dmat* from) {
     dbgassert(to->n_cols==from->n_cols,SIZEINEQUAL);
     for(us col=0;col<to->n_cols;col++) {
         d_copy(getdmatval(to,0,col),
-               getdmatval(from,0,col),
-               to->n_rows,1,1);
+                getdmatval(from,0,col),
+                to->n_rows,1,1);
     }
 }
+
+/**
+ * Allocate a new array, with size based on other. 
+ *
+ * @param[in] from: Array to copy
+ */
+static inline dmat dmat_alloc_from_dmat(const dmat* from) {
+    assertvalidptr(from);
+    dmat thecopy = dmat_alloc(from->n_rows, from->n_cols);
+    return thecopy;
+}
+
 /**
  * Copy contents of one matrix to another. Sizes should be equal
  *
@@ -547,17 +559,36 @@ static inline void cmat_conj_inplace(cmat* x) {
     }
 }
 
+/**
+ * Computes the maximum value for each row, returns a vector with maximum
+ * values for each column in the matrix.
+ *
+ * @param x
+ */
+static inline vd dmat_max(const dmat x) {
+    vd max_vals = vd_alloc(x.n_cols);
+    d max_val = -d_inf;
+    for(us j=0; j< x.n_cols; j++) {
+        for(us i=0; i< x.n_rows; i++) {
+            max_val = *getdmatval(&x, i, j) < max_val? max_val : *getdmatval(&x, i,j);
+        }
+        *getvdval(&max_vals, j) = max_val;
+    }
+    return max_vals;
+}
+
 
 #ifdef LASP_DEBUG
 void print_cmat(const cmat* m);
 void print_dmat(const dmat* m);
-#define print_vc print_cmat
-#define print_vd print_dmat
+#define print_vc(x) assert_vx(x) print_cmat(x)
+#define print_vd(x) assert_vx(x) print_dmat(x)
 
 #else
 #define print_cmat(m)
-#define print_vc(m)
 #define print_dmat(m)
+#define print_vc(m)
+#define print_vd(m)
 #endif
 
 #endif // LASP_MAT_H

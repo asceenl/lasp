@@ -465,6 +465,9 @@ cdef extern from "lasp_slm.h" nogil:
                     us* downsampling_fac)
     dmat Slm_run(c_Slm* slm,vd* input_data)
     void Slm_free(c_Slm* slm)
+    vd Slm_Leq(c_Slm*)
+    vd Slm_Lmax(c_Slm*)
+    vd Slm_Lpeak(c_Slm*)
 
 
 tau_fast = TAU_FAST
@@ -538,6 +541,23 @@ cdef class Slm:
         result = dmat_to_ndarray(&res,True)
         return result
         
+    def Leq(self):
+        cdef vd res
+        res = Slm_Leq(self.c_slm)
+        # True below, means transfer ownership of allocated data to Numpy
+        return dmat_to_ndarray(&res,True)
+
+    def Lmax(self):
+        cdef vd res
+        res = Slm_Lmax(self.c_slm)
+        # True below, means transfer ownership of allocated data to Numpy
+        return dmat_to_ndarray(&res,True)
+
+    def Lpeak(self):
+        cdef vd res
+        res = Slm_Lpeak(self.c_slm)
+        # True below, means transfer ownership of allocated data to Numpy
+        return dmat_to_ndarray(&res,True)
 
     def __dealloc__(self):
         if self.c_slm:

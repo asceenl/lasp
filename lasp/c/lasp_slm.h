@@ -67,6 +67,30 @@ dmat Slm_run(Slm* slm,
  */
 void Slm_free(Slm* f);
 
+/**
+ * Returns the (raw) peak level computed so far.
+ *
+ * @param[in] slm: Slm handle
+ * @return Vector of peak level for each channel in the filterbank.
+ */
+vd Slm_Lpeak(Slm* slm);
+
+/**
+ * Returns the equivalent level computed so far.
+ *
+ * @param[in] slm: Slm handle
+ * @return Vector of equivalent levels for each channel in the filterbank.
+ */
+vd Slm_Leq(Slm* slm);
+
+/**
+ * Returns the maximum level computed so far.
+ *
+ * @param[in] slm: Slm handle
+ * @return Vector of maximum levels for each channel in the filterbank.
+ */
+vd Slm_Lmax(Slm* slm);
+
 
 #endif // LASP_SLM_H
 //////////////////////////////////////////////////////////////////////
