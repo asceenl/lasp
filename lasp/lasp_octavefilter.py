@@ -228,6 +228,11 @@ class SosFilterBank:
             xmin: Minimum value for the bands
             xmax: Maximum value for the bands
         """
+        if xmin is None:
+            xmin = self.designer.xs[0]
+        if xmax is None:
+            xmax = self.designer.xs[-1]
+
         self.fs = fs
         self.xs = list(range(xmin, xmax + 1))
         nfilt = len(self.xs)
@@ -290,10 +295,6 @@ class SosThirdOctaveFilterBank(SosFilterBank):
             xmax: Maximum value for the bands
         """
         self.designer = ThirdOctaveBankDesigner(fs)
-        if xmin is None:
-            xmin = self.designer.xs[0]
-        if xmax is None:
-            xmax = self.designer.xs[-1]
         SosFilterBank.__init__(self, fs, xmin, xmax)
 
 
@@ -313,10 +314,6 @@ class SosOctaveFilterBank(SosFilterBank):
             xmax: Maximum value for the bands, if not specified, use maximum
         """
         self.designer = OctaveBankDesigner(fs)
-        if xmin is None:
-            xmin = self.designer.xs[0]
-        if xmax is None:
-            xmax = self.designer.xs[-1]
         SosFilterBank.__init__(self, fs, xmin, xmax)
 
 

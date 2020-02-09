@@ -149,7 +149,7 @@ class SLM:
                                        'data': levels[:, [i]],
                                        'x': x}
         if self.include_overall and self.fbdesigner is not None:
-            output['overall'] = {'t': t, 'data': levels[:, i+1], 'x': 0}
+            output['overall'] = {'t': t, 'data': levels[:, [i+1]], 'x': 0}
 
         return output
 
