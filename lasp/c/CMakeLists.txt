@@ -21,6 +21,7 @@ add_library(lasp_lib
   lasp_sosfilterbank.c
   lasp_decimation.c
   lasp_slm.c
+  lasp_eq.c
   )
 
 
