@@ -5,7 +5,7 @@
 // Description:
 // Signal generator implementation
 //////////////////////////////////////////////////////////////////////
-#define TRACERPLUS (-5)
+/* #define TRACERPLUS (-5) */
 #include "lasp_siggen.h"
 #include "lasp_alloc.h"
 #include "lasp_assert.h"

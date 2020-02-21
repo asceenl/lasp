@@ -466,8 +466,14 @@ class ThirdOctaveBankDesigner(FilterBankDesigner):
     def nominal_txt(self, x):
         # Put the nominal frequencies in a dictionary for easy access with
         # x as the key.
-        index = x - self.xs[0]
-        return self._nominal_txt[index]
+        if type(x) == int:
+            index = x - self.xs[0]
+            return self._nominal_txt[index]
+        elif type(x) == list:
+            index_start = x[0] - self.xs[0]
+            index_stop = x[-1] - self.xs[0]
+            return self._nominal_txt[index_start:index_stop+1]
+            
 
     def band_limits(self, x, filter_class=0):
         """Returns the third octave band filter limits for filter designator x.
