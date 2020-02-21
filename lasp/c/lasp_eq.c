@@ -28,6 +28,7 @@ vd Eq_equalize(Eq* eq,const vd* input_data) {
 
     for(us filter=0;filter<eq->nfilters;filter++) {
         d ampl = *getvdval(&(eq->ampl_values), filter);
+        /// TODO: Replace this code with something more fast from BLAS.
         for(us sample=0;sample<filtered.n_rows;sample++) {
             d* res = getvdval(&result, sample);
             *res = *res + *getdmatval(&filtered, sample, filter) * ampl;
@@ -39,12 +40,15 @@ vd Eq_equalize(Eq* eq,const vd* input_data) {
     return result;
 }
 
-vd Eq_setLevels(Eq* eq,const vd* levels) {
+void Eq_setLevels(Eq* eq,const vd* levels) {
     fsTRACE(15);
     assertvalidptr(eq);
     assert_vx(levels);
     dbgassert(levels->n_rows == eq->nfilters, "Invalid levels size");
-
+    for(us ch=0;ch<eq->nfilters;ch++){
+        d level = *getvdval(levels, ch);
+        *getvdval(&(eq->ampl_values), ch) = d_pow(10, level/20);
+    }
 
     feTRACE(15);
 }

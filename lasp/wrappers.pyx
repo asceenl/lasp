@@ -674,3 +674,58 @@ cdef class Siggen:
         siggen = Siggen()
         siggen._siggen = c_siggen
         return siggen
+
+cdef extern from "lasp_eq.h" nogil:
+    ctypedef struct c_Eq "Eq"
+    c_Eq* Eq_create(c_Sosfilterbank* fb)
+    vd Eq_equalize(c_Eq* eq,const vd* input_data) 
+    us Eq_getNLevels(const c_Eq* eq)
+    void Eq_setLevels(c_Eq* eq, const vd* levels)
+    void Eq_free(c_Eq* eq)
+
+cdef class Equalizer:
+    cdef:
+        c_Eq* ceq
+
+    def __cinit__(self, SosFilterBank cdef_fb):
+        """
+        Initialize equalizer using given filterbank. Note: Steals pointer of
+        underlying c_Sosfilterbank!!
+        """
+        self.ceq = Eq_create(cdef_fb.fb)
+        # Set this pointer to NULL, such that the underlying c_SosfilterBank is
+        # not deallocated.
+        cdef_fb.fb = NULL
+
+    def getNLevels(self):
+        return Eq_getNLevels(self.ceq)
+
+    def setLevels(self,d[:] new_levels):
+        cdef dmat dmat_new_levels = dmat_foreign_data(new_levels.shape[0],
+                                        1,
+                                        &new_levels[0],
+                                        False)
+        Eq_setLevels(self.ceq, &dmat_new_levels) 
+        dmat_free(&dmat_new_levels)
+
+    def equalize(self, d[::1, :] input_data):
+        assert input_data.shape[1] == 1
+        cdef:
+            vd res
+        cdef dmat input_dmat = dmat_foreign_data(input_data.shape[0],
+                                        1,
+                                        &input_data[0,0],
+                                        False)
+        with nogil:
+            res = Eq_equalize(self.ceq, &input_dmat)
+
+        # Steal the pointer from output
+        py_res = dmat_to_ndarray(&res,True)
+
+        dmat_free(&res)
+        vd_free(&input_dmat)
+        return py_res
+
+    def __dealloc__(self):
+        if self.ceq:
+            Eq_free(self.ceq)

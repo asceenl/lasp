@@ -24,7 +24,7 @@ Eq* Eq_create(Sosfilterbank* fb);
  *
  * @param[in] eq Equalizer handle
  * @param[in] input_data Input data to equalize
- * @return Equalized data
+ * @return Equalized data. Newly allocated vector. Ownership is transferred.
  * */
 vd Eq_equalize(Eq* eq,const vd* input_data);
 
