@@ -23,8 +23,8 @@ vd Eq_equalize(Eq* eq,const vd* input_data) {
     assertvalidptr(eq);
     assert_vx(input_data);
     vd result = vd_alloc(input_data->n_rows);
+    dmat_set(&result, 0);
     dmat filtered = Sosfilterbank_filter(eq->fb, input_data);
-    dmat_set(&filtered, 0);
 
     for(us filter=0;filter<eq->nfilters;filter++) {
         d ampl = *getvdval(&(eq->ampl_values), filter);

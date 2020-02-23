@@ -708,22 +708,22 @@ cdef class Equalizer:
         Eq_setLevels(self.ceq, &dmat_new_levels) 
         dmat_free(&dmat_new_levels)
 
-    def equalize(self, d[::1, :] input_data):
-        assert input_data.shape[1] == 1
+    def equalize(self, d[::1] input_data):
         cdef:
             vd res
-        cdef dmat input_dmat = dmat_foreign_data(input_data.shape[0],
+        cdef dmat input_dmat = dmat_foreign_data(input_data.size,
                                         1,
-                                        &input_data[0,0],
+                                        &input_data[0],
                                         False)
         with nogil:
             res = Eq_equalize(self.ceq, &input_dmat)
 
         # Steal the pointer from output
-        py_res = dmat_to_ndarray(&res,True)
+        py_res = dmat_to_ndarray(&res,True)[:,0]
 
         dmat_free(&res)
         vd_free(&input_dmat)
+
         return py_res
 
     def __dealloc__(self):
