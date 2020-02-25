@@ -164,6 +164,12 @@ class Measurement:
             self.N = (self.nblocks * self.blocksize)
             self.T = self.N / self.samplerate
 
+            try:
+                self._channel_names = f.attrs['channel_names']
+            except KeyError:
+                # No channel names found in measurement file
+                self._channel_names = ['{i}' for i in range(self.nchannels)]
+
             # comment = read-write thing
             try:
                 self._comment = f.attrs['comment']
@@ -188,6 +194,10 @@ class Measurement:
         Returns filename base without extension
         """
         return os.path.splitext(self.fn_base)[0]
+
+    @property
+    def channelNames(self):
+        return self._channel_names
 
     @contextmanager
     def file(self, mode='r'):

@@ -6,6 +6,7 @@ Description: Read data from image stream and record sound at the same time
 import cv2 as cv
 from .lasp_atomic import Atomic
 from threading import Thread, Condition, Lock
+import numpy as np
 
 import time
 from .device import (RtAudio, DeviceInfo, DAQConfiguration,
@@ -18,36 +19,31 @@ video_x, video_y = 640, 480
 
 
 class AvType:
-    """
-    Specificying the type of data, for adding and removing callbacks from the
-    stream.
-    """
-    audio_input = 0
-    audio_output = 1
-    video = 2
+    """Specificying the type of data, for adding and removing callbacks from
+    the stream."""
+    audio_input = 1
+    audio_output = 2
+    video = 4
 
 
 class AvStream:
-    """
-    Audio and video data stream, to which callbacks can be added for processing
-    the data.
-    """
+    """Audio and video data stream, to which callbacks can be added for
+    processing the data."""
 
     def __init__(self,
                  device: DeviceInfo,
                  avtype: AvType,
                  daqconfig: DAQConfiguration,
                  video=None):
-        """
-        Open a stream for audio in/output and video input. For audio output, by
-        default all available channels are opened for outputting data.
+        """Open a stream for audio in/output and video input. For audio output,
+        by default all available channels are opened for outputting data.
 
         Args:
             device: DeviceInfo for the audio device
             avtype: Type of stream. Input, output or duplex
 
             daqconfig: DAQConfiguration instance. If duplex mode flag is set,
-            please make sure that no output_device is None, as in that case the
+            please make sure that output_device is None, as in that case the
             output config will be taken from the input device.
             video:
         """
@@ -56,13 +52,18 @@ class AvStream:
         self._device = device
         self.avtype = avtype
         self.duplex_mode = daqconfig.duplex_mode
+        self.monitor_gen = daqconfig.monitor_gen
 
         # Determine highest input channel number
         channelconfigs = daqconfig.en_input_channels
 
         self.channel_names = []
-
         self.sensitivity = self.daqconfig.getSensitivities()
+        if daqconfig.monitor_gen:
+            assert self.duplex_mode
+            self.channel_names.append('Generated signal')
+            self.sensitivity = np.concatenate([np.array([1.]),
+                                               self.sensitivity])
 
         rtaudio_inputparams = None
         rtaudio_outputparams = None
@@ -71,8 +72,8 @@ class AvStream:
 
         if self.duplex_mode or avtype == AvType.audio_output:
             rtaudio_outputparams = {'deviceid': device.index,
-            # TODO: Add option to specify the number of output channels to use
-                                    'nchannels': 1,  #device.outputchannels,
+                                    # TODO: Add option to specify the number of output channels to use
+                                    'nchannels': 1,  # device.outputchannels,
                                     'firstchannel': 0}
             self.sampleformat = daqconfig.en_output_sample_format
             self.samplerate = int(daqconfig.en_output_rate)
@@ -93,24 +94,27 @@ class AvStream:
         try:
             self._rtaudio = RtAudio()
             self.blocksize = self._rtaudio.openStream(
-                    rtaudio_outputparams,  # Outputparams
-                    rtaudio_inputparams,   # Inputparams
-                    self.sampleformat,     # Sampleformat
-                    self.samplerate,
-                    self.nframes_per_block, # Buffer size in frames
-                    self._audioCallback)
+                rtaudio_outputparams,  # Outputparams
+                rtaudio_inputparams,   # Inputparams
+                self.sampleformat,     # Sampleformat
+                self.samplerate,
+                self.nframes_per_block,  # Buffer size in frames
+                self._audioCallback)
 
         except Exception as e:
             raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 
+        # Fill in numpy data type, and sample width
         self.numpy_dtype = get_numpy_dtype_from_format_string(
             self.sampleformat)
         self.sampwidth = get_sampwidth_from_format_string(
             self.sampleformat)
 
+        # Counters for the number of frames that have been coming in
         self._aframectr = Atomic(0)
         self._vframectr = Atomic(0)
 
+        # Lock
         self._callbacklock = Lock()
 
         self._running = Atomic(False)
@@ -118,32 +122,34 @@ class AvStream:
 
         self._video = video
         self._video_started = Atomic(False)
+
+        # Storage for callbacks, specified by type
         self._callbacks = {
             AvType.audio_input: [],
             AvType.audio_output: [],
             AvType.video: []
         }
+
+        # Possible, but long not tested: store video
         self._videothread = None
 
     def close(self):
         self._rtaudio.closeStream()
+        self._rtaudio = None
 
     def nCallbacks(self):
-        """
-        Returns the current number of installed callbacks
-        """
+        """Returns the current number of installed callbacks."""
         return len(self._callbacks[AvType.audio_input]) + \
-               len(self._callbacks[AvType.audio_output]) + \
-               len(self._callbacks[AvType.video]) 
+            len(self._callbacks[AvType.audio_output]) + \
+            len(self._callbacks[AvType.video])
 
     def addCallback(self, cb: callable, cbtype: AvType):
-        """
-        Add as stream callback to the list of callbacks
-        """
+        """Add as stream callback to the list of callbacks."""
         with self._callbacklock:
             outputcallbacks = self._callbacks[AvType.audio_output]
             if cbtype == AvType.audio_output and len(outputcallbacks) > 0:
-                raise RuntimeError('Only one audio output callback can be allowed')
+                raise RuntimeError(
+                    'Only one audio output callback can be allowed')
 
             if cb not in self._callbacks[cbtype]:
                 self._callbacks[cbtype].append(cb)
@@ -154,10 +160,8 @@ class AvStream:
                 self._callbacks[cbtype].remove(cb)
 
     def start(self):
-        """
-        Start the stream, which means the callbacks are called with stream
-        data (audio/video)
-        """
+        """Start the stream, which means the callbacks are called with stream
+        data (audio/video)"""
 
         if self._running:
             raise RuntimeError('Stream already started')
@@ -199,23 +203,33 @@ class AvStream:
         print('stopped videothread')
 
     def _audioCallback(self, indata, outdata, nframes, streamtime):
-        """
-        This is called (from a separate thread) for each audio block.
-        """
-        self._aframectr += 1
+        """This is called (from a separate thread) for each audio block."""
+        self._aframectr += nframes
         with self._callbacklock:
-            for cb in self._callbacks[AvType.audio_input]:
-                try:
-                    cb(indata, outdata, self._aframectr())
-                except Exception as e:
-                    print(e)
-                    return 1
+
+            # Count the number of output callbacks. If no output callbacks are
+            # present, and there should be output callbacks, we explicitly set
+            # the output buffer to zero
+            noutput_cb = len(self._callbacks[AvType.audio_output])
+            shouldhaveoutput = (self.avtype == AvType.audio_output or
+                                self.duplex_mode)
+            if noutput_cb == 0 and shouldhaveoutput:
+                outdata[:, :] = 0
+
+            # Loop over callbacks
             for cb in self._callbacks[AvType.audio_output]:
                 try:
                     cb(indata, outdata, self._aframectr())
                 except Exception as e:
                     print(e)
                     return 1
+            for cb in self._callbacks[AvType.audio_input]:
+                try:
+                    cb(indata, outdata, self._aframectr())
+                except Exception as e:
+                    print(e)
+                    return 1
+
         return 0 if self._running else 1
 
     def stop(self):

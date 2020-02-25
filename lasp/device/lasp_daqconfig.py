@@ -42,6 +42,8 @@ class DAQConfiguration:
     Initialize a device descriptor
 
     Args:
+        duplex_mode: Set device to duplex mode, if possible
+        monitor_gen: If set to true, add monitor channel to recording.
         input_device_name: ASCII name with which to open the device when connected
         outut_device_name: ASCII name with which to open the device when connected
 
@@ -75,6 +77,7 @@ class DAQConfiguration:
     en_output_rate: int
 
     en_input_channels: list
+    monitor_gen: bool = False
 
     def getEnabledChannels(self):
         en_channels = []

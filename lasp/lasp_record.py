@@ -3,7 +3,6 @@
 """
 Read data from stream and record sound and video at the same time
 """
-import numpy as np
 from .lasp_atomic import Atomic
 from threading import Condition
 from .lasp_avstream import AvType, AvStream
@@ -19,13 +18,15 @@ class RecordStatus:
 
 class Recording:
 
-    def __init__(self, fn, stream, rectime=None, wait = True,
+    def __init__(self, fn: str, stream: AvStream, 
+                 rectime: float=None, wait: bool = True,
                  progressCallback=None):
         """
 
         Args:
             fn: Filename to record to. extension is added
-            stream: AvStream instance to record from
+            stream: AvStream instance to record from. Should have input
+            channels!
             rectime: Recording time, None for infinite
         """
         ext = '.h5'
@@ -33,6 +34,8 @@ class Recording:
             fn += ext
 
         self._stream = stream
+        if stream.avtype != AvType.audio_input:
+            raise RuntimeError('Stream does not have any input channels')
         self.blocksize = stream.blocksize
         self.samplerate = stream.samplerate
         self._running = Atomic(False)
@@ -43,7 +46,7 @@ class Recording:
         self._video_frame_positions = []
         self._curT_rounded_to_seconds = 0
 
-        self._aframeno = Atomic(0)
+        self._ablockno = Atomic(0)
         self._vframeno = 0
 
         self._progressCallback = progressCallback 
@@ -53,28 +56,38 @@ class Recording:
         self._deleteFile = False
 
     def setDelete(self, val: bool):
+        """
+        Set the delete flag. If set, measurement file is deleted at the end of
+        the recording. Typically used for cleaning up after canceling a
+        recording.
+        """
         self._deleteFile = val
 
     def __enter__(self):
         """
 
-        with self._recording(wait=False):
+        with Recording(fn, stream, wait=False):
             event_loop_here()
 
         or:
 
-        with Recording(wait=True):
+        with Recording(fn, stream, wait=True):
             pass
         """
 
         stream = self._stream
         f = self._f
+        nchannels = stream.nchannels
+        if stream.monitor_gen:
+            nchannels += 1
+
+        self.monitor_gen = stream.monitor_gen
 
         self._ad = f.create_dataset('audio',
-                                    (1, stream.blocksize, stream.nchannels),
+                                    (1, stream.blocksize, nchannels),
                                     dtype=stream.numpy_dtype,
                                     maxshape=(None, stream.blocksize,
-                                              stream.nchannels),
+                                              nchannels),
                                     compression='gzip'
                                     )
         if stream.hasVideo():
@@ -91,6 +104,7 @@ class Recording:
         f.attrs['nchannels'] = stream.nchannels
         f.attrs['blocksize'] = stream.blocksize
         f.attrs['sensitivity'] = stream.sensitivity
+        f.attrs['channel_names'] = stream.channel_names
         f.attrs['time'] = time.time()
         self._running <<= True
 
@@ -119,7 +133,7 @@ class Recording:
         stream.removeCallback(self._aCallback, AvType.audio_input)
         if stream.hasVideo():
             stream.removeCallback(self._vCallback, AvType.video_input)
-            f['video_frame_positions'] = self._video_frame_positions
+            self._f['video_frame_positions'] = self._video_frame_positions
 
         self._f.close()
         print('\nEnding record')
@@ -130,10 +144,9 @@ class Recording:
                 print(f'Error deleting file: {self._fn}')
 
 
-
     def _aCallback(self, indata, outdata, aframe):
 
-        curT = self._aframeno()*self.blocksize/self.samplerate
+        curT = self._ablockno()*self.blocksize/self.samplerate
         recstatus = RecordStatus(
             curT = curT,
             done = False)
@@ -157,12 +170,16 @@ class Recording:
                 self._progressCallback(recstatus)
             return
 
-        self._ad.resize(self._aframeno()+1, axis=0)
-        self._ad[self._aframeno(), :, :] = indata
-        self._aframeno += 1
+        self._ad.resize(self._ablockno()+1, axis=0)
+        if self.monitor_gen:
+            self._ad[self._ablockno(), :, 0] = outdata
+            self._ad[self._ablockno(), :, 1:] = indata
+        else:
+            self._ad[self._ablockno(), :, :] = indata
+        self._ablockno += 1
 
     def _vCallback(self, frame, framectr):
-        self._video_frame_positions.append(self._aframeno())
+        self._video_frame_positions.append(self._ablockno())
         vframeno = self._vframeno
         self._vd.resize(vframeno+1, axis=0)
         self._vd[vframeno, :, :] = frame
