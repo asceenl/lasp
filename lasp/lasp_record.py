@@ -172,7 +172,7 @@ class Recording:
 
         self._ad.resize(self._ablockno()+1, axis=0)
         if self.monitor_gen:
-            self._ad[self._ablockno(), :, 0] = outdata
+            self._ad[self._ablockno(), :, 0] = outdata[:, 0]
             self._ad[self._ablockno(), :, 1:] = indata
         else:
             self._ad[self._ablockno(), :, :] = indata

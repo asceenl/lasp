@@ -168,7 +168,7 @@ class Measurement:
                 self._channel_names = f.attrs['channel_names']
             except KeyError:
                 # No channel names found in measurement file
-                self._channel_names = ['{i}' for i in range(self.nchannels)]
+                self._channel_names = [f'Unnamed {i}' for i in range(self.nchannels)]
 
             # comment = read-write thing
             try:

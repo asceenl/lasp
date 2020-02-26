@@ -29,6 +29,7 @@ cdef extern from "RtAudio.h" nogil:
     RtAudioStreamFlags RTAUDIO_NONINTERLEAVED
     RtAudioStreamFlags RTAUDIO_MINIMIZE_LATENCY
     RtAudioStreamFlags RTAUDIO_HOG_DEVICE
+    RtAudioStreamFlags RTAUDIO_SCHEDULE_REALTIME
     RtAudioStreamFlags RTAUDIO_ALSA_USE_DEFAULT
     RtAudioStreamFlags RTAUDIO_JACK_DONT_CONNECT
 
