@@ -82,12 +82,14 @@ class TimeWeighting:
     fast = (0.125, 'Fast (0.125 s)')
     slow = (1.0, 'Slow (1.0 s)')
     tens = (10., '10 s')
+    infinite = (0, 'Infinite')
     types = (none, uufast, ufast, fast, slow, tens)
+    types_all = (none, uufast, ufast, fast, slow, tens, infinite)
     default = fast
     default_index = 3
 
     @staticmethod
-    def fillComboBox(cb):
+    def fillComboBox(cb, all_=False):
         """
         Fill TimeWeightings to a combobox
 
@@ -95,13 +97,17 @@ class TimeWeighting:
             cb: QComboBox to fill
         """
         cb.clear()
-        for tw in TimeWeighting.types:
+        if all_:
+            types = TimeWeighting.types_all
+        else:
+            types = TimeWeighting.types
+        for tw in types:
             cb.addItem(tw[1], tw)
         cb.setCurrentIndex(TimeWeighting.default_index)
 
     @staticmethod
     def getCurrent(cb):
-        return TimeWeighting.types[cb.currentIndex()]
+        return TimeWeighting.types_all[cb.currentIndex()]
 
 class FreqWeighting:
     """
