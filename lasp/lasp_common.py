@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+import platform
+import shelve
+
+import appdirs
 import numpy as np
+
 from .wrappers import Window as wWindow
-import appdirs, os, shelve
+
 """
 Common definitions used throughout the code.
 """
 
-__all__ = ['P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 
-           'getFreq', 'lasp_shelve',
-           'W_REF', 'U_REF', 'I_REF']
+__all__ = [
+    'P_REF', 'FreqWeighting', 'TimeWeighting', 'getTime', 'getFreq',
+    'lasp_shelve', 'this_lasp_shelve', 'W_REF', 'U_REF', 'I_REF'
+]
 
 lasp_appdir = appdirs.user_data_dir('Lasp', 'ASCEE')
-
 
 if not os.path.exists(lasp_appdir):
     try:
@@ -29,7 +35,8 @@ class lasp_shelve:
     def __enter__(self):
         if lasp_shelve.shelve is None:
             assert lasp_shelve.refcount == 0
-            lasp_shelve.shelve = shelve.open(os.path.join(lasp_appdir, 'config.shelve'))
+            lasp_shelve.shelve = shelve.open(
+                os.path.join(lasp_appdir, 'config.shelve'))
         lasp_shelve.refcount += 1
         return lasp_shelve.shelve
 
@@ -38,6 +45,27 @@ class lasp_shelve:
         if lasp_shelve.refcount == 0:
             lasp_shelve.shelve.close()
             lasp_shelve.shelve = None
+
+
+class this_lasp_shelve:
+    refcount = 0
+    shelve = None
+
+    def __enter__(self):
+        if this_lasp_shelve.shelve is None:
+            assert lasp_shelve.refcount == 0
+            node = platform.node()
+            this_lasp_shelve.shelve = shelve.open(
+                os.path.join(lasp_appdir, f'{node}_config.shelve'))
+        this_lasp_shelve.refcount += 1
+        return this_lasp_shelve.shelve
+
+    def __exit__(self, type, value, traceback):
+        this_lasp_shelve.refcount -= 1
+        if this_lasp_shelve.refcount == 0:
+            this_lasp_shelve.shelve.close()
+            this_lasp_shelve.shelve = None
+
 
 # Reference sound pressure level
 P_REF = 2e-5
