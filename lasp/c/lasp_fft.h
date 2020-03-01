@@ -12,6 +12,23 @@
 #include "lasp_mat.h"
 
 /**
+ * Load wisdom data from a NULL-terminated character string. Note that at this
+ * point in time this is only used by the FFTW fft backend.
+ *
+ * @param[in] wisdom: Wisdom string
+ */
+void load_fft_wisdom(const char* wisdom);
+
+/**
+ * Creates a NULL-terminated string containing FFTW wisdom, or state knowledge
+ * from other libraries.
+ *
+ * @returns A NULL-terminated string. *Should be deallocated after being used*
+ */
+char* store_fft_wisdom(void);
+
+
+/**
  * Perform forward FFT's on real time data.
  * 
  */

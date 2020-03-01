@@ -28,6 +28,26 @@ typedef struct Fft_s {
 
 #endif
 
+void load_fft_wisdom(const char* wisdom) {
+#ifdef LASP_FFT_BACKEND_FFTPACK
+#elif defined LASP_FFT_BACKEND_FFTW
+    if(wisdom) {
+        int rv= fftw_import_wisdom_from_string(wisdom);
+        if(rv != 1) {
+            fprintf(stderr, "Error loading FFTW wisdom");
+        }
+    }
+#endif
+}
+
+char* store_fft_wisdom() {
+#ifdef LASP_FFT_BACKEND_FFTPACK
+    return NULL;
+#elif defined LASP_FFT_BACKEND_FFTW
+    return fftw_export_wisdom_to_string();
+#endif
+}
+
 Fft* Fft_create(const us nfft) {
     fsTRACE(15);
     if(nfft == 0) {

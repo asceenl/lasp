@@ -67,13 +67,14 @@ cdef extern from "lasp_python.h":
 
 __all__ = ['AvPowerSpectra', 'SosFilterBank', 'FilterBank', 'Siggen',
            'sweep_flag_forward', 'sweep_flag_backward', 'sweep_flag_linear',
-           'sweep_flag_exponential', 'sweep_flag_hyperbolic']
+           'sweep_flag_exponential', 'sweep_flag_hyperbolic',
+           'load_fft_wisdom', 'store_fft_wisdom']
+            
 
 setTracerLevel(15)
 cdef extern from "cblas.h":
     int openblas_get_num_threads()
     void openblas_set_num_threads(int)
-
 
 # If we touch this variable: we get segfaults when running from
 # Spyder!
@@ -86,6 +87,8 @@ def cls():
 # cls()
 
 cdef extern from "lasp_fft.h":
+    void c_load_fft_wisdom "load_fft_wisdom"  (const char* wisdom) 
+    char* c_store_fft_wisdom "store_fft_wisdom" ()
     ctypedef struct c_Fft "Fft"
     c_Fft* Fft_create(us nfft)
     void Fft_free(c_Fft*)
@@ -93,8 +96,24 @@ cdef extern from "lasp_fft.h":
     void Fft_ifft(c_Fft*,cmat * freqdata,dmat* timedata) nogil
     us Fft_nfft(c_Fft*)
 
+def load_fft_wisdom(const unsigned char[::1] wisdom):
+    c_load_fft_wisdom(<const char*> &wisdom[0])
 
+from cpython cimport PyBytes_FromString
+from libc.stdlib cimport free
 
+def store_fft_wisdom():
+    cdef char* wisdom = c_store_fft_wisdom()
+
+    if wisdom != NULL:
+        try:
+            bts = PyBytes_FromString(wisdom)
+        finally:
+            free(wisdom)
+        return bts
+    else:
+        return None
+    
 cdef class Fft:
     cdef:
         c_Fft* _fft
