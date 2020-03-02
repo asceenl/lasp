@@ -10,6 +10,7 @@
 #ifndef LASP_SIGGEN_H
 #define LASP_SIGGEN_H
 #include "lasp_mat.h"
+#include "lasp_sosfilterbank.h"
 
 typedef struct Siggen Siggen;
 
@@ -23,19 +24,18 @@ typedef struct Siggen Siggen;
 Siggen* Siggen_Sinewave_create(const d fs,const d freq,const d level_dB);
 
 /**
- * Create a white noise signal generator
- * 
- * @return Siggen* handle
- */
-Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB);
-
-/**
- * Create a pink (1/f) noise signal generator
- * 
+ * Create a Noise signal generator. If no Sosfilterbank is provided, it will
+ * create white noise. Otherwise, the noise is 'colored' using the filterbank
+ * given in the constructor. Note that the pointer to this filterbank is
+ * *STOLEN*!.
+ *
  * @param[in] fs: Sampling frequency [Hz]
+ * @param[in] level_dB: Relative level [dB]
+ * @param[in]
+ * 
  * @return Siggen* handle
  */
-Siggen* Siggen_Pinknoise_create(const us fs,const d level_dB);
+Siggen* Siggen_Noise_create(const d fs, const d level_dB, Sosfilterbank* colorfilter);
 
 // Define this flag to repeat a forward sweep only, or backward only. If not
 // set, we do a continuous sweep

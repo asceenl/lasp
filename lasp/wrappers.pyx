@@ -637,6 +637,8 @@ sweep_flag_linear = SWEEP_FLAG_LINEAR
 sweep_flag_exponential = SWEEP_FLAG_EXPONENTIAL
 sweep_flag_hyperbolic = SWEEP_FLAG_HYPERBOLIC
 
+from .filter import PinkNoise
+
 cdef class Siggen:
 
     cdef c_Siggen *_siggen

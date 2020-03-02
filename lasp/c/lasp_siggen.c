@@ -78,7 +78,7 @@ Siggen* Siggen_Sinewave_create(const d fs, const d freq,const d level_dB) {
     return sine;
 }
 
-Siggen* Siggen_Whitenoise_create(const d fs, const d level_dB) {
+Siggen* Siggen_Noise_create(const d fs, const d level_dB, Sosfilterbank* colorfilter) {
     fsTRACE(15);
 
     Siggen* whitenoise = Siggen_create(WHITENOISE, fs, level_dB);
