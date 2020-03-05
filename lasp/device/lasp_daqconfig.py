@@ -97,21 +97,18 @@ class DAQConfiguration:
         Returns a list of currently available configurations
         """
         with lasp_shelve() as sh:
-            return sh['daqconfigs'] if 'daqconfigs' in sh.keys() else {}
+            return sh.load('daqconfigs', {})
 
     def saveConfig(self, name):
         with lasp_shelve() as sh:
-            if 'daqconfigs' in sh.keys():
-                cur_configs = sh['daqconfigs']
-            else:
-                cur_configs = {}
+            cur_configs = self.loadConfigs()
             cur_configs[name] = self
-            sh['daqconfigs'] = cur_configs
+            sh.store('daqconfigs', cur_configs)
 
     @staticmethod
     def deleteConfig(name):
         with lasp_shelve() as sh:
-            cur_configs = sh['daqconfigs']
+            cur_configs = DAQConfiguration.loadConfigs()
             del cur_configs[name]
-            sh['daqconfigs'] = cur_configs
+            sh.store('daqconfigs', cur_configs)
 

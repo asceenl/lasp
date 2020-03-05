@@ -27,44 +27,76 @@ if not os.path.exists(lasp_appdir):
         print('Fatal error: could not create application directory')
         exit(1)
 
-
-class lasp_shelve:
-    refcount = 0
-    shelve = None
-
-    def __enter__(self):
-        if lasp_shelve.shelve is None:
-            assert lasp_shelve.refcount == 0
-            lasp_shelve.shelve = shelve.open(
-                os.path.join(lasp_appdir, 'config.shelve'))
-        lasp_shelve.refcount += 1
-        return lasp_shelve.shelve
-
-    def __exit__(self, type, value, traceback):
-        lasp_shelve.refcount -= 1
-        if lasp_shelve.refcount == 0:
-            lasp_shelve.shelve.close()
-            lasp_shelve.shelve = None
-
-
-class this_lasp_shelve:
-    refcount = 0
-    shelve = None
+class Shelve:
+    def load(self, key, default_value):
+        """
+        Load data from a given key, if key is not found, returns the
+        default value if key is not found
+        """
+        if key in self.shelve.keys():
+            return self.shelve[key]
+        else:
+            return default_value
 
     def __enter__(self):
-        if this_lasp_shelve.shelve is None:
-            assert lasp_shelve.refcount == 0
-            node = platform.node()
-            this_lasp_shelve.shelve = shelve.open(
-                os.path.join(lasp_appdir, f'{node}_config.shelve'))
-        this_lasp_shelve.refcount += 1
-        return this_lasp_shelve.shelve
+        if self.shelve is None:
+            assert self.refcount == 0
+            self.shelve = shelve.open(self.shelve_fn())
+        self.refcount += 1
+        return self
+
+    def store(self, key, val):
+        self.shelve[key] = val
+
+    def deleteIfPresent(self, key):
+        try:
+            del self.shelve[key]
+        except:
+            pass
+
+    def printAllKeys(self):
+        print(list(self.shelve.keys()))
+
+    @property
+    def shelve(self):
+        raise NotImplementedError()
 
     def __exit__(self, type, value, traceback):
-        this_lasp_shelve.refcount -= 1
-        if this_lasp_shelve.refcount == 0:
-            this_lasp_shelve.shelve.close()
-            this_lasp_shelve.shelve = None
+        self.refcount -= 1
+        if self.refcount == 0:
+            self.shelve.close()
+            self.shelve = None
+
+class lasp_shelve(Shelve):
+    refcount = 0
+    _shelve = None
+
+    @property
+    def shelve(self):
+        return self._shelve
+
+    @shelve.setter
+    def shelve(self, shelve):
+        self._shelve = shelve
+
+    def shelve_fn(self):
+        return os.path.join(lasp_appdir, 'config.shelve')
+
+class this_lasp_shelve(Shelve):
+    refcount = 0
+    _shelve = None
+
+    @property
+    def shelve(self):
+        return self._shelve
+
+    @shelve.setter
+    def shelve(self, shelve):
+        self._shelve = shelve
+
+    def shelve_fn(self):
+        node = platform.node()
+        return os.path.join(lasp_appdir, f'{node}_config.shelve')
 
 
 # Reference sound pressure level
