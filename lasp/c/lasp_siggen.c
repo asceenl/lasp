@@ -15,7 +15,7 @@
 
 typedef enum {
     SINEWAVE = 0,
-    WHITENOISE,
+    NOISE,
     SWEEP,
 
 } SignalType;
@@ -32,7 +32,7 @@ typedef struct {
     d omg;
 } SinewaveSpecific;
 
-typedef struct { 
+typedef struct {
     d fl;
     d fu;
     d Ts;
@@ -45,7 +45,8 @@ typedef struct {
 typedef struct {
     d V1, V2, S;
     int phase;
-} WhitenoiseSpecific;
+    Sosfilterbank* colorfilter;
+} NoiseSpecific;
 
 static d level_amp(d level_dB){
     return pow(10, level_dB/20);
@@ -81,17 +82,18 @@ Siggen* Siggen_Sinewave_create(const d fs, const d freq,const d level_dB) {
 Siggen* Siggen_Noise_create(const d fs, const d level_dB, Sosfilterbank* colorfilter) {
     fsTRACE(15);
 
-    Siggen* whitenoise = Siggen_create(WHITENOISE, fs, level_dB);
-    dbgassert(sizeof(WhitenoiseSpecific) <= sizeof(whitenoise->private_data),
+    Siggen* noise = Siggen_create(NOISE, fs, level_dB);
+    dbgassert(sizeof(noiseSpecific) <= sizeof(noise->private_data),
             "Allocated memory too small");
-    WhitenoiseSpecific* wn = (WhitenoiseSpecific*) whitenoise->private_data;
+    NoiseSpecific* wn = (NoiseSpecific*) noise->private_data;
     wn->phase = 0;
     wn->V1 = 0;
     wn->V2 = 0;
     wn->S = 0;
+    wn->colorfilter = colorfilter;
 
     feTRACE(15);
-    return whitenoise;
+    return noise;
 }
 
 
@@ -130,6 +132,7 @@ Siggen* Siggen_Sweep_create(const d fs,const d fl,const d fu,
 void Siggen_free(Siggen* siggen) {
     fsTRACE(15);
     assertvalidptr(siggen);
+    NoiseSpecific* sp;
 
     switch(siggen->signaltype) {
         case SWEEP:
@@ -138,6 +141,12 @@ void Siggen_free(Siggen* siggen) {
         case SINEWAVE:
             /* Sweep specific stuff here */
             break;
+        case NOISE:
+            sp = (NoiseSpecific*) siggen->private_data;
+            if(sp->colorfilter) {
+                Sosfilterbank_free(sp->colorfilter);
+            }
+
     }
 
     a_free(siggen);
@@ -182,7 +191,7 @@ static void Sweep_genSignal(Siggen* siggen, SweepSpecific* sweep,
     bool forward_sweep = flags & SWEEP_FLAG_FORWARD;
     bool backward_sweep = flags & SWEEP_FLAG_BACKWARD;
     dbgassert(!(forward_sweep && backward_sweep), "Both forward and backward flag set");
-    
+
     d k, Treverse;
     if(forward_sweep || backward_sweep) {
         k = (fu - fl)/Ts;
@@ -234,12 +243,13 @@ static void Sweep_genSignal(Siggen* siggen, SweepSpecific* sweep,
     feTRACE(15);
 }
 
-static void Whitenoise_genSignal(Siggen* siggen, WhitenoiseSpecific* wn, vd* samples) {
+static void noise_genSignal(Siggen* siggen, NoiseSpecific* wn, vd* samples) {
     fsTRACE(15);
     d X;
     d S = wn->S;
     d V1 = wn->V1;
     d V2 = wn->V2;
+
     int phase = wn->phase;
 
     for(us i =0; i< samples->n_rows; i++) {
@@ -254,13 +264,19 @@ static void Whitenoise_genSignal(Siggen* siggen, WhitenoiseSpecific* wn, vd* sam
                 S = V1 * V1 + V2 * V2;
             } while(S >= 1 || S == 0);
 
-            X = V1 * sqrt(-2 * log(S) / S);
+            X = V1 * sqrt(-2 * d_log(S) / S);
         } else
-            X = V2 * sqrt(-2 * log(S) / S);
+            X = V2 * sqrt(-2 * d_log(S) / S);
 
         phase = 1 - phase;
 
         setvecval(samples, i, siggen->level_amp*X);
+    }
+    if(wn->colorfilter){
+        vd filtered = Sosfilterbank_filter(wn->colorfilter,
+                samples);
+        dmat_copy(samples, &filtered);
+        vd_free(&filtered);
     }
     wn->S = S;
     wn->V1 = V1;
@@ -283,9 +299,9 @@ void Siggen_genSignal(Siggen* siggen,vd* samples) {
                     samples);
 
             break;
-        case WHITENOISE:
-            Whitenoise_genSignal(siggen,
-                    (WhitenoiseSpecific*) siggen->private_data,
+        case NOISE:
+            noise_genSignal(siggen,
+                    (NoiseSpecific*) siggen->private_data,
                     samples);
             break;
         case SWEEP:

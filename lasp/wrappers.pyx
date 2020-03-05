@@ -621,7 +621,8 @@ cdef extern from "lasp_siggen.h":
     us SWEEP_FLAG_FORWARD, SWEEP_FLAG_BACKWARD, SWEEP_FLAG_LINEAR
     us SWEEP_FLAG_EXPONENTIAL,SWEEP_FLAG_HYPERBOLIC
 
-    c_Siggen* Siggen_Whitenoise_create(d fs, d level_dB)
+    c_Siggen* Siggen_Noise_create(d fs, d level_dB, c_Sosfilterbank*
+                                  colorfilter)
     c_Siggen* Siggen_Sinewave_create(d fs, d freq, d level_dB)
     c_Siggen* Siggen_Sweep_create(d fs, d fl,
                                   d fu, d Ts,us sweep_flags,
@@ -676,11 +677,25 @@ cdef class Siggen:
 
 
     @staticmethod
-    def whiteNoise(d fs, d level_dB):
-        cdef c_Siggen* c_siggen = Siggen_Whitenoise_create(fs, level_dB)
+    def noise(d fs, d level_dB, d[::1] colorfilter_coefs=None):
+        cdef:
+            c_Sosfilterbank* colorfilter = NULL
+        if colorfilter_coefs is not None:
+            assert colorfilter_coefs.size % 6 == 0
+            colorfilter_nsections = colorfilter_coefs.size // 6
+            colorfilter = Sosfilterbank_create(1,colorfilter_nsections)
+            coefs = colorfilter_coefs
+            coefs_vd = dmat_foreign_data(colorfilter_nsections*6,1,
+                                         &colorfilter_coefs[0],False)
+            Sosfilterbank_setFilter(colorfilter, 0, coefs_vd)
+
+            if colorfilter is NULL:
+                raise RuntimeError('Error creating pre-filter')
+        cdef c_Siggen* c_siggen = Siggen_Noise_create(fs, level_dB, colorfilter)
         siggen = Siggen()
         siggen._siggen = c_siggen
         return siggen
+
 
     @staticmethod
     def sweep(d fs, d fl, d fu, d Ts,us sweep_flags, d level_dB):
