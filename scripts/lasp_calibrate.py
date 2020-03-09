@@ -50,10 +50,11 @@ prms = P_REF*10**(args.spl/20)
 
 sens = Vrms / prms
 
-print(f'Computed sensitivity: {sens[args.channel]:.5} V/Pa')
+print(f'Computed sensitivity: {sens[args.channel]:.5e} V/Pa')
 if args.fn:
     print('Searching for files in directory to apply sensitivity value to...')
     dir_ = os.path.dirname(args.fn)
+    if len(dir_) == 0: dir_ = '.'
     for f in os.listdir(dir_):
         yn = input(f'Apply sensitivity to {f}? [Y/n]')
         if yn in ['', 'Y', 'y']:

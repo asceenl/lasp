@@ -51,7 +51,7 @@ class DAQConfiguration:
         en_format: index of the format in the list of sample formats
         en_input_rate: index of enabled input sampling frequency [Hz]
                             in the list of frequencies.
-        en_input_channels: list of channel indices which are used to
+        input_channel_configs: list of channel indices which are used to
                                 acquire data from.
         input_sensitivity: List of sensitivity values, in units of [Pa^-1]
         input_gain_settings: If a DAQ supports it, list of indices which
@@ -76,17 +76,49 @@ class DAQConfiguration:
     en_input_rate: int
     en_output_rate: int
 
-    en_input_channels: list
+    input_channel_configs: list = None
     monitor_gen: bool = False
+
+
+    def __post_init__(self):
+        """
+        We do a check here to see whether the list of enabled channels is
+        contiguous. Non-contiguous is not yet implemented in RtAudio backend.
+        """
+        en_input = self.input_channel_configs
+        first_ch_enabled_found = False
+        ch_disabled_found_after = False
+        print(en_input)
+        for ch in en_input:
+            if ch.channel_enabled:
+                first_ch_enabled_found = True
+                if ch_disabled_found_after:
+                    raise ValueError('Error: non-contiguous array of channels'
+                                    ' found. This is not yet implemented in'
+                                     ' backend')
+            else:
+                if first_ch_enabled_found:
+                    ch_disabled_found_after = True
+
+    def firstEnabledInputChannelNumber(self):
+        """
+        Returns the channel number of the first enabled channel. Returns -1 if
+        no channels are enabled.
+        """
+        for i, ch in enumerate(self.input_channel_configs):
+            if ch.channel_enabled:
+                return i
+        return -1
+
 
     def getEnabledChannels(self):
         en_channels = []
-        for chan in self.en_input_channels:
+        for chan in self.input_channel_configs:
             if chan.channel_enabled:
                 en_channels.append(chan)
         return en_channels
 
-    def getSensitivities(self):
+    def getEnabledChannelSensitivities(self):
         return np.array(
                 [float(channel.sensitivity) for channel in
                     self.getEnabledChannels()])

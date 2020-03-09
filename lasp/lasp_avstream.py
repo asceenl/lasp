@@ -85,7 +85,7 @@ class AvStream:
                     self.channel_names.append(channelconfig.channel_name)
             rtaudio_inputparams = {'deviceid': device.index,
                                    'nchannels': self.nchannels,
-                                   'firstchannel': 0}
+                                   'firstchannel': firstchannel}
 
             # Here, we override the sample format in case of duplex mode.
             self.sampleformat = daqconfig.en_input_sample_format
