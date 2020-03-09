@@ -35,6 +35,7 @@
 #define d_cos cos
 #define d_pow pow
 #define d_log10 log10
+#define d_ln log
 #define d_epsilon (DBL_EPSILON)
 
 #else  // LASP_DOUBLE_PRECISION not defined
@@ -51,6 +52,7 @@
 #define d_cos cosf
 #define d_pow powf
 #define d_log10 log10f
+#define d_ln logf
 #define d_epsilon (FLT_EPSILON)
 #endif // LASP_DOUBLE_PRECISION
 

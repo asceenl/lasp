@@ -83,7 +83,7 @@ Siggen* Siggen_Noise_create(const d fs, const d level_dB, Sosfilterbank* colorfi
     fsTRACE(15);
 
     Siggen* noise = Siggen_create(NOISE, fs, level_dB);
-    dbgassert(sizeof(noiseSpecific) <= sizeof(noise->private_data),
+    dbgassert(sizeof(NoiseSpecific) <= sizeof(noise->private_data),
             "Allocated memory too small");
     NoiseSpecific* wn = (NoiseSpecific*) noise->private_data;
     wn->phase = 0;
@@ -264,9 +264,9 @@ static void noise_genSignal(Siggen* siggen, NoiseSpecific* wn, vd* samples) {
                 S = V1 * V1 + V2 * V2;
             } while(S >= 1 || S == 0);
 
-            X = V1 * sqrt(-2 * d_log(S) / S);
+            X = V1 * sqrt(-2 * d_ln(S) / S);
         } else
-            X = V2 * sqrt(-2 * d_log(S) / S);
+            X = V2 * sqrt(-2 * d_ln(S) / S);
 
         phase = 1 - phase;
 
