@@ -39,60 +39,79 @@ class Shelve:
             return default_value
 
     def __enter__(self):
-        if self.shelve is None:
-            assert self.refcount == 0
-            self.shelve = shelve.open(self.shelve_fn())
-        self.refcount += 1
+        self.incref()
         return self
 
     def store(self, key, val):
-        self.shelve[key] = val
+        self._shelve[key] = val
 
     def deleteIfPresent(self, key):
         try:
-            del self.shelve[key]
+            del self._shelve[key]
         except:
             pass
 
     def printAllKeys(self):
         print(list(self.shelve.keys()))
 
-    @property
-    def shelve(self):
-        raise NotImplementedError()
+    def incref(self):
+        if self.shelve is None:
+            assert self.refcount == 0
+            self.shelve = shelve.open(self.shelve_fn())
+        self.refcount += 1
 
-    def __exit__(self, type, value, traceback):
+    def decref(self):
         self.refcount -= 1
         if self.refcount == 0:
             self.shelve.close()
             self.shelve = None
 
+    def __exit__(self, type, value, traceback):
+        self.decref()
+
 class lasp_shelve(Shelve):
-    refcount = 0
+    _refcount = 0
     _shelve = None
+
+
+    @property
+    def refcount(self):
+        return lasp_shelve._refcount
+
+    @refcount.setter
+    def refcount(self, val):
+        lasp_shelve._refcount = val
 
     @property
     def shelve(self):
-        return self._shelve
+        return lasp_shelve._shelve
 
     @shelve.setter
     def shelve(self, shelve):
-        self._shelve = shelve
+        lasp_shelve._shelve = shelve
 
     def shelve_fn(self):
         return os.path.join(lasp_appdir, 'config.shelve')
 
 class this_lasp_shelve(Shelve):
-    refcount = 0
+    _refcount = 0
     _shelve = None
 
     @property
+    def refcount(self):
+        return this_lasp_shelve._refcount
+
+    @refcount.setter
+    def refcount(self, val):
+        this_lasp_shelve._refcount = val
+
+    @property
     def shelve(self):
-        return self._shelve
+        return this_lasp_shelve._shelve
 
     @shelve.setter
     def shelve(self, shelve):
-        self._shelve = shelve
+        this_lasp_shelve._shelve = shelve
 
     def shelve_fn(self):
         node = platform.node()
