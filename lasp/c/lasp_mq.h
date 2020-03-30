@@ -31,7 +31,7 @@ JobQueue* JobQueue_alloc(const us max_msg);
 void JobQueue_free(JobQueue* jq);
 
 /** 
- * Pops a job from the queue. Waits indefinetely until some job is
+ * Pops a job from the queue. Waits indefinitely until some job is
  * available.
  *
  * @param jq: JobQueue handle

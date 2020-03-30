@@ -55,20 +55,25 @@ class AvStream:
         self.monitor_gen = daqconfig.monitor_gen
 
         # Determine highest input channel number
-        channelconfigs = daqconfig.en_input_channels
+        channelconfigs = daqconfig.input_channel_configs
+        firstchannel = daqconfig.firstEnabledInputChannelNumber()
+        if firstchannel < 0:
+            raise ValueError('No input channels enabled')
 
         self.channel_names = []
-        self.sensitivity = self.daqconfig.getSensitivities()
+        self.sensitivity = self.daqconfig.getEnabledChannelSensitivities()
+
         if daqconfig.monitor_gen:
             assert self.duplex_mode
             self.channel_names.append('Generated signal')
             self.sensitivity = np.concatenate([np.array([1.]),
                                                self.sensitivity])
 
+
         rtaudio_inputparams = None
         rtaudio_outputparams = None
 
-        self.nframes_per_block = 2048
+        self.nframes_per_block = 512
 
         if self.duplex_mode or avtype == AvType.audio_output:
             rtaudio_outputparams = {'deviceid': device.index,

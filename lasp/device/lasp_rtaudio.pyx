@@ -4,7 +4,11 @@ cimport cython
 from .lasp_daqconfig import DeviceInfo
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
+from cpython.ref cimport PyObject,Py_INCREF, Py_DECREF
+
+# cdef extern from "lasp_worker.h":
 
 cdef extern from "RtAudio.h" nogil:
     ctypedef unsigned long RtAudioStreamStatus
@@ -123,18 +127,17 @@ def get_numpy_dtype_from_format_string(format_string):
 def get_sampwidth_from_format_string(format_string):
     return _formats_strkey[format_string][-2]
 
-cdef class _Stream:
-    cdef:
-        object pyCallback
-        unsigned int sampleSize
-        RtAudioFormat sampleformat
-        cppRtAudio.StreamParameters inputParams
-        cppRtAudio.StreamParameters outputParams
-        # These boolean values tell us whether the structs above here are
-        # initialized and contain valid data
-        bool hasInput
-        bool hasOutput
-        unsigned int bufferFrames
+ctypedef struct _Stream:
+    PyObject* pyCallback
+    RtAudioFormat sampleformat
+    cppRtAudio.StreamParameters inputParams
+    cppRtAudio.StreamParameters outputParams
+    # These boolean values tell us whether the structs above here are
+    # initialized and contain valid data
+    bool hasInput
+    bool hasOutput
+    unsigned int bufferFrames
+
 
 
 # It took me quite a long time to fully understand Cython's idiosyncrasies
@@ -153,6 +156,7 @@ cdef object fromBufferToNPYNoCopy(
             buf)
 
     return array
+
 
 cdef void fromNPYToBuffer(cnp.ndarray arr,
                           void* buf):
@@ -177,14 +181,18 @@ cdef int audioCallback(void* outputbuffer,
         int rval = 0
         cnp.NPY_TYPES npy_format
 
+
     with gil:
         if status == RTAUDIO_INPUT_OVERFLOW:
             print('Input overflow.')
             return 0
-        if status == RTAUDIO_OUTPUT_UNDERFLOW:
+        elif status == RTAUDIO_OUTPUT_UNDERFLOW:
             print('Output underflow.')
             return 0
-        stream = <_Stream>(userData)
+        else:
+            pass
+        stream = <_Stream*>(userData)
+        callback = <object> stream[0].pyCallback
         
         # Obtain stream information
         npy_input = None
@@ -196,37 +204,40 @@ cdef int audioCallback(void* outputbuffer,
                 npy_input = fromBufferToNPYNoCopy(
                         npy_format,
                         inputbuffer,
-                        stream.inputParams.nChannels,
+                        stream[0].inputParams.nChannels,
                         nFrames)
 
             except Exception as e:
-                print('exception in cython callback: ', str(e))
+                print('exception in cython callback for input: ', str(e))
+                return 1
 
-        if stream.hasOutput:
+        if stream[0].hasOutput:
             try:
                 assert outputbuffer != NULL
-                npy_format = _formats_rtkey[stream.sampleformat][2]
+                npy_format = _formats_rtkey[stream[0].sampleformat][2]
                 npy_output = fromBufferToNPYNoCopy(
                         npy_format,
                         outputbuffer,
-                        stream.outputParams.nChannels,
+                        stream[0].outputParams.nChannels,
                         nFrames)
 
             except Exception as e:
-                print('exception in cython callback: ', str(e))
+                print('exception in Cython callback for output: ', str(e))
+                return 1
         try:
-            rval = stream.pyCallback(npy_input,
+            rval = callback(npy_input,
                                      npy_output,
                                      nFrames,
                                      streamTime)
         except Exception as e:
-            print('Exception in Python callback: ', str(e))
+            print('Exception in Cython callback: ', str(e))
             return 1
 
         return rval
 
 cdef void errorCallback(RtAudioError.Type _type,const string& errortxt) nogil:
-    pass
+    with gil:
+        print('Error callback called: %s', errortxt)
 
 
 
@@ -234,13 +245,13 @@ cdef void errorCallback(RtAudioError.Type _type,const string& errortxt) nogil:
 cdef class RtAudio:
     cdef:
         cppRtAudio _rtaudio
-        _Stream _stream
+        _Stream* _stream
 
     def __cinit__(self):
-        self._stream = None
+        self._stream = NULL
 
     def __dealloc__(self):
-        if self._stream is not None:
+        if self._stream is not NULL:
             print('Force closing stream')
             self._rtaudio.closeStream()
 
@@ -302,7 +313,7 @@ cdef class RtAudio:
 
         Returns: None
         """
-        if self._stream is not None:
+        if self._stream is not NULL:
             raise RuntimeError('Stream is already opened.')
 
         cdef cppRtAudio.StreamParameters *rtOutputParams_ptr = NULL
@@ -312,23 +323,29 @@ cdef class RtAudio:
         streamoptions.flags = RTAUDIO_HOG_DEVICE
         streamoptions.numberOfBuffers = 4
 
-        self._stream = _Stream()
-        self._stream.pyCallback = pyCallback
-        self._stream.sampleformat = _formats_strkey[sampleformat][0]
+        self._stream = <_Stream*> malloc(sizeof(_Stream))
+        self._stream.hasInput = False
+        self._stream.hasInput = False
+        if self._stream is NULL:
+            raise MemoryError()
+
+        self._stream[0].pyCallback = <PyObject*> pyCallback
+        Py_INCREF(pyCallback)
+        self._stream[0].sampleformat = _formats_strkey[sampleformat][0]
 
         if outputParams is not None:
             rtOutputParams_ptr = &self._stream.outputParams
             rtOutputParams_ptr.deviceId = outputParams['deviceid']
             rtOutputParams_ptr.nChannels = outputParams['nchannels']
             rtOutputParams_ptr.firstChannel = outputParams['firstchannel']
-            self._stream.hasOutput = True
+            self._stream[0].hasOutput = True
 
         if inputParams is not None:
             rtInputParams_ptr = &self._stream.inputParams
             rtInputParams_ptr.deviceId = inputParams['deviceid']
             rtInputParams_ptr.nChannels = inputParams['nchannels']
             rtInputParams_ptr.firstChannel = inputParams['firstchannel']
-            self._stream.hasInput = True
+            self._stream[0].hasInput = True
 
         try:
             self._stream.bufferFrames = bufferFrames
@@ -336,7 +353,7 @@ cdef class RtAudio:
                                      rtInputParams_ptr,
                                      _formats_strkey[sampleformat][0],
                                      sampleRate,
-                                     &self._stream.bufferFrames,
+                                     &self._stream[0].bufferFrames,
                                      audioCallback,
                                      <void*> self._stream,
                                      &streamoptions, # Stream options
@@ -344,7 +361,9 @@ cdef class RtAudio:
                                      ) 
         except Exception as e:
             print('Exception occured in stream opening: ', str(e))
-            self._stream = None
+            self._stream = NULL
+            free(self._stream)
+            Py_INCREF(pyCallback)
             raise
 
         return self._stream.bufferFrames
@@ -353,19 +372,21 @@ cdef class RtAudio:
         self._rtaudio.startStream()
 
     def stopStream(self):
-        if not self._stream:
+        if self._stream is NULL:
             raise RuntimeError('Stream is not opened')
         self._rtaudio.stopStream()
 
     def closeStream(self):
-        if not self._stream:
+        if self._stream is NULL:
             raise RuntimeError('Stream is not opened')
         # Closing stream
         self._rtaudio.closeStream()
-        self._stream = None
+        Py_DECREF(<object> self._stream[0].pyCallback)
+        free(self._stream)
+        self._stream = NULL
 
     def abortStream(self):
-        if not self._stream:
+        if self._stream is NULL:
             raise RuntimeError('Stream is not opened')
         self._rtaudio.abortStream()
 
