@@ -289,7 +289,7 @@ class Measurement:
     def praw(self, block=None):
         """
         Returns the uncalibrated acoustic pressure signal, converted to
-        floating  point acoustic pressure values [Pa].
+        floating point acoustic pressure values [Pa].
         """
         if block is not None:
             with self.file() as f:

@@ -145,6 +145,8 @@ class Recording:
 
 
     def _aCallback(self, indata, outdata, aframe):
+        if indata is None:
+            return
 
         curT = self._ablockno()*self.blocksize/self.samplerate
         recstatus = RecordStatus(

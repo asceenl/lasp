@@ -6,4 +6,4 @@ set_source_files_properties(lasp_rtaudio.cxx PROPERTIES COMPILE_FLAGS
 cython_add_module(lasp_rtaudio lasp_rtaudio.pyx)
 
 # target_link_libraries(lasp_portaudio portaudio) */
-target_link_libraries(lasp_rtaudio rtaudio)
+target_link_libraries(lasp_rtaudio pthread rtaudio)

@@ -96,18 +96,6 @@ class AvStream:
             self.sampleformat = daqconfig.en_input_sample_format
             self.samplerate = int(daqconfig.en_input_rate)
 
-        try:
-            self._rtaudio = RtAudio()
-            self.blocksize = self._rtaudio.openStream(
-                rtaudio_outputparams,  # Outputparams
-                rtaudio_inputparams,   # Inputparams
-                self.sampleformat,     # Sampleformat
-                self.samplerate,
-                self.nframes_per_block,  # Buffer size in frames
-                self._audioCallback)
-
-        except Exception as e:
-            raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 
         # Fill in numpy data type, and sample width
         self.numpy_dtype = get_numpy_dtype_from_format_string(
@@ -137,6 +125,19 @@ class AvStream:
 
         # Possible, but long not tested: store video
         self._videothread = None
+
+        try:
+            self._rtaudio = RtAudio()
+            self.blocksize = self._rtaudio.openStream(
+                rtaudio_outputparams,  # Outputparams
+                rtaudio_inputparams,   # Inputparams
+                self.sampleformat,     # Sampleformat
+                self.samplerate,
+                self.nframes_per_block,  # Buffer size in frames
+                self._audioCallback)
+
+        except Exception as e:
+            raise RuntimeError(f'Could not initialize DAQ device: {str(e)}')
 
     def close(self):
         self._rtaudio.closeStream()
@@ -207,7 +208,7 @@ class AvStream:
         cap.release()
         print('stopped videothread')
 
-    def _audioCallback(self, indata, outdata, nframes, streamtime):
+    def _audioCallback(self, indata, outdata, nframes):
         """This is called (from a separate thread) for each audio block."""
         self._aframectr += nframes
         with self._callbacklock:

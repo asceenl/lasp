@@ -8,6 +8,7 @@
 #pragma once
 #ifndef MQ_H
 #define MQ_H
+#include "lasp_types.h"
 
 typedef struct JobQueue_s JobQueue;
 
@@ -58,7 +59,7 @@ void JobQueue_done(JobQueue* jq,void* job);
  * @param job_ptr Pointer to job to be done
  * @return 0 on success.
  */
-int JobQueue_push(JobQueue* jp,void* job_ptr);
+int JobQueue_push(JobQueue* jq,void* job_ptr);
 
 /** 
  * Wait until the job queue is empty. Please use this function with
