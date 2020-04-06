@@ -24,8 +24,8 @@ add_definitions(-DLASP_MAX_NFFT=33554432) # 2**25
 add_definitions(-D_REENTRANT)
 
 # ############### Choose an fft backend here
-#set(LASP_FFT_BACKEND fftpack)
-set(LASP_FFT_BACKEND "fftw")
+set(LASP_FFT_BACKEND fftpack)
+#set(LASP_FFT_BACKEND "fftw")
 
 if(LASP_FFT_BACKEND STREQUAL "fftw")
     find_library(FFTW_LIBRARY NAMES fftw3 fftw)
@@ -54,6 +54,32 @@ endif(NOT DEFINED LASP_DEBUG)
 # ##################### END Cmake variables converted to a macro
 set(Python_ADDITIONAL_VERSIONS "3")
 # #################### Setting definitions and debug-specific compilation flags
+
+# General make flags
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -Wall -Wextra -Wno-type-limits \
+-Werror=implicit-function-declaration  \
+-Werror=return-type")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(win32 true)
+	message("Building for Windows")
+	include_directories(
+		..\\rtaudio
+		C:\\mingw\\include\\OpenBLAS
+		)
+	add_definitions(-DMS_WIN64)
+	link_directories(C:\\mingw\\lib)
+	link_directories(C:\\mingw\\bin)
+	link_directories(..\\rtaudio)
+	link_directories(C:\\Users\\librewin7\\Miniconda3)
+else()
+    set(win32 false)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=c11 \
+	-Werror=incompatible-pointer-types")
+		
+
+	
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 if(LASP_DEBUG)
     set(TRACERNAME LASPTracer)
@@ -87,10 +113,7 @@ endif(LASP_DEBUG)
 ############################## General compilation flags (independent of debug mode, windows or linux)
 set(CYTHON_EXTRA_C_FLAGS "-Wno-sign-compare -Wno-cpp -Wno-implicit-fallthrough -Wno-incompatible-pointer-types -Wno-strict-aliasing")
 
-# General make flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=c11  -Wall -Wextra -Wno-type-limits \
--Werror=implicit-function-declaration -Werror=incompatible-pointer-types \
--Werror=return-type")
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11  -Wall -Wextra \
 -Wno-type-limits")
@@ -111,11 +134,7 @@ endif(LASP_USE_BLAS)
 
 # ############################# End compilation flags
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(win32 true)
-else()
-    set(win32 false)
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
 
 find_package(PythonLibs REQUIRED )
 find_package(PythonInterp REQUIRED)

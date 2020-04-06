@@ -11,17 +11,17 @@
 #include "lasp_types.h"
 
 #ifdef _REENTRANT
-#include <stdatomic.h>
-static _Thread_local us ASCEE_FN_LEVEL = 0;
 
-static _Atomic(int) TRACERNAME = ATOMIC_VAR_INIT(DEFAULTTRACERLEVEL);
+static __thread us ASCEE_FN_LEVEL = 0;
+
+static int TRACERNAME = DEFAULTTRACERLEVEL;
 
 
 void setTracerLevel(int level) {
-    atomic_store(&TRACERNAME,level);
+    __sync_lock_test_and_set(&TRACERNAME, level);
 }
 int getTracerLevel() {
-    return atomic_load(&TRACERNAME);
+    return __sync_fetch_and_add(&TRACERNAME, 0);
 }
 
 #else

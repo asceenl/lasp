@@ -18,7 +18,9 @@
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <unistd.h>
+#ifndef MS_WIN64
 #include <sys/syscall.h>
+#endif
 /* #endif */
 
 typedef struct {

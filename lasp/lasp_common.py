@@ -3,7 +3,7 @@
 import os
 import platform
 import shelve
-
+import sys
 import appdirs
 import numpy as np
 
@@ -22,10 +22,10 @@ lasp_appdir = appdirs.user_data_dir('Lasp', 'ASCEE')
 
 if not os.path.exists(lasp_appdir):
     try:
-        os.mkdir(lasp_appdir)
+        os.makedirs(lasp_appdir, exist_ok=True)
     except:
         print('Fatal error: could not create application directory')
-        exit(1)
+        sys.exit(1)
 
 class Shelve:
     def load(self, key, default_value):
