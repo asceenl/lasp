@@ -2,6 +2,12 @@
 This file contains the Cython wrapper functions to C implementations.
 """
 include "config.pxi"
+from libc.stdio cimport printf
+from numpy cimport import_array
+
+import_array()
+
+
 IF LASP_FLOAT == "double":
     ctypedef  double d
     ctypedef double complex c
@@ -456,13 +462,13 @@ cdef class SosFilterBank:
         cdef dmat output
         with nogil:
             output = Sosfilterbank_filter(self.fb,&input_vd)
-
+        #printf('Came back from filter\n')
         # Steal the pointer from output
         result = dmat_to_ndarray(&output,True)
-
+        #printf('Converted to array\n')
         dmat_free(&output)
         vd_free(&input_vd)
-
+        #printf('Ready to return\n')
         return result
 
 cdef extern from "lasp_decimation.h":

@@ -17,6 +17,17 @@
 #define LASP_NUMPY_FLOAT_TYPE NPY_FLOAT32
 #endif
 
+#ifdef MS_WIN64
+/** 
+ * Function passed to Python to use for cleanup of
+ * foreignly obtained data.
+ **/
+static inline void capsule_cleanup(void* capsule) {
+	void *memory = PyCapsule_GetPointer(capsule, NULL);
+    free(memory);
+	}
+
+#endif
 /** 
  * Create a numpy array from an existing dmat.
  *
@@ -47,7 +58,18 @@ static inline PyObject* dmat_to_ndarray(dmat* mat,bool transfer_ownership) {
 
     if(transfer_ownership) {
         mat->_foreign_data = true;
+#ifdef MS_WIN64
+		// The default destructor of Python cannot free the data, as it is allocated
+		// with malloc. Therefore, with this code, we tell Numpy/Python to use
+		// the capsule_cleanup constructor. See:
+		// https://stackoverflow.com/questions/54269956/crash-of-jupyter-due-to-the-use-of-pyarray-enableflags/54278170#54278170
+		// Note that in general it was disadvised to build all C code with MinGW on Windows.
+		// We do it anyway, see if we find any problems on the way.
+		void* capsule = PyCapsule_New(mat->_data, NULL, capsule_cleanup);
+		PyArray_SetBaseObject( arr_t, capsule);
+#else		
         PyArray_ENABLEFLAGS(arr_t, NPY_OWNDATA);
+#endif
     }
 
     // Transpose the array
