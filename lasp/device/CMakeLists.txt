@@ -5,4 +5,7 @@ set_source_files_properties(lasp_rtaudio.cxx PROPERTIES COMPILE_FLAGS
 
 cython_add_module(lasp_rtaudio lasp_rtaudio.pyx)
 
-target_link_libraries(lasp_rtaudio pthread rtaudio python37)
+target_link_libraries(lasp_rtaudio pthread rtaudio)
+if(win32)
+target_link_libraries(lasp_rtaudio python37)
+endif(win32)

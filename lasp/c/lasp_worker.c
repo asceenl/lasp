@@ -26,7 +26,7 @@ typedef struct Workers_s {
     us num_workers;
 } Workers;
 
-static void threadfcn(void* data);
+static void* threadfcn(void* data);
 
 Workers* Workers_create(const us num_workers,
                         JobQueue* jq,
@@ -123,7 +123,7 @@ void Workers_free(Workers* w) {
 
 }
 
-static void threadfcn(void* thread_global_data) {
+static void* threadfcn(void* thread_global_data) {
 
     TRACE(15,"Started worker thread function");
     dbgassert(thread_global_data,NULLPTRDEREF "thread_data in"
@@ -186,6 +186,10 @@ static void threadfcn(void* thread_global_data) {
     wfree(w_data);
     TRACE(15,"Exiting thread. Goodbye");
     pthread_exit((void*) NULL);
+
+    /* This return statement is never reached, but added to have a proper return
+     * type from this function. */ 
+    return NULL;
 }
 
 
